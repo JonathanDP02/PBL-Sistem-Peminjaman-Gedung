@@ -11,12 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('workflow_requirements', function (Blueprint $table) {
-            $table->uuid('requirement_id')->primary();
+       Schema::create('workflow_steps', function (Blueprint $table) {
+            $table->uuid('step_id')->primary();
             $table->foreignUuid('workflow_id')->references('workflow_id')->on('workflows')->cascadeOnDelete();
-            $table->string('document_name', 150);
-            $table->boolean('is_mandatory')->default(true);
-            $table->timestamp('created_at')->useCurrent();
+            $table->foreignUuid('position_id')->references('position_id')->on('positions');
+            $table->integer('step_order');
+            $table->boolean('requires_attachment')->default(false);
+            $table->timestamps();
         });
     }
 
