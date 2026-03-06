@@ -13,12 +13,15 @@ return new class extends Migration
     {
         Schema::create('rooms', function (Blueprint $table) {
             $table->uuid('room_id')->primary();
-            
             $table->foreignUuid('building_id')->references('building_id')->on('buildings')->cascadeOnDelete();
+            
+            //Siapa "Unit" pemilik sah ruangan ini?
+            $table->foreignUuid('unit_id')->references('unit_id')->on('units');
+            
             $table->string('room_name', 150);
             $table->integer('capacity')->nullable();
             $table->text('description')->nullable();
-            $table->timestamp('created_at')->useCurrent();
+            $table->timestamps();
         });
     }
 
