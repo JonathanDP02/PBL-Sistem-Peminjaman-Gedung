@@ -13,16 +13,17 @@ return new class extends Migration
     {
         Schema::create('units', function (Blueprint $table) {
             $table->uuid('unit_id')->primary();
+            $table->uuid('parent_id')->nullable(); 
             
-            //(Bisa null jika dia adalah Pusat / Level 1)
-            $table->foreignUuid('parent_id')->nullable()->references('unit_id')->on('units')->cascadeOnDelete();
-            
-            // Tingkatan hierarki
             $table->enum('level', ['Pusat', 'Jurusan', 'Organisasi'])->default('Organisasi');
-            
             $table->string('unit_name', 150);
             $table->string('description', 255)->nullable();
             $table->timestamps();
+        });
+
+        // Eksekusi relasi setelah tabel dipastikan ada
+        Schema::table('units', function (Blueprint $table) {
+            $table->foreign('parent_id')->references('unit_id')->on('units')->cascadeOnDelete();
         });
     }
 

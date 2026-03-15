@@ -15,6 +15,7 @@ return new class extends Migration
             $table->uuid('role_id')->primary();
             $table->string('name', 50);
             $table->text('description')->nullable();
+            $table->timestamps();
         });
     }
 
