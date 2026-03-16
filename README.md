@@ -61,7 +61,7 @@ php artisan serve
 ```
 
 ## 📚 Dokumentasi & Laporan
-Log kemajuan dan laporan teknis dari implementasi modul sistem ini dapat diakses pada tautan berikut:
+Log kemajuan dan laporan teknis dari implementasi modul sistem ini dapat diakses pada tautan berikut:<br>
 [📄 Laporan Implementasi Login, Auth, dan Middleware(Sementara)](report/REPORT.md)
 
 ## 📄 Lisensi
