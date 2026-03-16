@@ -23,7 +23,18 @@ class DatabaseSeeder extends Seeder
         // 2. Buat 5 Unit Master
         Unit::factory()->count(5)->create();
 
-        // 3. Buat 10 User (Otomatis akan mendapat role_id dan unit_id secara acak)
-        User::factory()->count(10)->create();
+        // Ambil Role dan Unit yang baru saja dibuat untuk dimasukkan ke User
+        $role = Role::first();
+        $unit = Unit::first();
+
+        // 3. Buat 1 User Khusus untuk Testing Login secara Manual (tanpa Factory)
+        User::create([
+            'user_id' => \Illuminate\Support\Str::uuid(),
+            'role_id' => $role->role_id,
+            'unit_id' => $unit->unit_id,
+            'name' => 'Admin_Super',
+            'email' => 'admin@gmail.com',
+            'password' => bcrypt('12345'),
+        ]);
     }
 }
