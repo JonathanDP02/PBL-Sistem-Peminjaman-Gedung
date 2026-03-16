@@ -1,17 +1,17 @@
-# Space.in (Project-Based Learning)
+# Space.in - Sistem Peminjaman Gedung dan Ruangan
 
-Sistem informasi manajemen peminjaman gedung dan ruangan berbasis web yang kita namakan SPACE.IN . Aplikasi ini dirancang untuk menangani siklus peminjaman fasilitas secara end-to-end, mulai dari pengajuan oleh pengguna, manajemen lampiran persyaratan, hingga sistem persetujuan (approval workflow) bertingkat oleh pihak berwenang.
+Sistem informasi manajemen peminjaman gedung dan ruangan berbasis web yang dirancang untuk menangani siklus peminjaman fasilitas secara end-to-end, mulai dari pengajuan oleh pengguna, manajemen lampiran persyaratan, hingga sistem persetujuan (approval workflow) bertingkat oleh pihak berwenang.
 
 ## 👥 Tim Pengembang
 
-**Institusi:** Politeknik Negeri Malang
+**Institusi:** Politeknik Negeri Malang | **Program Studi:** Teknologi Informasi
 
-| Nama Lengkap | NIM  | Kelas |
-|---|---|---|---|
-| Febri | [NIM Anggota 3] | [Peran Anggota 3] | TI-2F |
-| Jonathan  | [NIM Anggota 2] | [Peran Anggota 2] | TI-2F |
+| Nama Lengkap | NIM | Kelas |
+|---|---|---|
+| Febri | [NIM Anggota 1] | TI-2F |
+| Jonathan | [NIM Anggota 2] | TI-2F |
 | Nabhan Rizqi Julian Saputro | 2341720255 | TI-2F |
-| Otavia | [NIM Anggota 4] | [Peran Anggota 4] | TI-2F |
+| Otavia | [NIM Anggota 4] | TI-2F |
 
 ## ✨ Fitur Utama (Core Features)
 
@@ -33,13 +33,13 @@ Ikuti langkah berikut untuk menjalankan proyek ini di lingkungan lokal (Developm
 
 ```bash
 # 1. Clone repositori
-git clone [https://github.com/JonathanDP02/PBL-Sistem-Peminjaman-Gedung]
+git clone https://github.com/JonathanDP02/PBL-Sistem-Peminjaman-Gedung
 cd PBL-Sistem-Peminjaman-Gedung
 
 # 2. Install dependensi PHP
 composer install
 
-# 3. Install dependensi Frontend (Jika menggunakan NPM)
+# 3. Install dependensi Frontend
 npm install
 npm run build
 
@@ -48,21 +48,17 @@ cp .env.example .env
 php artisan key:generate
 
 # 5. Konfigurasi Database
-# Buka file .env dan sesuaikan DB_DATABASE, DB_USERNAME, DB_PASSWORD
+# Edit file .env dan sesuaikan:
+# - DB_DATABASE
+# - DB_USERNAME
+# - DB_PASSWORD
 
 # 6. Jalankan Migrasi dan Seeder
 php artisan migrate --seed
 
 # 7. Jalankan Local Server
 php artisan serve
-
 ```
-## Features
-- User registration and authentication
-- Building/venue listing and details
-- Rental request submission
-- Admin dashboard for managing rentals
-- Booking confirmation and notifications
 
 ## 📚 Dokumentasi & Laporan
 Log kemajuan dan laporan teknis dari implementasi modul sistem ini dapat diakses pada tautan berikut:
