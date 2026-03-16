@@ -17,13 +17,9 @@
             <p class="text-gray-500 mt-2">Masuk ke Sistem Peminjaman Gedung</p>
         </div>
 
-        @if(session('message') || $errors->any())
+        @if($errors->any())
             <div class="mb-4 p-3 rounded bg-red-100 text-red-600 text-sm">
-                @if(session('message'))
-                    {{ session('message') }}
-                @else
-                    {{ $errors->first() }}
-                @endif
+                {{ $errors->first() }}
             </div>
         @endif
 
