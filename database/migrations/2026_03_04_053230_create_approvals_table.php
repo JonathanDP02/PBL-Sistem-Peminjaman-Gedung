@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('approvals', function (Blueprint $table) {
             $table->uuid('approval_id')->primary();
             $table->foreignUuid('booking_id')->references('booking_id')->on('bookings')->cascadeOnDelete();
-            $table->foreignUuid('approver_id')->references('user_id')->on('users');
-            $table->foreignUuid('step_id')->references('step_id')->on('workflow_steps');
+            $table->foreignId('approver_id')->references('user_id')->on('users');
+            $table->foreignId('step_id')->references('step_id')->on('workflow_steps');
             $table->string('approval_status', 50);
             $table->text('notes')->nullable();
             $table->text('signature_image')->nullable();

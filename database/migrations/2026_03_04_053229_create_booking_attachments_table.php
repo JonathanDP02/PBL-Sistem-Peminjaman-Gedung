@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('booking_attachments', function (Blueprint $table) {
             $table->uuid('attachment_id')->primary();
             $table->foreignUuid('booking_id')->references('booking_id')->on('bookings')->cascadeOnDelete();
-            $table->foreignUuid('requirement_id')->nullable()->references('requirement_id')->on('workflow_requirements');
-            $table->foreignUuid('uploader_id')->references('user_id')->on('users');
+            $table->foreignId('requirement_id')->nullable()->references('requirement_id')->on('workflow_requirements');
+            $table->foreignId('uploader_id')->references('user_id')->on('users');
             $table->string('document_type', 150);
             $table->string('file_path', 255);
             $table->timestamp('uploaded_at')->useCurrent();

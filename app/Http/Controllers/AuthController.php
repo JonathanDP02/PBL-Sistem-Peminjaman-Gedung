@@ -9,31 +9,40 @@ class AuthController extends Controller
 {
     public function login(Request $request)
     {
-        // 1. Validasi input
+        //Validasi input
         $credentials = $request->validate([
             'email' => ['required', 'email'],
             'password' => ['required'],
         ]);
 
-        // 2. Coba login
+        //Coba login
         if (Auth::attempt($credentials)) {
-            // 3. Jika berhasil: buat ulang sesi untuk cegah hacking (session fixation)
+            //Jika berhasil: buat ulang sesi untuk cegah hacking (session fixation)
             $request->session()->regenerate();
             
-            // 4. Redirect ke halaman dashboard (atau halaman yang dituju)
-            // Ganti '/dashboard' dengan route yang sesuai nanti
+           // Ambil role user yang baru saja login
+            $user = Auth::user();
+            if (!$user) {
+                Auth::logout();
+                return back()->withErrors([
+                    'email' => 'User ini belum diberikan role. Hubungi admin.',
+                ])->onlyInput('email');
+            }
+
+            $role = $user->role->name;
+
+            // Redirect berdasarkan Role
+            if ($role === 'User') {
+                return redirect('/peminjaman'); // Pastikan route name ini ada nanti
+            }
+
+            // Redirect ke halaman dashboard (atau halaman yang dituju)
             return redirect('/dashboard'); 
         }
 
-        // 4.1 Cek role untuk redirect yang sesuai
-        if (auth()->user()->role->name === 'SuperAdmin') {
-            return redirect()->route('admin.dashboard');
-        } elseif (auth()->user()->role->name === 'User Biasa') {
-            return redirect()->route('peminjaman.index');
-        }
         
 
-        // 5. Jika gagal: kembalikan user ke halaman login beserta pesan error
+        //Jika gagal: kembalikan user ke halaman login beserta pesan error
         return back()->withErrors([
             'email' => 'Email atau password salah jirr.',
         ])->onlyInput('email'); // onlyInput menjaga email tetap terisi di form

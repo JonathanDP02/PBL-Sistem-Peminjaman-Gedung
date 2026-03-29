@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     { //Ini menampung data role seperti SuperAdmin, Admin_unit, User, User_Approval
         Schema::create('roles', function (Blueprint $table) {
-            $table->uuid('role_id')->primary();
+            $table->id('role_id')->primary();
             $table->string('name', 50);
             $table->text('description')->nullable();
             $table->timestamps();

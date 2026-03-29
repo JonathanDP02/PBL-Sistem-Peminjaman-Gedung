@@ -12,10 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
-            $table->uuid('user_id')->primary();
-            $table->foreignUuid('unit_id')->references('unit_id')->on('units');
-            $table->foreignUuid('position_id')->nullable()->references('position_id')->on('positions');
-            $table->foreignUuid('role_id')->references('role_id')->on('roles');
+            $table->id('user_id')->primary();
+            $table->foreignId('unit_id')->references('unit_id')->on('units');
+            $table->foreignId('position_id')->nullable()->references('position_id')->on('positions');
+            $table->foreignId('role_id')->references('role_id')->on('roles');
             $table->string('name', 150);
             $table->string('email', 150)->unique();
             $table->text('password');

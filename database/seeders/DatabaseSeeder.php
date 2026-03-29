@@ -32,7 +32,7 @@ class DatabaseSeeder extends Seeder
             'user_id' => \Illuminate\Support\Str::uuid(),
             'role_id' => $role->role_id,
             'unit_id' => $unit->unit_id,
-            'name' => 'Admin_Super',
+            'name' => 'SuperAdmin',
             'email' => 'admin@gmail.com',
             'password' => bcrypt('12345'),
         ]);

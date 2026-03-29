@@ -11,6 +11,6 @@ class Role extends Model
     use HasFactory;
 
     protected $primaryKey = 'role_id';
-    public $incrementing = false;
-    protected $keyType = 'string';
+    public $incrementing = true;
+    protected $keyType = 'int';
 }

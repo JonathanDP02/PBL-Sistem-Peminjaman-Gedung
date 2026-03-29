@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('units', function (Blueprint $table) {
-            $table->uuid('unit_id')->primary();
-            $table->uuid('parent_id')->nullable(); 
+            $table->id('unit_id')->primary();
+            $table->unsignedBigInteger('parent_id')->nullable(); 
             
             $table->enum('level', ['Pusat', 'Jurusan', 'Organisasi'])->default('Organisasi');
             $table->string('unit_name', 150);

@@ -12,11 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('rooms', function (Blueprint $table) {
-            $table->uuid('room_id')->primary();
-            $table->foreignUuid('building_id')->references('building_id')->on('buildings')->cascadeOnDelete();
+            $table->id('room_id')->primary();
+            $table->foreignId('building_id')->references('building_id')->on('buildings')->cascadeOnDelete();
             
             //Siapa "Unit" pemilik sah ruangan ini?
-            $table->foreignUuid('unit_id')->references('unit_id')->on('units');
+            $table->foreignId('unit_id')->references('unit_id')->on('units');
             
             $table->string('room_name', 150);
             $table->integer('capacity')->nullable();

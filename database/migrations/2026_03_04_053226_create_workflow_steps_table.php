@@ -12,9 +12,9 @@ return new class extends Migration
     public function up(): void
     {
        Schema::create('workflow_steps', function (Blueprint $table) {
-            $table->uuid('step_id')->primary();
-            $table->foreignUuid('workflow_id')->references('workflow_id')->on('workflows')->cascadeOnDelete();
-            $table->foreignUuid('position_id')->references('position_id')->on('positions');
+            $table->id('step_id')->primary();
+            $table->foreignId('workflow_id')->references('workflow_id')->on('workflows')->cascadeOnDelete();
+            $table->foreignId('position_id')->references('position_id')->on('positions');
             $table->integer('step_order');
             $table->boolean('requires_attachment')->default(false);
             $table->timestamps();

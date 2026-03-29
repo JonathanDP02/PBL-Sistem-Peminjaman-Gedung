@@ -13,9 +13,9 @@ return new class extends Migration
     {
         Schema::create('bookings', function (Blueprint $table) {
             $table->uuid('booking_id')->primary();
-            $table->foreignUuid('user_id')->references('user_id')->on('users');
-            $table->foreignUuid('room_id')->references('room_id')->on('rooms');
-            $table->foreignUuid('workflow_id')->references('workflow_id')->on('workflows');
+            $table->foreignId('user_id')->references('user_id')->on('users')->cascadeOnDelete();
+            $table->foreignId('room_id')->references('room_id')->on('rooms')->cascadeOnDelete();
+            $table->foreignId('workflow_id')->references('workflow_id')->on('workflows');
             $table->string('event_name', 200);
             $table->text('event_description')->nullable();
             $table->date('booking_date');
