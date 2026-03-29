@@ -12,10 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('bookings', function (Blueprint $table) {
-            $table->uuid('booking_id')->primary();
-            $table->foreignId('user_id')->references('user_id')->on('users')->cascadeOnDelete();
-            $table->foreignId('room_id')->references('room_id')->on('rooms')->cascadeOnDelete();
-            $table->foreignId('workflow_id')->references('workflow_id')->on('workflows');
+            $table->id();
+            $table->foreignId('user_id')->references('id')->on('users')->cascadeOnDelete();
+            $table->foreignId('room_id')->references('id')->on('rooms')->cascadeOnDelete();
+            $table->foreignId('workflow_id')->references('id')->on('workflows');
             $table->string('event_name', 200);
             $table->text('event_description')->nullable();
             $table->date('booking_date');

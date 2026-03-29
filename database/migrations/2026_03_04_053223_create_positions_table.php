@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('positions', function (Blueprint $table) {
-            $table->id('position_id')->primary();
-            $table->foreignId('unit_id')->references('unit_id')->on('units')->cascadeOnDelete();
+            $table->id();
+            $table->foreignId('unit_id')->references('id')->on('units')->cascadeOnDelete();
             $table->string('name', 150);
             $table->timestamps();
         });

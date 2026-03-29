@@ -12,10 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('approvals', function (Blueprint $table) {
-            $table->uuid('approval_id')->primary();
-            $table->foreignUuid('booking_id')->references('booking_id')->on('bookings')->cascadeOnDelete();
-            $table->foreignId('approver_id')->references('user_id')->on('users');
-            $table->foreignId('step_id')->references('step_id')->on('workflow_steps');
+            $table->id();
+            $table->foreignId('booking_id')->constrained('bookings')->cascadeOnDelete();
+            $table->foreignId('approver_id')->references('id')->on('users');
+            $table->foreignId('step_id')->references('id')->on('workflow_steps');
             $table->string('approval_status', 50);
             $table->text('notes')->nullable();
             $table->text('signature_image')->nullable();
@@ -32,6 +32,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('booking_attachments');
+        Schema::dropIfExists('approvals');
     }
 };

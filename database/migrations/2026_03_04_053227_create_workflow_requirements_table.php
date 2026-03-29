@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
          Schema::create('workflow_requirements', function (Blueprint $table) {
-            $table->id('requirement_id')->primary();
-            $table->foreignId('workflow_id')->references('workflow_id')->on('workflows')->cascadeOnDelete();
+            $table->id();
+            $table->foreignId('workflow_id')->references('id')->on('workflows')->cascadeOnDelete();
             $table->string('document_name', 150);
             $table->boolean('is_mandatory')->default(true);
             $table->timestamp('created_at')->useCurrent();

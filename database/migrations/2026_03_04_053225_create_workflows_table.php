@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('workflows', function (Blueprint $table) {
-            $table->id('workflow_id')->primary();
-            $table->foreignId('unit_id')->references('unit_id')->on('units')->cascadeOnDelete();
+            $table->id();
+            $table->foreignId('unit_id')->references('id')->on('units')->cascadeOnDelete();
             $table->string('name', 255);
             $table->text('description')->nullable();
             $table->timestamps();

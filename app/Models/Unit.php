@@ -9,8 +9,4 @@ class Unit extends Model
 {
     /** @use HasFactory<\Database\Factories\UnitFactory> */
     use HasFactory;
-
-    protected $primaryKey = 'role_id';
-    public $incrementing = true;
-    protected $keyType = 'int';
 }

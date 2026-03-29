@@ -29,9 +29,8 @@ class DatabaseSeeder extends Seeder
 
         // 3. Buat 1 User Khusus untuk Testing Login secara Manual (tanpa Factory)
         User::create([
-            'user_id' => \Illuminate\Support\Str::uuid(),
-            'role_id' => $role->role_id,
-            'unit_id' => $unit->unit_id,
+            'role_id' => $role->id,
+            'unit_id' => $unit->id,
             'name' => 'SuperAdmin',
             'email' => 'admin@gmail.com',
             'password' => bcrypt('12345'),

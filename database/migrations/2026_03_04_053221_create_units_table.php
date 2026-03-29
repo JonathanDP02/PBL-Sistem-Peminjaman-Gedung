@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('units', function (Blueprint $table) {
-            $table->id('unit_id')->primary();
+            $table->id();
             $table->unsignedBigInteger('parent_id')->nullable(); 
             
             $table->enum('level', ['Pusat', 'Jurusan', 'Organisasi'])->default('Organisasi');
@@ -23,7 +23,7 @@ return new class extends Migration
 
         // Eksekusi relasi setelah tabel dipastikan ada
         Schema::table('units', function (Blueprint $table) {
-            $table->foreign('parent_id')->references('unit_id')->on('units')->cascadeOnDelete();
+            $table->foreign('parent_id')->references('id')->on('units')->cascadeOnDelete();
         });
     }
 

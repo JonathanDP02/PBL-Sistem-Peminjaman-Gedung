@@ -12,10 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('booking_attachments', function (Blueprint $table) {
-            $table->uuid('attachment_id')->primary();
-            $table->foreignUuid('booking_id')->references('booking_id')->on('bookings')->cascadeOnDelete();
-            $table->foreignId('requirement_id')->nullable()->references('requirement_id')->on('workflow_requirements');
-            $table->foreignId('uploader_id')->references('user_id')->on('users');
+            $table->id();
+            $table->foreignId('booking_id')->constrained('bookings')->cascadeOnDelete();
+            $table->foreignId('requirement_id')->nullable()->references('id')->on('workflow_requirements');
+            $table->foreignId('uploader_id')->references('id')->on('users');
             $table->string('document_type', 150);
             $table->string('file_path', 255);
             $table->timestamp('uploaded_at')->useCurrent();
@@ -30,6 +30,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('approvals');
+        Schema::dropIfExists('booking_attachments');
     }
 };
