@@ -25,6 +25,14 @@ class AuthController extends Controller
             return redirect('/dashboard'); 
         }
 
+        // 4.1 Cek role untuk redirect yang sesuai
+        if (auth()->user()->role->name === 'SuperAdmin') {
+            return redirect()->route('admin.dashboard');
+        } elseif (auth()->user()->role->name === 'User Biasa') {
+            return redirect()->route('peminjaman.index');
+        }
+        
+
         // 5. Jika gagal: kembalikan user ke halaman login beserta pesan error
         return back()->withErrors([
             'email' => 'Email atau password salah jirr.',
