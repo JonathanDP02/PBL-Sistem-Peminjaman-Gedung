@@ -25,7 +25,7 @@ Sistem informasi manajemen peminjaman gedung dan ruangan berbasis web yang diran
 - **Framework:** Laravel 12.x
 - **Bahasa:** PHP >= 8.2
 - **Frontend:** HTML, TailwindCSS, Blade Templating
-- **Database:** MySQL / PostgreSQL (Pilih salah satu sesuai aslinya)
+- **Database:** PostgreSQL
 
 ## 📦 Instalasi & Konfigurasi
 
