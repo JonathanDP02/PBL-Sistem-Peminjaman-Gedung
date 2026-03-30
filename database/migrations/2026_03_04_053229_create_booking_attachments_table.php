@@ -18,7 +18,7 @@ return new class extends Migration
             $table->foreignId('uploader_id')->references('id')->on('users');
             $table->string('document_type', 150);
             $table->string('file_path', 255);
-            $table->timestamp('uploaded_at')->useCurrent();
+            $table->timestamps();
 
             // Indexing
             $table->index(['booking_id', 'uploader_id'], 'idx_attachments_booking');

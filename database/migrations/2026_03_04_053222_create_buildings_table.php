@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('building_name', 150);
             $table->text('location')->nullable();
-            $table->timestamp('created_at')->useCurrent();
+            $table->timestamps();
         });
 
     }

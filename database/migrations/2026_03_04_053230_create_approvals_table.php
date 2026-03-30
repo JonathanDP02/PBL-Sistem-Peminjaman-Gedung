@@ -21,7 +21,7 @@ return new class extends Migration
             $table->text('signature_image')->nullable();
             $table->text('qr_code')->nullable();
             $table->timestamp('approved_at')->useCurrent();
-
+            $table->integer('attempt')->default(1); //agar jika terjadi revisi, riwayat lama tidak tertimpa dan tidak ambigu dengan riwayat baru.
             // Indexing
             $table->index(['booking_id', 'step_id'], 'idx_approvals_tracking');
         });

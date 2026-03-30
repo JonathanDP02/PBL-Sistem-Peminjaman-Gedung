@@ -23,6 +23,7 @@ return new class extends Migration
             $table->time('end_time');
             $table->integer('current_step')->default(1);
             $table->string('status', 50)->default('Pending');
+            $table->integer('revision_count')->default(0);
             $table->timestamps();
 
             // Indexing

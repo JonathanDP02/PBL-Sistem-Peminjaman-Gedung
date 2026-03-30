@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('workflow_id')->references('id')->on('workflows')->cascadeOnDelete();
             $table->string('document_name', 150);
             $table->boolean('is_mandatory')->default(true);
-            $table->timestamp('created_at')->useCurrent();
+            $table->timestamps();
         });
     }
 
