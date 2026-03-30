@@ -31,13 +31,12 @@ class AuthController extends Controller
 
             $role = $user->role->name;
 
-            // Redirect berdasarkan Role
             if ($role === 'User') {
-                return redirect('/user/peminjaman'); // Pastikan route name ini ada nanti
+                return redirect()->route('peminjaman'); // setelah berhasil sama dengan user, maka mengembalikan ke route dengan nama peminjaman
             }
 
-            // Redirect ke halaman dashboard (atau halaman yang dituju)
-            return redirect('/admin/dashboard'); 
+            return redirect()->route('dashboard');
+
         }
 
         
