@@ -19,24 +19,16 @@ class AuthController extends Controller
         if (Auth::attempt($credentials)) {
             //Jika berhasil: buat ulang sesi untuk cegah hacking (session fixation)
             $request->session()->regenerate();
-            
-           // Ambil role user yang baru saja login
-            $user = Auth::user();
-            if (!$user) {
-                Auth::logout();
-                return back()->withErrors([
-                    'email' => 'User ini belum diberikan role. Hubungi admin.',
-                ])->onlyInput('email');
-            }
 
-            $role = $user->role->name;
+            // Ambil role user yang baru saja login
+            $role = Auth::user()->role->name;
 
-            if ($role === 'User') {
-                return redirect()->route('peminjaman'); // setelah berhasil sama dengan user, maka mengembalikan ke route dengan nama peminjaman
-            }
-
-            return redirect()->route('dashboard');
-
+            return match ($role) {
+                'SuperAdmin', 'Admin_Unit' => redirect()->route('dashboard'),
+                'Approver'                 => redirect()->route('approve'),
+                'User'                     => redirect()->route('peminjaman'),
+                default                    => redirect()->route('dashboard'),
+            };
         }
 
         

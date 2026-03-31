@@ -13,10 +13,16 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::post('/logout', [AuthController::class, 'logout']);
 
 // Fungsi prefix('kata') di Laravel digunakan untuk menambahkan "kata" tersebut di bagian paling depan dari semua URL yang ada di dalam grup tersebut.
-Route::middleware(['auth', 'checkRole:SuperAdmin'])->prefix('admin')->group(function () {
+Route::middleware(['auth', 'checkRole:SuperAdmin,AdminUnit'])->prefix('admin')->group(function () {
     Route::get('/dashboard', function () {
         return view('admin.dashboard');
     })->name('dashboard');
+});
+
+Route::middleware(['auth', 'checkRole:Approver'])->prefix('approver')->group(function () {
+    Route::get('/approve', function () {
+        return view('approver.approve');
+    })->name('approve');
 });
 
 Route::middleware(['auth', 'checkRole:User'])->prefix('user')->group(function () {
