@@ -17,11 +17,7 @@
             <p class="text-gray-500 mt-2">Masuk ke Sistem Peminjaman Gedung</p>
         </div>
 
-        @if($errors->any())
-            <div class="mb-4 p-3 rounded bg-red-100 text-red-600 text-sm">
-                {{ $errors->first() }}
-            </div>
-        @endif
+        <x-input-error :messages="$errors->all()" class="mb-4" />
 
         <form method="POST" action="/login" class="space-y-5">
             @csrf
