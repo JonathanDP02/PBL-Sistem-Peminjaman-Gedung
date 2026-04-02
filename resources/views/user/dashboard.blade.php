@@ -1,4 +1,4 @@
-<x-app-layout>  
+<x-app-layout title="cihuyyy">  
     <!-- Main Content -->
     <div class="relative px-8 pt-4 pb-8 space-y-8 z-10 flex flex-col min-h-full">
         <!-- Ambient Glow (Visible mostly in dark mode, subtle in light mode) -->
@@ -11,12 +11,12 @@
                 
                 <div class="relative z-10">
                     <span class="px-2 py-1 bg-teal-50 dark:bg-kinetic-primary/10 text-teal-700 dark:text-kinetic-secondary text-[10px] font-bold rounded uppercase tracking-wider border border-teal-200 dark:border-kinetic-primary/20 mb-3 inline-block">Selamat Datang Kembali</span>
-                    <h2 class="font-heading text-3xl font-extrabold mb-1 text-slate-900 dark:text-white">Ringkasan <span class="text-gradient">Ekslusif</span></h2>
+                    <h2 class="font-heading text-3xl font-extrabold mb-1 text-slate-900 dark:text-white">Ruang Kerja <span class="text-gradient">Akademis</span></h2>
                     <p class="text-sm text-slate-500 dark:text-gray-400 max-w-md">Pantau status pengajuan ruanganmu dan pastikan tidak ada dokumen yang tertinggal.</p>
                 </div>
                 
                 <button class="relative z-10 bg-kinetic-primary hover:bg-teal-600 dark:hover:bg-kinetic-secondary text-white dark:text-kinetic-bg font-heading font-bold px-6 py-3 rounded-xl transition flex items-center gap-2 shadow-[0_0_15px_rgba(20,184,166,0.2)] dark:shadow-[0_0_15px_rgba(20,184,166,0.3)]">
-                    <i class="ph-bold ph-plus"></i> Tambah Ruangan
+                    <i class="ph-bold ph-plus"></i> Booking Baru
                 </button>
             </div>
 
