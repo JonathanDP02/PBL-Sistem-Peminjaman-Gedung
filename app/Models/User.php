@@ -53,4 +53,12 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Role::class, 'role_id', 'id');
     }
+    public function unit()
+    {
+        return $this->belongsTo(Unit::class, 'unit_id', 'id');
+    }
+    public function position()
+    {
+        return $this->belongsTo(Position::class, 'position_id', 'id');//position_id merupakan foregin key, id merupakan primary key di tabel positions
+    }
 }
