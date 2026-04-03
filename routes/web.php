@@ -19,6 +19,19 @@ Route::middleware(['auth', 'checkRole:SuperAdmin'])->prefix('admin')->group(func
     })->name('dashboard');
 });
 
+Route::get('/cari-ruangan', function () {
+    return view('admin.ruangan');
+});
+
+Route::get('/jadwal-saya', function () {
+    return view('admin.jadwalSaya');
+});
+
+Route::get('/riwayat', function () {
+    return view('admin.riwayat');
+});
+
+
 Route::middleware(['auth', 'checkRole:User'])->prefix('user')->group(function () {
     Route::get('/peminjaman', function () {
         return view('user.peminjaman');
