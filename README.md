@@ -67,3 +67,13 @@ Log kemajuan dan laporan teknis dari implementasi modul sistem ini dapat diakses
 
 ## 📄 Lisensi
 Proyek ini dikembangkan untuk kebutuhan akademik (Project-Based Learning). Kode inti kerangka kerja Laravel dilisensikan di bawah MIT license.
+
+## Akun Dummy untuk Testing (Seeder)
+Gunakan kredensial berikut untuk masuk ke dalam sistem:
+
+- **SuperAdmin**: superadmin@space.in | password: `password`
+- **Admin Unit TI**: adminti@space.in | password: `password`
+- **Admin Unit Sipil**: adminsipil@space.in | password: `password`
+- **Approver 1**: approver1@space.in | password: `password`
+- **Approver 2**: approver2@space.in | password: `password`
+- **Approver 3**: approver3@space.in | password: `password`
