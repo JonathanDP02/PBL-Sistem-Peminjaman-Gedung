@@ -21,11 +21,18 @@ Route::middleware(['auth', 'checkRole:SuperAdmin,AdminUnit'])->prefix('admin')->
     })->name('dashboard');
 });
 
-Route::middleware(['auth', 'checkRole:Approver'])->prefix('approver')->group(function () {
-    Route::get('/approve', function () {
-        return view('approver.approve');
-    })->name('approve');
+Route::get('/cari-ruangan', function () {
+    return view('admin.ruangan');
 });
+
+Route::get('/jadwal-saya', function () {
+    return view('admin.jadwalSaya');
+});
+
+Route::get('/riwayat', function () {
+    return view('admin.riwayat');
+});
+
 
 Route::middleware(['auth', 'checkRole:User'])->prefix('user')->group(function () {
     Route::get('/peminjaman', function () {

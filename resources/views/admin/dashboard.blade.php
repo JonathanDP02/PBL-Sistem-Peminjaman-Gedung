@@ -79,16 +79,16 @@
             <div class="px-6 mb-4">
                 <p class="text-[10px] font-bold tracking-widest text-slate-400 dark:text-gray-500 uppercase mb-4">Enterprise Booking</p>
                 <nav class="space-y-1">
-                    <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-teal-50 text-teal-700 dark:bg-kinetic-primary/10 dark:text-kinetic-secondary font-medium text-sm transition border border-teal-100 dark:border-kinetic-primary/20">
+                    <a href="{{ url('/admin/dashboard') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-teal-50 text-teal-700 dark:bg-kinetic-primary/10 dark:text-kinetic-secondary font-medium text-sm transition border border-teal-100 dark:border-kinetic-primary/20">
                         <i class="ph-fill ph-squares-four text-lg"></i> Dashboard
                     </a>
-                    <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-kinetic-surface transition font-medium text-sm">
+                    <a href="{{ url('/cari-ruangan') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-kinetic-surface transition font-medium text-sm">
                         <i class="ph ph-magnifying-glass text-lg"></i> Cari Ruangan
                     </a>
-                    <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-kinetic-surface transition font-medium text-sm">
+                    <a href="{{ url('/jadwal-saya') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-kinetic-surface transition font-medium text-sm">
                         <i class="ph ph-calendar-blank text-lg"></i> Jadwal Saya
                     </a>
-                    <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-kinetic-surface transition font-medium text-sm">
+                    <a href="{{ url('/riwayat') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-kinetic-surface transition font-medium text-sm">
                         <i class="ph ph-clock-counter-clockwise text-lg"></i> Riwayat
                     </a>
                 </nav>
