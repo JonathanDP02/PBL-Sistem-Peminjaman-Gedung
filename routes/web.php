@@ -3,7 +3,9 @@
 use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
 
-
+Route::get('/', function () {
+    return redirect('/login'); // Otomatis mengarahkan user ke halaman login
+});
 
 Route::get('/login', function () {
     return view('login'); 
