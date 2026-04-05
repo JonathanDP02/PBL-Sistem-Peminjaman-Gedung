@@ -93,4 +93,34 @@
             syncThemeUI();
         });
         </script>
+    
+    
+        <script>
+    const modal = document.getElementById('modalTambahRuang');
+    const modalBox = modal.querySelector('div'); // Mengambil kotak dalam modal
+
+    function openModal() {
+        // Hapus class hidden dulu agar elemen ada di layar
+        modal.classList.remove('hidden');
+        
+        // Beri jeda sangat kecil agar animasi CSS mendeteksi perubahan state
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            modalBox.classList.remove('scale-95');
+            modalBox.classList.add('scale-100');
+        }, 10);
+    }
+
+    function closeModal() {
+        // Hilangkan opacity dan kembalikan ukuran semula
+        modal.classList.add('opacity-0');
+        modalBox.classList.remove('scale-100');
+        modalBox.classList.add('scale-95');
+
+        // Tunggu animasi CSS selesai (300ms) baru sembunyikan elemen sepenuhnya
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 300);
+    }
+</script>
 </html>

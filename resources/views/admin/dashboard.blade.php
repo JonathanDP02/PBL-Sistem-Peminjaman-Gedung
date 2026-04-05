@@ -15,9 +15,11 @@
                     <p class="text-sm text-slate-500 dark:text-gray-400 max-w-md">Pantau status pengajuan ruanganmu dan pastikan tidak ada dokumen yang tertinggal.</p>
                 </div>
                 
-                <button class="relative z-10 bg-kinetic-primary hover:bg-teal-600 dark:hover:bg-kinetic-secondary text-white dark:text-kinetic-bg font-heading font-bold px-6 py-3 rounded-xl transition flex items-center gap-2 shadow-[0_0_15px_rgba(20,184,166,0.2)] dark:shadow-[0_0_15px_rgba(20,184,166,0.3)]">
-                    <i class="ph-bold ph-plus"></i> Tambah Ruangan
+                <button onclick="openModal()" class="bg-kinetic-primary hover:bg-teal-400 text-slate-900 font-bold px-5 py-2.5 rounded-xl flex items-center gap-2 transition">
+                    <i class="ph-bold ph-plus text-lg"></i> Tambah Ruangan
                 </button>
+
+                @include('admin.modal-tambah-ruang')
             </div>
 
             <!-- Real Stats -->
