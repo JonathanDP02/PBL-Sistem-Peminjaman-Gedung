@@ -8,10 +8,10 @@ Sistem informasi manajemen peminjaman gedung dan ruangan berbasis web yang diran
 
 | Nama Lengkap | NIM | Kelas |
 |---|---|---|
-| Febri | [NIM Anggota 1] | TI-2F |
-| Jonathan | [NIM Anggota 2] | TI-2F |
+| Febri | 244107020199 | TI-2F |
+| Jonathan | 244107020197 | TI-2F |
 | Nabhan Rizqi Julian Saputro | 2341720255 | TI-2F |
-| Otavia | [NIM Anggota 4] | TI-2F |
+| Otavia | 244107020053 | TI-2F |
 
 ## ✨ Fitur Utama (Core Features)
 
@@ -49,12 +49,14 @@ php artisan key:generate
 
 # 5. Konfigurasi Database
 # Edit file .env dan sesuaikan:
-# - DB_DATABASE
-# - DB_USERNAME
-# - DB_PASSWORD
+- DB_DATABASE
+- DB_USERNAME
+- DB_PASSWORD
 
 # 6. Jalankan Migrasi dan Seeder
 php artisan migrate --seed
+# misal sudah ada , tapi blom dapet update migration dll, 
+php artisan migrate:fresh --seed
 
 # 7. Jalankan Local Server
 php artisan serve
