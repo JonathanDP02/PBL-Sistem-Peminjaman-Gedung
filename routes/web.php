@@ -1,36 +1,39 @@
 <?php
 
+use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
-//Guest
+// Guest
 Route::get('/', function () {
     return view('welcome');
 });
 
 // Dashboard
 Route::get('/dashboard', function () {
-    $view = match(Auth::user()->role->name) {
+    $view = match (Auth::user()->role->name) {
         'SuperAdmin', 'Admin_Unit' => 'admin.dashboard',
         'Approver' => 'approver.dashboard',
         default => 'user.dashboard',
     };
+
     return view($view);
 })
-->middleware('auth')
-->name('dashboard');
+    ->middleware('auth')
+    ->name('dashboard');
 
 Route::get('/riwayat', function () {
-    $view = match(Auth::user()->role->name) {
-        'User'=> 'user.riwayat',
+    $view = match (Auth::user()->role->name) {
+        'User' => 'user.riwayat',
         'Approver' => 'approver.riwayat',
         default => 'user.riwayat',
     };
+
     return view($view);
 })
-->middleware('auth')
-->name('riwayat');
+    ->middleware('auth')
+    ->name('riwayat');
 
 // By Role
 // Fungsi prefix('kata') di Laravel digunakan untuk menambahkan "kata" tersebut di bagian paling depan dari semua URL yang ada di dalam grup tersebut.
@@ -47,6 +50,8 @@ Route::middleware(['auth', 'checkRole:SuperAdmin,AdminUnit'])->prefix('admin')->
     Route::get('/kelola-user', function () {
         return view('admin.kelola-user');
     })->name('kelola-user');
+
+    Route::post('/user', [UserController::class, 'store'])->name('tambah-user.store');
 });
 
 Route::middleware(['auth', 'checkRole:Approver'])->prefix('approver')->group(function () {
@@ -56,19 +61,17 @@ Route::middleware(['auth', 'checkRole:Approver'])->prefix('approver')->group(fun
     Route::get('/meja-kerja', function () {
         return view('approver.meja-kerja');
     })->name('meja-kerja');
-    });
-    
+});
 
 Route::middleware(['auth', 'checkRole:User'])->prefix('user')->group(function () {
     Route::get('/cari-ruangan', function () {
         return view('user.cari-ruangan');
     })->name('cari-ruangan');
-    
+
     Route::get('/jadwal-saya', function () {
         return view('user.jadwal-saya');
     })->name('jadwal-saya');
-    
-    
+
 });
 
 // ini route untuk halaman profile, hanya bisa diakses kalau sudah login (middleware auth)

@@ -8,7 +8,7 @@
                     Kelola seluruh otorisasi pengguna, peran akses, dan status keanggotaan dalam ekosistem Space.in Enterprise.
                 </p>
             </div>
-            <button class="bg-kinetic-primary hover:bg-teal-400 text-slate-900 font-bold px-5 py-2.5 rounded-xl flex items-center gap-2 transition shadow-[0_0_15px_rgba(20,184,166,0.3)] shrink-0">
+            <button onclick="openUserModal()" class="bg-kinetic-primary hover:bg-teal-400 text-slate-900 font-bold px-5 py-2.5 rounded-xl flex items-center gap-2 transition shadow-[0_0_15px_rgba(20,184,166,0.3)] shrink-0">
                 <i class="ph-bold ph-user-plus text-lg"></i> Tambah Pengguna Baru
             </button>
         </div>
@@ -189,4 +189,5 @@
         </div>
 
     </div>
+    @include('admin.modal-tambah-user')
 </x-app-layout>
