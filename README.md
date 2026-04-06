@@ -11,7 +11,7 @@ Sistem informasi manajemen peminjaman gedung dan ruangan berbasis web yang diran
 | Febri | [NIM Anggota 1] | TI-2F |
 | Jonathan | [NIM Anggota 2] | TI-2F |
 | Nabhan Rizqi Julian Saputro | 2341720255 | TI-2F |
-| Otavia | [NIM Anggota 4] | TI-2F |
+| Otavia | 244107020053 | TI-2F |
 
 ## ✨ Fitur Utama (Core Features)
 
