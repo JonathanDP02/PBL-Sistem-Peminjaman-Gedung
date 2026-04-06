@@ -24,7 +24,7 @@ class Workflow extends Model
 
     public function steps(): HasMany
     {
-        return $this->hasMany(WorkflowStep::class);
+        return $this->hasMany(WorkflowStep::class)->orderBy('step_order', 'asc');
     }
 
     public function requirements(): HasMany
@@ -37,3 +37,4 @@ class Workflow extends Model
         return $this->hasMany(Booking::class);
     }
 }
+
