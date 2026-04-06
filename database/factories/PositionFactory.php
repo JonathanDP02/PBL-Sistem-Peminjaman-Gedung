@@ -28,8 +28,8 @@ class PositionFactory extends Factory
         ];
 
         return [
-            // unit_id harus sudah ada; default ambil random dari unit yang ada
-            'unit_id' => Unit::inRandomOrder()->first()?->id ?? 1,
+            // gunakan unit acak jika sudah ada, jika belum buat unit baru agar FK tetap valid
+            'unit_id' => Unit::query()->inRandomOrder()->value('id') ?? Unit::factory(),
             'name'    => $this->faker->randomElement($jabatan),
         ];
     }
