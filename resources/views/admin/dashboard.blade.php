@@ -1,6 +1,6 @@
 <x-app-layout>  
     <!-- Main Content -->
-    <div class="relative px-8 pt-4 pb-8 space-y-8 z-10 flex flex-col min-h-full">
+    <div class="relative px-8 pt-4 pb-8 space-y-8 flex flex-col min-h-full">
         <!-- Ambient Glow (Visible mostly in dark mode, subtle in light mode) -->
         {{-- background --}}
         <div class="absolute top-0 right-0 w-96 h-96 bg-teal-100/50 dark:bg-kinetic-primary/5 rounded-full blur-[100px] pointer-events-none transition-colors duration-300"></div>
@@ -15,8 +15,8 @@
                     <p class="text-sm text-slate-500 dark:text-gray-400 max-w-md">Pantau status pengajuan ruanganmu dan pastikan tidak ada dokumen yang tertinggal.</p>
                 </div>
                 
-                <button onclick="openModal()" class="bg-kinetic-primary hover:bg-teal-400 text-slate-900 font-bold px-5 py-2.5 rounded-xl flex items-center gap-2 transition">
-                    <i class="ph-bold ph-plus text-lg"></i> Tambah Ruangan
+                <button onclick="openModal()" class="relative z-10 bg-kinetic-primary hover:bg-teal-600 dark:hover:bg-kinetic-secondary text-white dark:text-kinetic-bg font-heading font-bold px-6 py-3 rounded-xl transition flex items-center gap-2 shadow-[0_0_15px_rgba(20,184,166,0.2)] dark:shadow-[0_0_15px_rgba(20,184,166,0.3)]">
+                    <i class="ph-bold ph-plus"></i> Tambah Ruangan
                 </button>
 
                 @include('admin.modal-tambah-ruang')

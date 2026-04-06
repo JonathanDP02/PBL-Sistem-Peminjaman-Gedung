@@ -21,7 +21,7 @@
                 <div>
                     <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">Kapasitas</label>
                     <div class="relative">
-                        <input type="number" placeholder="40" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl pl-4 pr-10 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-kinetic-primary transition-colors">
+                        <input type="number" placeholder="40" min="0" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl pl-4 pr-14 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-kinetic-primary transition-colors">
                         <span class="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-slate-500">Orang</span>
                     </div>
                 </div>

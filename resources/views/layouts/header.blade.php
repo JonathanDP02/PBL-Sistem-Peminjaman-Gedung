@@ -3,7 +3,7 @@
         {{ __('Dashboard') }}
     </h2>
     <div class="relative w-96">
-        <i class="ph ph-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-gray-500"></i>
+        <i class="ph ph-magnifying-glass absolute left-4 top-2/3 -translate-y-1/2 text-slate-400 dark:text-gray-500"></i>
         <input type="text" placeholder="Cari ruangan atau departemen..." class="w-full bg-slate-100 dark:bg-kinetic-surface border border-slate-200 dark:border-kinetic-border rounded-full pl-11 pr-4 py-2.5 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-500 focus:outline-none focus:border-kinetic-primary focus:ring-1 focus:ring-kinetic-primary transition">
     </div>
     <div class="flex items-center gap-4">
