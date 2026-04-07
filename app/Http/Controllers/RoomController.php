@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\Room;
 
 class RoomController extends Controller
 {
@@ -27,7 +28,7 @@ class RoomController extends Controller
             'room_name' => 'required',
             'capacity' => 'required|integer',
             'description' => 'nullable',
-            'unit_id' => 'nullable'
+            'unit_id' => $user->role->name === 'SuperAdmin' ? 'required' : 'nullable'
         ]);
 
         if ($user->role->name === 'Admin_Unit') {
@@ -61,4 +62,14 @@ class RoomController extends Controller
         return $room;
     }
     
+    public function showApi($id)
+    {
+        $room = Room::with([
+            'building',
+            'unit',
+            'bookings.workflow'
+        ])->findOrFail($id);
+
+        return response()->json($room);
+    }
 }

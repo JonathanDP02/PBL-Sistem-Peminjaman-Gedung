@@ -17,6 +17,7 @@ class PositionController extends Controller
 
         return Position::all();
     }
+    
     public function store(Request $request)
     {
         $user = auth()->user();
