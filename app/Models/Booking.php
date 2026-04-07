@@ -2,10 +2,15 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Booking extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'user_id',
         'room_id',
@@ -17,31 +22,45 @@ class Booking extends Model
         'end_time',
         'current_step',
         'status',
-        'revision_count'
+        'revision_count',
     ];
 
-    public function user()
+    protected function casts(): array
+    {
+        return [
+            'booking_date' => 'date',
+            'start_time' => 'datetime:H:i:s',
+            'end_time' => 'datetime:H:i:s',
+        ];
+    }
+
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function room()
+    public function room(): BelongsTo
     {
         return $this->belongsTo(Room::class);
     }
 
-    public function workflow()
+    public function workflow(): BelongsTo
     {
         return $this->belongsTo(Workflow::class);
     }
 
-    public function attachments()
+    public function attachments(): HasMany
     {
         return $this->hasMany(BookingAttachment::class);
     }
 
-    public function approvals()
+    public function approvals(): HasMany
     {
         return $this->hasMany(Approval::class);
+    }
+
+    public function logs(): HasMany
+    {
+        return $this->hasMany(BookingLog::class);
     }
 }

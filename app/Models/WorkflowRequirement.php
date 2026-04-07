@@ -2,23 +2,29 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class WorkflowRequirement extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'workflow_id',
         'document_name',
-        'is_mandatory'
+        'is_mandatory',
     ];
 
-    public function workflow()
+    protected function casts(): array
     {
-        return $this->belongsTo(Workflow::class);
+        return [
+            'is_mandatory' => 'boolean',
+        ];
     }
 
-    public function attachments()
+    public function workflow(): BelongsTo
     {
-        return $this->hasMany(BookingAttachment::class, 'requirement_id');
+        return $this->belongsTo(Workflow::class);
     }
 }

@@ -2,10 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Approval extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'booking_id',
         'approver_id',
@@ -14,20 +18,28 @@ class Approval extends Model
         'notes',
         'signature_image',
         'qr_code',
-        'attempt'
+        'approved_at',
+        'attempt',
     ];
 
-    public function booking()
+    protected function casts(): array
+    {
+        return [
+            'approved_at' => 'datetime',
+        ];
+    }
+
+    public function booking(): BelongsTo
     {
         return $this->belongsTo(Booking::class);
     }
 
-    public function approver()
+    public function approver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approver_id');
     }
 
-    public function step()
+    public function step(): BelongsTo
     {
         return $this->belongsTo(WorkflowStep::class, 'step_id');
     }

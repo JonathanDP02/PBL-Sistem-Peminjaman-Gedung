@@ -5,6 +5,8 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class User extends Authenticatable
 {
@@ -49,8 +51,39 @@ class User extends Authenticatable
     /**
      * Get the role associated with the user.
      */
-    public function role()
+    public function role(): BelongsTo
     {
         return $this->belongsTo(Role::class, 'role_id', 'id');
     }
+
+    public function unit(): BelongsTo
+    {
+        return $this->belongsTo(Unit::class, 'unit_id', 'id');
+    }
+
+    public function position(): BelongsTo
+    {
+        return $this->belongsTo(Position::class, 'position_id', 'id');
+    }
+
+    public function bookings(): HasMany
+    {
+        return $this->hasMany(Booking::class);
+    }
+
+    public function approvals(): HasMany
+    {
+        return $this->hasMany(Approval::class, 'approver_id');
+    }
+
+    public function uploadedAttachments(): HasMany
+    {
+        return $this->hasMany(BookingAttachment::class, 'uploader_id');
+    }
+
+    public function bookingLogs(): HasMany
+    {
+        return $this->hasMany(BookingLog::class, 'actor_id');
+    }
 }
+
