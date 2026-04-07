@@ -2,16 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
+use App\Models\Building;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class BuildingController extends Controller
 {
-    use Illuminate\Support\Facades\Auth;
-
     public function index()
     {
         $this->authorizeSuperAdmin();
+
         return Building::all();
     }
 
@@ -37,6 +37,7 @@ class BuildingController extends Controller
         ]);
 
         $building->update($validated);
+
         return $building;
     }
 
