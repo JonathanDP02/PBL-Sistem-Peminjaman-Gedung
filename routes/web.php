@@ -34,7 +34,7 @@ Route::get('/riwayat', function () {
 
 // By Role
 // Fungsi prefix('kata') di Laravel digunakan untuk menambahkan "kata" tersebut di bagian paling depan dari semua URL yang ada di dalam grup tersebut.
-Route::middleware(['auth', 'checkRole:SuperAdmin,AdminUnit'])->prefix('admin')->group(function () {
+Route::middleware(['auth', 'checkRole:Approver'])->prefix('approver')->group(function () {
     Route::get('/dashboard', function () {
         return view('admin.dashboard');
     })->name('admin.dashboard');
@@ -49,14 +49,17 @@ Route::middleware(['auth', 'checkRole:SuperAdmin,AdminUnit'])->prefix('admin')->
     })->name('kelola-user');
 });
 
-Route::middleware(['auth', 'checkRole:Approver'])->prefix('approver')->group(function () {
+Route::middleware(['auth', 'checkRole:SuperAdmin,AdminUnit'])->prefix('admin')->group(function () {
     Route::get('/dashboard', function () {
         return view('approver.dashboard');
     })->name('approver.dashboard');
     Route::get('/meja-kerja', function () {
         return view('approver.meja-kerja');
     })->name('meja-kerja');
-    });
+    Route::get('/riwayat', function () {
+        return view('approver.riwayat');
+    })->name('riwayat');
+});
     
 
 Route::middleware(['auth', 'checkRole:User'])->prefix('user')->group(function () {
