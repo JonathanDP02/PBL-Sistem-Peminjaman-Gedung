@@ -267,7 +267,6 @@ Libur Nasional:
 Metode Hybrid: Sistem menarik API Kalender Nasional -> SuperAdmin melakukan review/edit -> Sistem men-generate booking massal (Global Blocking) ke tabel bookings.
 
 6. Catatan Teknis Laravel (Implementation Guide)
-Trait HasUuid: Wajib dipasang di semua Model agar Laravel tidak error menganggap ID sebagai integer 0.
 
 Strict Typing: Validasi input harus ketat karena PostgreSQL tidak menoleransi tipe data yang salah (string vs integer).
 
