@@ -14,20 +14,39 @@ class UnitController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
+        $userUnit = $user->unit;
 
+        // Logika menampilkan unit berdasarkan level dan role
         if ($user->role->name === 'SuperAdmin') {
+            // SuperAdmin - tampilkan semua unit
             $units = Unit::with('parent', 'children')
                 ->orderBy('level')
                 ->orderBy('name')
                 ->get();
+        } elseif ($userUnit) {
+            // Admin_Unit - tampilkan berdasarkan level
+            if ($userUnit->level === 'Jurusan') {
+                // Level 2 (Jurusan): tampilkan unit sendiri + semua anak (level 3)
+                $units = Unit::with('parent', 'children')
+                    ->where('id', $userUnit->id)  // Unit sendiri
+                    ->orWhere('parent_id', $userUnit->id)  // Anak unit (level 3)
+                    ->orderBy('level')
+                    ->orderBy('name')
+                    ->get();
+            } elseif ($userUnit->level === 'Organisasi') {
+                // Level 3 (Organisasi): tampilkan unit sendiri saja
+                $units = Unit::with('parent', 'children')
+                    ->where('id', $userUnit->id)
+                    ->get();
+            } else {
+                // Level Pusat atau lainnya: tampilkan unit sendiri
+                $units = Unit::with('parent', 'children')
+                    ->where('id', $userUnit->id)
+                    ->get();
+            }
         } else {
-            $ownUnitId = $user->unit_id;
-            $units = Unit::with('parent', 'children')
-                ->where('id', $ownUnitId)
-                ->orWhere('parent_id', $ownUnitId)
-                ->orderBy('level')
-                ->orderBy('name')
-                ->get();
+            // Jika user tidak memiliki unit, return empty
+            $units = collect([]);
         }
 
         return response()->json([
@@ -91,17 +110,42 @@ class UnitController extends Controller
 
         $user = $request->user();
 
+        // Validasi akses berdasarkan role dan level
         if ($user->role->name !== 'SuperAdmin') {
-            $allowed = Unit::where('id', $user->unit_id)
-                ->orWhere('parent_id', $user->unit_id)
-                ->pluck('id')
-                ->toArray();
-
-            if (! in_array($unit->id, $allowed)) {
+            $userUnit = $user->unit;
+            
+            if (!$userUnit) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Anda tidak memiliki akses untuk mengedit unit ini.',
                 ], 403);
+            }
+
+            // Cek akses berdasarkan level unit user
+            if ($userUnit->level === 'Jurusan') {
+                // Level 2: bisa edit unit sendiri atau anak (level 3)
+                if ($unit->id !== $userUnit->id && $unit->parent_id !== $userUnit->id) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Anda hanya dapat mengedit unit Anda sendiri atau bawahan langsung.',
+                    ], 403);
+                }
+            } elseif ($userUnit->level === 'Organisasi') {
+                // Level 3: hanya bisa edit unit sendiri
+                if ($unit->id !== $userUnit->id) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Anda hanya dapat mengelola unit Anda sendiri.',
+                    ], 403);
+                }
+            } else {
+                // Level lain: hanya bisa edit diri sendiri
+                if ($unit->id !== $userUnit->id) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Anda hanya dapat mengelola unit Anda sendiri.',
+                    ], 403);
+                }
             }
         }
 

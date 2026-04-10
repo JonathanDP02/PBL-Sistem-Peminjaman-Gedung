@@ -32,19 +32,44 @@ class CheckRole
             ], 403);
         }
 
-        // Scope khusus AdminUnit: hanya boleh akses unit sendiri
-        if ($userRoleName === 'AdminUnit') {
-            $request->attributes->set('scope_unit_id', (int) $user->unit_id);
-
-            $routeUnitId = $request->route('unit_id') ?? optional($request->route('unit'))->id;
-            if ($routeUnitId && (int) $routeUnitId !== (int) $user->unit_id) {
-                return response()->json([
-                    'message' => 'Akses Ditolak. AdminUnit hanya boleh akses data unit sendiri.'
-                ], 403);
+        // Scope khusus Admin_Unit: kontrol akses berdasarkan level unit
+        if ($userRoleName === 'Admin_Unit') {
+            $userUnit = $user->unit;
+            
+            if ($userUnit) {
+                // Ambil unit_id dari route parameter jika ada
+                $routeUnitId = $request->route('unit_id') ?? optional($request->route('unit'))->id;
+                
+                if ($routeUnitId) {
+                    // Validasi akses berdasarkan level unit
+                    $targetUnit = \App\Models\Unit::find($routeUnitId);
+                    
+                    if ($targetUnit) {
+                        // Jika user level = Jurusan (level 2), bisa akses Jurusan sendiri atau Organisasi (level 3) anak
+                        if ($userUnit->level === 'Jurusan') {
+                            // Bisa akses unit sendiri atau unit dengan parent_id = unit_id sendiri
+                            if ($targetUnit->id !== $userUnit->id && $targetUnit->parent_id !== $userUnit->id) {
+                                return response()->json([
+                                    'message' => 'Akses Ditolak. Anda hanya dapat akses unit Anda sendiri atau bawahan langsung.'
+                                ], 403);
+                            }
+                        }
+                        // Jika user level = Organisasi (level 3), hanya bisa akses unit sendiri
+                        else if ($userUnit->level === 'Organisasi') {
+                            if ($targetUnit->id !== $userUnit->id) {
+                                return response()->json([
+                                    'message' => 'Akses Ditolak. Anda hanya dapat mengelola unit Anda sendiri.'
+                                ], 403);
+                            }
+                        }
+                    }
+                }
+                
+                // Set scope unit_id untuk referensi di controller
+                $request->attributes->set('scope_unit_id', (int) $user->unit_id);
+                $request->attributes->set('user_unit_level', $userUnit->level);
             }
         }
-        //pakai di controller bagian booking
-        //$scopeUnitId = $request->attributes->get('scope_unit_id');
         
         return $next($request);
     }
