@@ -52,8 +52,41 @@ Route::middleware(['auth', 'checkRole:SuperAdmin,AdminUnit'])->prefix('admin')->
     Route::get('/kelola-user', function () {
         return view('admin.kelola-user');
     })->name('kelola-user');
+    Route::get('/user-management', function () {
+        return view('admin.user-management');
+    })->name('user-management');
 
     Route::post('/user', [UserController::class, 'store'])->name('tambah-user.store');
+
+    // API Routes for User Management
+    Route::prefix('api')->group(function () {
+        Route::get('/users', [UserController::class, 'index']);
+        Route::get('/users/{id}', [UserController::class, 'show']);
+        Route::post('/users', [UserController::class, 'store']);
+        Route::put('/users/{id}', [UserController::class, 'update']);
+        Route::delete('/users/{id}', [UserController::class, 'destroy']);
+
+        Route::get('/units', function () {
+            return response()->json([
+                'success' => true,
+                'data' => \App\Models\Unit::all(),
+            ]);
+        });
+
+        Route::get('/roles', function () {
+            return response()->json([
+                'success' => true,
+                'data' => \App\Models\Role::all(),
+            ]);
+        });
+
+        Route::get('/positions', function () {
+            return response()->json([
+                'success' => true,
+                'data' => \App\Models\Position::all(),
+            ]);
+        });
+    });
 });
 
 Route::middleware(['auth', 'checkRole:Approver'])->prefix('approver')->group(function () {
