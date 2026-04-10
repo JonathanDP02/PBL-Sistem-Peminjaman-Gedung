@@ -65,7 +65,8 @@
                             <th class="px-6 py-5 text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest">Nama</th>
                             <th class="px-6 py-5 text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest">Email</th>
                             <th class="px-6 py-5 text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest">Unit</th>
-                            <th class="px-6 py-5 text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest">Role</th>
+                            <th class="px-6 py-5 text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest">Level</th>
+                            <th class="px-6 py-5 text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest"></th>Role</th>
                             <th class="px-6 py-5 text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest text-center">Aksi</th>
                         </tr>
                     </thead>
@@ -296,7 +297,7 @@ function renderUsersTable(users) {
     if (!users || users.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="5" class="px-6 py-8 text-center text-slate-500 dark:text-gray-400">
+                <td colspan="6" class="px-6 py-8 text-center text-slate-500 dark:text-gray-400">
                     Tidak ada data user
                 </td>
             </tr>
@@ -307,6 +308,7 @@ function renderUsersTable(users) {
     tbody.innerHTML = users.map(user => {
         const initials = user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
         const roleColor = getRoleColor(user.role?.name);
+        const levelColor = getLevelColor(user.unit?.level);
         
         return `
             <tr class="hover:bg-slate-50 dark:hover:bg-[#1A1A1A] transition-colors group cursor-pointer">
@@ -322,6 +324,11 @@ function renderUsersTable(users) {
                 <td class="px-6 py-4">
                     <span class="px-3 py-1 bg-slate-100 dark:bg-[#222] text-slate-600 dark:text-gray-300 rounded-full text-xs font-medium border border-slate-200 dark:border-[#333]">
                         ${user.unit?.unit_name || 'N/A'}
+                    </span>
+                </td>
+                <td class="px-6 py-4">
+                    <span class="px-3 py-1 ${levelColor} rounded-full text-xs font-medium border">
+                        ${user.unit?.level || 'N/A'}
                     </span>
                 </td>
                 <td class="px-6 py-4">
@@ -354,6 +361,16 @@ function getRoleColor(roleName) {
         'User': 'text-slate-500 dark:text-gray-500'
     };
     return colors[roleName] || 'text-slate-500 dark:text-gray-500';
+}
+
+// Get level color class
+function getLevelColor(levelName) {
+    const colors = {
+        'Pusat': 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900',
+        'Jurusan': 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-900',
+        'Organisasi': 'bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-900'
+    };
+    return colors[levelName] || 'bg-slate-100 dark:bg-slate-900/20 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-900';
 }
 
 // Load units and roles
