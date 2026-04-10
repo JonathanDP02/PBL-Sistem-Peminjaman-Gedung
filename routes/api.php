@@ -2,16 +2,17 @@
 
 use App\Http\Controllers\Admin\UnitController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\RoomController;
 use App\Models\Role;
 use App\Models\Position;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware('auth')->get('/user', function (Request $request) {
+Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::middleware('auth')->group(function () {
+Route::middleware('auth:sanctum')->group(function () {
 
     // Units
     Route::get('/units', [UnitController::class, 'index']);
@@ -26,6 +27,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/users', [UserController::class, 'store']);
     Route::put('/users/{id}', [UserController::class, 'update']);
     Route::delete('/users/{id}', [UserController::class, 'destroy']);
+
+    // Rooms
+    Route::post('/rooms', [RoomController::class, 'store']);
 
     // Roles
     Route::get('/roles', function () {
