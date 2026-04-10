@@ -13,6 +13,37 @@
             </button>
         </div>
 
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] rounded-2xl p-5 shadow-sm dark:shadow-none flex flex-col transition-colors">
+                <p class="text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">Total Pengguna</p>
+                <div class="flex items-end gap-2">
+                    <h2 class="font-heading text-3xl font-extrabold text-slate-900 dark:text-white leading-none">2,842</h2>
+                    <span class="text-xs font-bold text-teal-600 dark:text-kinetic-primary mb-0.5">+12%</span>
+                </div>
+            </div>
+            <div class="bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] rounded-2xl p-5 shadow-sm dark:shadow-none flex flex-col transition-colors">
+                <p class="text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">Super Admin</p>
+                <div class="flex items-end gap-2">
+                    <h2 class="font-heading text-3xl font-extrabold text-slate-900 dark:text-white leading-none">5</h2>
+                    <span class="text-xs font-medium text-slate-500 dark:text-gray-400 mb-0.5">Global</span>
+                </div>
+            </div>
+            <div class="bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] rounded-2xl p-5 shadow-sm dark:shadow-none flex flex-col transition-colors">
+                <p class="text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">Unit Admin</p>
+                <div class="flex items-end gap-2">
+                    <h2 class="font-heading text-3xl font-extrabold text-slate-900 dark:text-white leading-none">48</h2>
+                    <span class="text-xs font-medium text-slate-500 dark:text-gray-400 mb-0.5">Tersebar</span>
+                </div>
+            </div>
+            <div class="bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] rounded-2xl p-5 shadow-sm dark:shadow-none flex flex-col transition-colors">
+                <p class="text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">Aktif Sekarang</p>
+                <div class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-kinetic-primary animate-pulse"></span>
+                    <h2 class="font-heading text-3xl font-extrabold text-slate-900 dark:text-white leading-none">156</h2>
+                </div>
+            </div>
+        </div>
+
         <!-- Alert Message -->
         <div id="alertContainer" class="hidden"></div>
 
@@ -47,10 +78,26 @@
 
             <div class="border-t border-slate-200 dark:border-[#2A2A2A] px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4 bg-white dark:bg-[#151515]">
                 <p class="text-xs text-slate-500 dark:text-gray-400">
-                    Total pengguna: <span id="totalUsers" class="font-bold text-slate-900 dark:text-white">0</span>
+                    Menampilkan <span class="font-bold text-slate-900 dark:text-white">1-10</span> dari <span id="totalUsers" class="font-bold text-slate-900 dark:text-white">0</span> pengguna
                 </p>
+                <div class="flex items-center gap-1 text-sm">
+                    <button class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 dark:text-gray-500 hover:bg-slate-100 dark:hover:bg-[#222] transition-colors">
+                        <i class="ph-bold ph-caret-left"></i>
+                    </button>
+                    <button class="w-8 h-8 flex items-center justify-center rounded-lg bg-kinetic-primary text-slate-900 font-bold transition-colors">
+                        1
+                    </button>
+                    <button class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-600 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-[#222] font-medium transition-colors">
+                        2
+                    </button>
+                    <button class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-600 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-[#222] font-medium transition-colors">
+                        3
+                    </button>
+                    <button class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 dark:text-gray-500 hover:bg-slate-100 dark:hover:bg-[#222] transition-colors">
+                        <i class="ph-bold ph-caret-right"></i>
+                    </button>
+                </div>
             </div>
-
         </div>
 
     </div>
@@ -130,6 +177,7 @@
                 </div>
             </form>
         </div>
+        
     </div>
 
     <!-- Modal Delete Confirmation -->
