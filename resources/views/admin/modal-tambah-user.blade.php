@@ -57,8 +57,8 @@
 
             <!-- Position -->
             <div>
-                <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">Jabatan</label>
-                <select name="position_id" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-kinetic-primary transition-colors appearance-none @error('position_id') border-red-500 @enderror" required>
+                <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">Jabatan <span class="text-slate-400 text-[8px]">(Opsional)</span></label>
+                <select name="position_id" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-kinetic-primary transition-colors appearance-none @error('position_id') border-red-500 @enderror">
                     <option value="" disabled selected>Pilih Jabatan</option>
                     @foreach(\App\Models\Position::all() as $position)
                         <option value="{{ $position->id }}" {{ old('position_id') == $position->id ? 'selected' : '' }}>{{ $position->name }}</option>
