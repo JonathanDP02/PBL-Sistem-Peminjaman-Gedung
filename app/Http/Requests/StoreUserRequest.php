@@ -21,7 +21,7 @@ class StoreUserRequest extends FormRequest
             'email' => ['required', 'string', 'lowercase', 'email', 'max:150', 'unique:'.User::class],
             'password' => ['required', Rules\Password::defaults()],
             'unit_id' => ['required', 'exists:units,id'],
-            'position_id' => ['required', 'exists:positions,id'],
+            'position_id' => ['nullable', 'exists:positions,id'],
             'role_id' => ['required', 'exists:roles,id'],
         ];
     }
