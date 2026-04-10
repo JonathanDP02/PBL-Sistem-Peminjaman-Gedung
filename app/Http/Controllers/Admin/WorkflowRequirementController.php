@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Controller;
 use App\Models\Workflow;
 use App\Models\WorkflowRequirement;
 use Illuminate\Http\Request;

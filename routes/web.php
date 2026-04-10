@@ -1,9 +1,12 @@
 <?php
 
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\WorkflowController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoomController;
-use App\Http\Controllers\WorkflowController;
+use App\Models\Position;
+use App\Models\Role;
+use App\Models\Unit;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -69,23 +72,26 @@ Route::middleware(['auth', 'checkRole:SuperAdmin,AdminUnit'])->prefix('admin')->
         Route::get('/units', function () {
             return response()->json([
                 'success' => true,
-                'data' => \App\Models\Unit::all(),
+                'data' => Unit::all(),
             ]);
         });
 
         Route::get('/roles', function () {
             return response()->json([
                 'success' => true,
-                'data' => \App\Models\Role::all(),
+                'data' => Role::all(),
             ]);
         });
 
         Route::get('/positions', function () {
             return response()->json([
                 'success' => true,
-                'data' => \App\Models\Position::all(),
+                'data' => Position::all(),
             ]);
         });
+
+        // Workflow API Routes
+        Route::get('/workflows/{id}/requirements', [WorkflowController::class, 'showRequirements']);
     });
 });
 
@@ -117,10 +123,5 @@ Route::middleware('auth')->group(function () {
 });
 
 require __DIR__.'/auth.php';
-
-// API Endpoints
-Route::middleware('auth')->group(function () {
-    Route::get('/api/workflows/{id}/requirements', [WorkflowController::class, 'showRequirements']);
-});
 
 Route::get('/rooms/{id}', [RoomController::class, 'showApi']);
