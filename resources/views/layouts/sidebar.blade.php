@@ -23,7 +23,7 @@
                 @endif
 
                 <!-- Menu untuk SuperAdmin/Admin_Unit -->
-                @if(Auth::user()->role->name === 'SuperAdmin' || Auth::user()->role->name === 'Admin_Unit')
+                @if(Auth::user()->role->name === 'SuperAdmin')
                     <a href="{{ route('dashboard') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm transition {{ request()->routeIs('dashboard') ? 'bg-teal-50 text-teal-700 dark:bg-kinetic-primary/10 dark:text-kinetic-secondary border border-teal-100 dark:border-kinetic-primary/20' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-kinetic-surface border border-slate-200 dark:border-kinetic-border' }}">
                         <i class="ph {{ request()->routeIs('dashboard') ? 'ph-fill' : '' }} ph-squares-four text-lg"></i> Dashboard
                     </a>
@@ -35,6 +35,24 @@
                     </a>
                     <a href="{{ route('kelola-user') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm transition {{ request()->routeIs('kelola-user') ? 'bg-teal-50 text-teal-700 dark:bg-kinetic-primary/10 dark:text-kinetic-secondary border border-teal-100 dark:border-kinetic-primary/20' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-kinetic-surface border border-slate-200 dark:border-kinetic-border' }}">
                         <i class="ph {{ request()->routeIs('kelola-user') ? 'ph-fill' : '' }} ph-user-gear text-lg"></i> Kelola User    
+                    </a>
+                @endif
+
+                @if(Auth::user()->role->name === 'Admin_Unit')
+                    <a href="{{ route('dashboard') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm transition {{ request()->routeIs('dashboard') ? 'bg-teal-50 text-teal-700 dark:bg-kinetic-primary/10 dark:text-kinetic-secondary border border-teal-100 dark:border-kinetic-primary/20' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-kinetic-surface border border-slate-200 dark:border-kinetic-border' }}">
+                    <i class="ph {{ request()->routeIs('dashboard') ? 'ph-fill' : '' }} ph-squares-four text-lg"></i> Dashboard
+                    </a>
+                    <a href="{{ route('fasilitas') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm transition {{ request()->routeIs('fasilitas') ? 'bg-teal-50 text-teal-700 dark:bg-kinetic-primary/10 dark:text-kinetic-secondary border border-teal-100 dark:border-kinetic-primary/20' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-kinetic-surface border border-slate-200 dark:border-kinetic-border' }}">
+                        <i class="ph {{ request()->routeIs('fasilitas') ? 'ph-fill' : '' }} ph-buildings text-lg"></i> Workflow Builder
+                    </a>
+                    <a href="{{ route('unit') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm transition {{ request()->routeIs('unit') ? 'bg-teal-50 text-teal-700 dark:bg-kinetic-primary/10 dark:text-kinetic-secondary border border-teal-100 dark:border-kinetic-primary/20' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-kinetic-surface border border-slate-200 dark:border-kinetic-border' }}">
+                        <i class="ph {{ request()->routeIs('unit') ? 'ph-fill' : '' }} ph-door text-lg"></i> Manajemen Ruangan
+                    </a>
+                    <a href="{{ route('kelola-user') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm transition {{ request()->routeIs('kelola-user') ? 'bg-teal-50 text-teal-700 dark:bg-kinetic-primary/10 dark:text-kinetic-secondary border border-teal-100 dark:border-kinetic-primary/20' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-kinetic-surface border border-slate-200 dark:border-kinetic-border' }}">
+                        <i class="ph {{ request()->routeIs('kelola-user') ? 'ph-fill' : '' }} ph-user-gear text-lg"></i> Pemesanan
+                    </a>
+                    <a href="{{ route('kelola-user') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm transition {{ request()->routeIs('kelola-user') ? 'bg-teal-50 text-teal-700 dark:bg-kinetic-primary/10 dark:text-kinetic-secondary border border-teal-100 dark:border-kinetic-primary/20' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-kinetic-surface border border-slate-200 dark:border-kinetic-border' }}">
+                        <i class="ph {{ request()->routeIs('kelola-user') ? 'ph-fill' : '' }} ph-user-gear text-lg"></i> Laporan
                     </a>
                 @endif
 
