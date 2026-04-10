@@ -7,7 +7,6 @@ use App\Http\Requests\Auth\LoginRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Route;
 use Illuminate\View\View;
 
 class AuthenticatedSessionController extends Controller
@@ -29,7 +28,15 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        $role = $request->user()->role->name;
+
+        $redirectRoute = match ($role) {
+            'User' => 'cari-ruangan',
+            'Approver' => 'meja-kerja',
+            default => 'dashboard',
+        };
+
+        return redirect()->intended(route($redirectRoute, absolute: false));
     }
 
     /**

@@ -16,6 +16,7 @@
 12. [Layanan](#12-layanan)
 13. [Helper](#13-helper)
 14. [Database Seeder](#14-database-seeder)
+15. [Alur Kerja Sistem](#15-alur-kerja-sistem)
 
 ---
 
@@ -798,3 +799,758 @@ Berlaku untuk ruangan Auditorium yang dimiliki oleh Pusat.
 ---
 
 *Dokumen ini mencakup arsitektur backend yang telah diimplementasikan. Untuk dokumentasi frontend (tampilan Blade), lihat `docs/FRONTEND.md`.*
+
+---
+
+## 15. Alur Kerja Sistem
+
+Dokumentasi detail alur kerja sistem SpaceIn dari berbagai perspektif pengguna dan tahapan bisnis.
+
+---
+
+### 15.1 Alur Peminjam (User)
+
+#### Fase 1: Akses Tanpa Autentikasi (Guest)
+
+```
+1. Guest mengakses URL aplikasi (/)
+   ↓
+   Route: GET /
+   Controller: Menampilkan view 'welcome' (halaman landing)
+   Status: Belum autentikasi
+```
+
+#### Fase 2: Registrasi User Baru
+
+```
+2. Guest klik tombol "Daftar" di halaman landing
+   ↓
+   Route: GET /register
+   Controller: RegisteredUserController@create
+   Response: Tampilkan form registrasi (Blade: auth.register)
+   
+3. Isi form: name, email, password, password_confirmation
+   ↓
+   Route: POST /register
+   Controller: RegisteredUserController@store
+   Operasi DB:
+     - Validasi: StoreUserRequest (internal validation)
+       * name: required, string, max:150
+       * email: required, email, unique:users
+       * password: memenuhi aturan kata sandi default Laravel
+     - Unit diset dari request default (atau pilihan user jika ada)
+     - Peran otomatis: 'User'
+     - Hash kata sandi menggunakan bcrypt
+     - INSERT ke tabel 'users'
+   Response: Auth guard 'web' mencatat sesi pengguna
+   Redirect: POST /login → dashboard redirect (lihat Fase 3)
+```
+
+#### Fase 3: Login & Dashboard Redirect
+
+```
+4. User (atau registrasi baru) klik "Masuk"
+   ↓
+   Route: GET /login
+   Controller: AuthenticatedSessionController@create
+   Response: Tampilkan form login (Blade: auth.login)
+   
+5. Isi email & password, klik Masuk
+   ↓
+   Route: POST /login
+   Controller: AuthenticatedSessionController@store
+   Operasi DB:
+     - Validasi LoginRequest: email, password
+     - Laravel Guard 'web' verifikasi credentials
+     - Jika berhasil: regenerate session token
+   Operasi Kode:
+     - if (Auth::attempt(...)) {
+         $request->session()->regenerate();
+         $user = Auth::user(); // load relasi 'role'
+         match ($user->role->name) {
+           'User' => redirect to 'cari-ruangan',
+           'Approver' => redirect to 'meja-kerja',
+           default => redirect to 'dashboard'
+         }
+       }
+   Response: Redirect dengan status autentikasi sukses
+```
+
+#### Fase 4: Cari Ruangan & Periksa Ketersediaan
+
+```
+6. User tiba di halaman pencarian ruangan (cari-ruangan)
+   ↓
+   Route: GET /user/cari-ruangan
+   Middleware: auth, checkRole:User
+   Controller: Menampilkan view 'user.cari-ruangan'
+   Frontend: AJAX/JavaScript fetch data ruangan & jadwal
+   
+7. Frontend AJAX: GET /rooms (atau endpoint yang ada)
+   ↓
+   Controller: RoomController@index
+   Query DB:
+     SELECT rooms.*, buildings.building_name, units.unit_name
+     FROM rooms
+     JOIN buildings ON rooms.building_id = buildings.id
+     JOIN units ON rooms.unit_id = units.id
+   Response JSON: Daftar ruangan dengan info bangunan & unit pemilik
+   
+8. User pilih ruangan, pilih tanggal & jam
+   ↓
+   Frontend AJAX: POST /check-availability
+   (atau logika di aplikasi frontend untuk cek konflik lokal)
+   Query DB:
+     SELECT bookings.* FROM bookings
+     WHERE room_id = {roomId}
+     AND booking_date = {date}
+     AND status NOT IN ('Rejected', 'Draft')
+     AND (
+       (start_time < {userEndTime} AND end_time > {userStartTime})
+     )
+   Response: Status ketersediaan (available / conflict)
+   Frontend: Tampilkan "Ruangan tersedia" atau "Bentrok dengan jadwal lain"
+```
+
+#### Fase 5: Submit Booking (Draft → Pending)
+
+```
+9. User isi detail peminjaman:
+   - event_name: "Seminar Workshop Python"
+   - event_description: "....."
+   - booking_date: 2026-04-15
+   - start_time: 09:00
+   - end_time: 12:00
+   Klik "Ajukan Peminjaman"
+   ↓
+   Route: POST /bookings (atau endpoint sesuai struktur)
+   Middleware: auth
+   Controller: BookingController@store
+   Validasi:
+     - room_id: required, exists:rooms,id
+     - workflow_id: required, exists:workflows,id (otomatis dari room)
+     - event_name: required, string, max:200
+     - event_description: nullable, text
+     - booking_date: required, date, >= today
+     - start_time: required, date_format:H:i:s
+     - end_time: required, after:start_time
+   
+   Operasi DB Transaksi Atomic:
+     START TRANSACTION
+     
+     • SELECT rooms WHERE id = {roomId} FOR UPDATE (lock)
+     • Cek konflikt booking di rentang waktu yg sama
+     • Jika ada booking aktif dgn status bukan 'Rejected' → abort
+     
+     • INSERT INTO bookings:
+       {
+         user_id: Auth::id(),
+         room_id: {roomId},
+         workflow_id: {workflowId}, // diambil dari unit pemilik room
+         event_name: {eventName},
+         event_description: {eventDescription},
+         booking_date: {bookingDate},
+         start_time: {startTime},
+         end_time: {endTime},
+         current_step: 1, // langkah pertama workflow
+         status: 'Draft', // belum final submit
+         revision_count: 0,
+         created_at: NOW(),
+         updated_at: NOW()
+       }
+     
+     • INSERT INTO booking_logs:
+       {
+         booking_id: {newBookingId},
+         actor_id: Auth::id(),
+         action: 'CREATED',
+         notes: 'Booking dibuat (Draft)',
+         created_at: NOW()
+       }
+     
+     COMMIT
+   
+   Response: Return booking object dengan ID
+   Frontend: Redirect ke halaman upload dokumen atau detail booking
+```
+
+#### Fase 6: Upload Dokumen Syarat Workflow
+
+```
+10. User melihat halaman detail booking (status: Draft)
+    Sistem menampilkan daftar dokumen yang wajib diunggah
+    ↓
+    GET /api/workflows/{workflowId}/requirements
+    Middleware: auth
+    Controller: WorkflowController@showRequirements
+    Otorisasi: authorizeUnit() check
+    Query DB:
+      SELECT * FROM workflow_requirements
+      WHERE workflow_id = {workflowId}
+      AND is_mandatory = true
+    Response JSON:
+      [
+        { id: 1, document_name: "Surat Permohonan", is_mandatory: true },
+        { id: 2, document_name: "Identitas Peserta", is_mandatory: true },
+        { id: 3, document_name: "Surat Sponsor", is_mandatory: false }
+      ]
+    Frontend: Tampilkan form upload per dokumentasi
+    
+11. User upload dokumen (misal: Surat Permohonan)
+    ↓
+    Route: POST /booking-attachments
+    Controller: BookingAttachmentController@store
+    Validasi:
+      - booking_id: required, exists:bookings,id
+      - requirement_id: required, exists:workflow_requirements,id
+      - file: required, mimes:pdf,doc,docx, max:5120 (5MB)
+    
+    Operasi File & DB:
+      • file_path = storage_path('bookings/{bookingId}/{filename}')
+      • File::put(file_path, $request->file('file')->getContent())
+      • INSERT INTO booking_attachments:
+        {
+          booking_id: {bookingId},
+          requirement_id: {requirementId},
+          uploader_id: Auth::id(),
+          document_type: requirement.document_name,
+          file_path: {file_path},
+          created_at: NOW()
+        }
+      • INSERT INTO booking_logs:
+        {
+          booking_id: {bookingId},
+          actor_id: Auth::id(),
+          action: 'DOCUMENT_UPLOADED',
+          notes: 'Upload: Surat Permohonan',
+          created_at: NOW()
+        }
+    Response: Success dengan booking attachment ID
+    
+12. User ulangi upload untuk semua dokumen wajib (requirement.is_mandatory = true)
+    ↓
+    Frontend: Tampilkan checklist, highlight mana yang sudah/belum
+    
+13. Semua dokumen wajib sudah diunggah, user klik "Ajukan ke Approver"
+    ↓
+    Route: PATCH /bookings/{id}/submit
+    Middleware: auth
+    Controller: BookingController@submitForApproval
+    Validasi:
+      • Cek booking milik user saat ini
+      • Cek status = 'Draft'
+      • Validasi semua requirement wajib sudah diunggah:
+        WorkflowService::validateRequirements($bookingId)
+        if (!valid) → return error "Dokumen belum lengkap"
+    
+    Operasi DB:
+      UPDATE bookings
+      SET status = 'Pending', 
+          updated_at = NOW()
+      WHERE id = {bookingId}
+      
+      INSERT INTO booking_logs:
+      {
+        booking_id: {bookingId},
+        actor_id: Auth::id(),
+        action: 'SUBMITTED',
+        notes: 'Peminjaman diajukan ke alur persetujuan',
+        created_at: NOW()
+      }
+    
+    Response: Booking object dengan status 'Pending'
+    Frontend: Alert "Berhasil diajukan, tunggu persetujuan approver"
+```
+
+#### Fase 7: Monitor Riwayat & Status Persetujuan
+
+```
+14. User akses halaman "Jadwal Saya" (jadwal-saya)
+    ↓
+    Route: GET /user/jadwal-saya
+    Middleware: auth, checkRole:User
+    Controller: Menampilkan view 'user.jadwal-saya'
+    Frontend AJAX: GET /api/bookings?user_id={userId}
+    
+    Query DB:
+      SELECT bookings.*, rooms.room_name, workflows.name as workflow_name
+      FROM bookings
+      JOIN rooms ON bookings.room_id = rooms.id
+      JOIN workflows ON bookings.workflow_id = workflows.id
+      WHERE bookings.user_id = {userId}
+      ORDER BY booking_date DESC, start_time DESC
+    
+    Response JSON: Daftar peminjaman user
+    Frontend: Tampilkan tabel/card dengan status, tanggal, jam, approver saat ini
+    
+15. User klik detail booking → lihat timeline approval
+    ↓
+    Frontend: GET /api/bookings/{id}/approvals
+    Query DB:
+      SELECT approvals.*, users.name as approver_name, positions.name as position_name,
+             workflow_steps.step_order
+      FROM approvals
+      JOIN users ON approvals.approver_id = users.id
+      JOIN workflow_steps ON approvals.step_id = workflow_steps.id
+      LEFT JOIN positions ON workflow_steps.position_id = positions.id
+      WHERE approvals.booking_id = {bookingId}
+      ORDER BY workflow_steps.step_order ASC
+    
+    Response: Timeline approval dengan status setiap step
+    Frontend: Tampilkan timeline visual
+```
+
+---
+
+### 15.2 Alur Approver (Pejabat Persetujuan)
+
+#### Fase 1: Login & Dashboard Approver
+
+```
+1. Approver login (same as User phase 3)
+   ↓
+   Route: POST /login
+   Redirect: ke /approver/meja-kerja (karena role = 'Approver')
+```
+
+#### Fase 2: Lihat Antrian Persetujuan
+
+```
+2. Approver akses "Meja Kerja" (meja-kerja)
+   ↓
+   Route: GET /approver/meja-kerja
+   Middleware: auth, checkRole:Approver
+   Controller: Menampilkan view 'approver.meja-kerja'
+   Frontend AJAX: GET /api/approvals/pending
+   
+   Query DB (kompleks):
+      SELECT bookings.*, users.name as peminjam, rooms.room_name,
+             workflows.name as workflow_name,
+             current_step, workflow_steps.position_id,
+             positions.name as position_required
+      FROM bookings
+      JOIN bookings.workflow_id = workflows.id
+      JOIN workflows.workflow_steps ON workflow.id = workflow_steps.workflow_id
+      JOIN positions ON workflow_steps.position_id = positions.id
+      WHERE bookings.status = 'Pending'
+      AND workflow_steps.step_order = bookings.current_step
+      AND positions.id = Auth::user()->position_id  // Approver ini di posisi mana?
+      ORDER BY bookings.created_at ASC
+   
+   Response JSON: Daftar booking yg menunggu persetujuan approver ini
+   Frontend: Tampilkan queue/antrian dengan sorting by created_at
+```
+
+#### Fase 3: Lihat Detail Booking untuk Approval
+
+```
+3. Approver klik booking → buka detail
+   ↓
+   Route: GET /approver/approvals/{booking_id}
+   Middleware: auth, checkRole:Approver
+   Controller: ApprovalController@show
+   
+   Operasi:
+     • Load booking dengan eager load: user, room, workflow, workflow_steps
+     • Load semua dokumen yang sudah diunggah
+     • Load approval history (approval tracking)
+     • Load current step requirement: apakah step ini requires_attachment?
+   
+   Response: Tampilkan:
+     - Detail peminjam & acara
+     - Tanggal, jam, ruangan
+     - Dokumen yang diunggah (link preview/download)
+     - Form submit: "Setuju" atau "Tolak"
+     - Jika step.requires_attachment = true: form upload mandatory
+     - History persetujuan sebelumnya
+```
+
+#### Fase 4: Persetujuan (Approve)
+
+```
+4. Approver review dokumen → klik "Setuju"
+   ↓
+   Route: POST /approvals/{booking_id}/approve
+   Middleware: auth, checkRole:Approver
+   Controller: ApprovalController@approve
+   
+   Validasi:
+     • Booking milik step approver ini
+     • Status booking = 'Pending'
+     • Jika step.requires_attachment = true:
+       - File lampiran harus diunggah (attachment di request)
+       - Validasi file: mimes:pdf,doc,docx, max:5120
+   
+   Operasi DB Transaksi:
+     START TRANSACTION
+     
+     1. INSERT INTO approvals:
+        {
+          booking_id: {bookingId},
+          approver_id: Auth::id(),
+          step_id: {currentStepId},
+          approval_status: 'Approved',
+          notes: {optional_notes},
+          signature_image: {base64_atau_path_tanda_tangan},
+          qr_code: {generated_qr_code},
+          approved_at: NOW(),
+          attempt: {current_revision_count}
+        }
+     
+     2. Jika step requires_attachment = true & file diunggah:
+        INSERT INTO booking_attachments:
+        {
+          booking_id: {bookingId},
+          requirement_id: {step_requirement_id},
+          uploader_id: Auth::id(),
+          document_type: {approver_attachment_name},
+          file_path: {file_path_approver_doc},
+          created_at: NOW()
+        }
+     
+     3. INSERT INTO booking_logs:
+        {
+          booking_id: {bookingId},
+          actor_id: Auth::id(),
+          step_id: {currentStepId},
+          action: 'APPROVED',
+          notes: 'Disetujui oleh ' . position.name,
+          created_at: NOW()
+        }
+     
+     4. Cari langkah berikutnya:
+        next_step = WorkflowStep WHERE workflow_id = workflow.id AND step_order = current_step + 1
+        
+        if (next_step exists) {
+          UPDATE bookings
+          SET current_step = next_step.step_order,
+              updated_at = NOW()
+          WHERE id = {bookingId}
+          // Status tetap 'Pending' untuk step berikutnya
+        } else {
+          // Tidak ada step berikutnya = semua approver setuju
+          UPDATE bookings
+          SET status = 'Approved',
+              updated_at = NOW()
+          WHERE id = {bookingId}
+          
+          // Generate izin akhir (PDF dengan QR)
+          Trigger PDF generation dengan semua approval signatures
+        }
+     
+     COMMIT
+   
+   Response: Redirect ke meja kerja dgn flash "Berhasil disetujui"
+   Notifikasi: Email ke approver berikutnya (jika ada) atau peminjam (jika final)
+```
+
+#### Fase 5: Penolakan / Revisi
+
+```
+5. Approver review & klik "Tolak"
+   ↓
+   Route: POST /approvals/{booking_id}/reject
+   Middleware: auth, checkRole:Approver
+   Controller: ApprovalController@reject
+   
+   Validasi:
+     • Booking milik step approver ini
+     • notes (alasan penolakan) tidak boleh kosong
+   
+   Operasi DB Transaksi:
+     START TRANSACTION
+     
+     1. INSERT INTO approvals:
+        {
+          booking_id: {bookingId},
+          approver_id: Auth::id(),
+          step_id: {currentStepId},
+          approval_status: 'Rejected',
+          notes: {rejection_reason},
+          approved_at: NOW(),
+          attempt: {current_revision_count}
+        }
+     
+     2. UPDATE bookings:
+        {
+          status: 'Revised', // Bukan 'Rejected' langsung, tapi 'Revised' untuk dibuka kembali
+          current_step: 1,   // Reset ke langkah pertama
+          revision_count: revision_count + 1,
+          updated_at: NOW()
+        }
+     
+     3. INSERT INTO booking_logs:
+        {
+          booking_id: {bookingId},
+          actor_id: Auth::id(),
+          step_id: {currentStepId},
+          action: 'REJECTED',
+          notes: {rejection_reason},
+          created_at: NOW()
+        }
+     
+     COMMIT
+   
+   Response: Redirect ke meja kerja
+   Notifikasi: Email ke peminjam "Peminjaman ditolak, silakan revisi"
+```
+
+---
+
+### 15.3 Alur Admin Unit (Setup Workflow)
+
+#### Fase 1: Login Admin Unit
+
+```
+1. Admin_Unit login
+   ↓
+   Redirect: /admin/dashboard
+```
+
+#### Fase 2: Setup Alur Kerja (Workflow)
+
+```
+2. Admin_Unit akses "Setup Alur Persetujuan" → buka form/view
+   ↓
+   Route: GET /admin/workflow/create (atau page setup-workflow)
+   Middleware: auth, checkRole:SuperAdmin,Admin_Unit
+   
+3. Admin_Unit isi:
+   - Nama Workflow: "Peminjaman Lab Komputer TI"
+   - Deskripsi: "Alur persetujuan untuk peminjaman lab..."
+   Klik "Buat Workflow"
+   ↓
+   Route: POST /workflows
+   Middleware: auth
+   Controller: WorkflowController@store
+   
+   Validasi:
+     • Auth::user()->role->name must be 'Admin_Unit'
+     • name: required, string, max:255
+     • description: nullable
+   
+   Operasi DB:
+     unit_id = Auth::user()->unit_id (otomatis)
+     INSERT INTO workflows:
+     {
+       unit_id: {unit_id},
+       name: {workflowName},
+       description: {description},
+       created_at: NOW()
+     }
+   
+   Otorisasi: authorizeUnit() hanya Admin_Unit unitnya sendiri bisa buat
+   Response: Redirect ke halaman edit workflow
+```
+
+#### Fase 3: Tambahkan Workflow Steps
+
+```
+4. Admin_Unit di halaman workflow detail → "Tambah Step"
+   ↓
+   Route: GET /admin/workflow/{id}/steps/create
+   
+5. Admin_Unit pilih:
+   - Posisi: "Ketua Lab Komputer TI" (dari tabel positions)
+   - Urutan: 1
+   - Perlu Lampiran?: ☐ (unchecked)
+   Klik "Simpan Step"
+   ↓
+   Route: POST /workflow-steps
+   Middleware: auth
+   Controller: WorkflowStepController@store
+   
+   Validasi:
+     • workflow_id: required, exists:workflows,id
+     • position_id: required, exists:positions,id
+     • step_order: required, integer, >= 1
+     • requires_attachment: nullable, boolean
+   
+   Otorisasi: Cek workflow belongs to Admin_Unit's unit
+   
+   Operasi DB:
+     unit_id = Workflow.unit_id
+     if (Auth::user()->role->name === 'Admin_Unit' && Workflow.unit_id !== Auth::user()->unit_id) {
+       abort(403);
+     }
+     
+     INSERT INTO workflow_steps:
+     {
+       workflow_id: {workflowId},
+       position_id: {positionId},
+       step_order: 1,
+       requires_attachment: false,
+       created_at: NOW()
+     }
+   
+   Response: Success, reload workflow detail
+   
+6. Admin_Unit tambah step kedua:
+   - Posisi: "Wadir Akademik"
+   - Urutan: 2
+   - Perlu Lampiran?: ☑ (checked) → Pejabat harus upload surat disposisi
+   Klik "Simpan Step"
+   ↓
+   Operasi sama seperti step 1, tapi requires_attachment = true
+```
+
+#### Fase 4: Tambahkan Persyaratan Dokumen
+
+```
+7. Admin_Unit di halaman workflow → "Tambah Dokumen Wajib"
+   ↓
+   Route: GET /admin/workflow/{id}/requirements/create
+   
+8. Admin_Unit isi:
+   - Nama Dokumen: "Surat Permohonan"
+   - Wajib?: ☑ (checked)
+   Klik "Simpan"
+   ↓
+   Route: POST /workflow-requirements
+   Middleware: auth
+   Controller: WorkflowRequirementController@store
+   
+   Validasi: document_name: required, max:150, is_mandatory: nullable boolean
+   Otorisasi: Same as step creation
+   
+   Operasi DB:
+     INSERT INTO workflow_requirements:
+     {
+       workflow_id: {workflowId},
+       document_name: 'Surat Permohonan',
+       is_mandatory: true,
+       created_at: NOW()
+     }
+   
+9. Ulangi untuk dokumen lain:
+   - "Kartu Identitas Peserta"
+   - "Surat Sponsor Kegiatan"
+   
+   Setelah selesai, workflow sudah siap digunakan.
+```
+
+#### Fase 5: Assign Workflow ke Ruangan
+
+```
+10. SuperAdmin atau Admin_Unit yang memiliki room:
+    Masuk ke halaman Edit Ruangan
+    ↓
+    Route: PATCH /rooms/{id}
+    Di form: Pilih Workflow: "Peminjaman Lab Komputer TI"
+    
+    Operasi DB:
+      Tabel rooms belum ada kolom workflow_id, tapi bisa ditambah.
+      Atau: Assign otomatis berdasarkan unit_id room ke workflow yang ada di unit itu.
+      
+      Option 1 (future): rooms.workflow_id = {workflowId}
+      Option 2 (current): Query otomatis by unit
+```
+
+---
+
+### 15.4 Flow Diagram Singkat
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     USER (PEMINJAM) JOURNEY                     │
+└─────────────────────────────────────────────────────────────────┘
+                                
+   Landing Page / Guest
+         ↓
+    Register / Login
+         ↓
+   Auth Guard 'web' ✓
+         ↓
+   Role Check: 'User' → /user/cari-ruangan
+         ↓
+   Search Rooms + Check Availability
+         ↓
+   Select Room, Date, Time
+         ↓
+   Create Booking (POST /bookings)
+   → Status: 'Draft', current_step: 1
+         ↓
+   Upload Wajib Documents
+   → booking_attachments INSERT
+         ↓
+   Submit for Approval (PATCH /bookings/{id}/submit)
+   → Status: 'Pending'
+         ↓
+   Monitor Status di /user/jadwal-saya
+         ↓
+         ├─ APPROVED (semua langkah setuju) → PDF Izin + QR
+         ├─ REVISED (ada yang tolak) → Kembali ke Draft, upload ulang
+         └─ pending (menunggu approver)
+
+┌─────────────────────────────────────────────────────────────────┐
+│                   APPROVER (PEJABAT) JOURNEY                    │
+└─────────────────────────────────────────────────────────────────┘
+
+   Login → Role Check: 'Approver' → /approver/meja-kerja
+         ↓
+   Query: Booking di current_step yang butuh approver ini
+         ↓
+   Buka Detail Booking
+         ↓
+   Review Dokumen + Catatan
+         ↓
+         ├─ APPROVE → INSERT approval, next_step++
+         │            Jika requires_attachment: upload doc
+         │            Email ke next approver atau peminjam
+         │
+         └─ REJECT → INSERT approval, status='Revised', current_step=1
+                      revision_count++
+                      Email ke peminjam (revisi)
+
+┌─────────────────────────────────────────────────────────────────┐
+│                 ADMIN_UNIT (SETUP WORKFLOW) JOURNEY             │
+└─────────────────────────────────────────────────────────────────┘
+
+   Login → Role Check: 'Admin_Unit' → /admin/dashboard
+         ↓
+   Setup Alur Persetujuan (Workflow)
+   → Create: name, description (unit_id otomatis)
+         ↓
+   Tambah Langkah (Steps)
+   → position_id, step_order, requires_attachment
+         ↓
+   Tambah Dokumen Wajib (Requirements)
+   → document_name, is_mandatory
+         ↓
+   Workflow ready untuk digunakan di room milik unit
+```
+
+---
+
+### 15.7 Email Notifications (Future Implementation)
+
+```
+Trigger events:
+
+1. Booking di-submit
+   → Email ke approver 1
+   Subject: "Ada permintaan peminjaman ruangan dari {peminjam}"
+   Body: Link ke meja kerja, preview details
+
+2. Step disetujui + ada step berikutnya
+   → Email ke approver berikutnya
+   Subject: "Ada permintaan peminjaman yang perlu persetujuan Anda"
+
+3. Semua approve (booking final)
+   → Email ke peminjam
+   Subject: "Peminjaman Anda disetujui! PDF izin terlampir"
+   Attachment: PDF izin dengan QR code
+
+4. Di-reject (status = 'Revised')
+   → Email ke peminjam
+   Subject: "Peminjaman Anda perlu revisi"
+   Body: Alasan ditolak, link ke booking untuk upload ulang
+
+5. Timeout / Reminder (optional)
+   → Email ke approver
+   Subject: "Reminder: Ada {N} permintaan menunggu persetujuan Anda"
+```
+
+---
+
+*Dokumentasi ini merupakan reference lengkap untuk testing, validasi, dan pengembangan fitur di masa depan. Setiap request flow sudah mencakup Controller, Middleware, DB Operation, Validasi, dan Response yang diharapkan.*

@@ -2,9 +2,10 @@
 
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RoomController;
+use App\Http\Controllers\WorkflowController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\RoomController;
 
 // Guest
 Route::get('/', function () {
@@ -83,5 +84,10 @@ Route::middleware('auth')->group(function () {
 });
 
 require __DIR__.'/auth.php';
+
+// API Endpoints
+Route::middleware('auth')->group(function () {
+    Route::get('/api/workflows/{id}/requirements', [WorkflowController::class, 'showRequirements']);
+});
 
 Route::get('/rooms/{id}', [RoomController::class, 'showApi']);
