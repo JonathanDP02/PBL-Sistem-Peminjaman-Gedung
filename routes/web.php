@@ -39,55 +39,92 @@ Route::get('/riwayat', function () {
 
 // By Role
 // Fungsi prefix('kata') di Laravel digunakan untuk menambahkan "kata" tersebut di bagian paling depan dari semua URL yang ada di dalam grup tersebut.
-Route::middleware(['auth', 'checkRole:SuperAdmin,AdminUnit'])->prefix('admin')->group(function () {
-    Route::get('/dashboard', function () {
-        return view('admin.dashboard');
-    })->name('admin.dashboard');
-    Route::get('/fasilitas', function () {
-        return view('admin.fasilitas');
-    })->name('fasilitas');
-    Route::get('/unit', function () {
-        return view('admin.unit');
-    })->name('unit');
-    Route::get('/kelola-user', function () {
-        return view('admin.kelola-user');
-    })->name('kelola-user');
-    Route::get('/user-management', function () {
-        return view('admin.user-management');
-    })->name('user-management');
+Route::middleware(['auth'])->prefix('admin')->group(function () {
 
-    Route::post('/user', [UserController::class, 'store'])->name('tambah-user.store');
+    Route::middleware(['checkRole:SuperAdmin,AdminUnit'])->group(function () {
+        Route::get('/dashboard', function () {
+            return view('admin.dashboard');
+        })->name('admin.dashboard');
+    });
 
-    // API Routes for User Management
-    Route::prefix('api')->group(function () {
-        Route::get('/users', [UserController::class, 'index']);
-        Route::get('/users/{id}', [UserController::class, 'show']);
-        Route::post('/users', [UserController::class, 'store']);
-        Route::put('/users/{id}', [UserController::class, 'update']);
-        Route::delete('/users/{id}', [UserController::class, 'destroy']);
+    //SuperAdmin
+    Route::middleware(['checkRole:SuperAdmin'])->group(function () {
+        Route::get('/fasilitas', function () {
+            return view('admin.fasilitas');
+        })->name('fasilitas');
+        
+        Route::get('/unit', function () {
+            return view('admin.unit');
+        })->name('unit');
+        
+        Route::get('/kelola-user', function () {
+            return view('admin.kelola-user');
+        })->name('kelola-user');
+        
+        Route::get('/user-management', function () {
+            return view('admin.user-management');
+        })->name('user-management');
 
-        Route::get('/units', function () {
-            return response()->json([
-                'success' => true,
-                'data' => \App\Models\Unit::all(),
-            ]);
-        });
+        Route::post('/user', [UserController::class, 'store'])->name('tambah-user.store');
 
-        Route::get('/roles', function () {
-            return response()->json([
-                'success' => true,
-                'data' => \App\Models\Role::all(),
-            ]);
-        });
+        // API Routes for User Management
+        Route::prefix('api')->group(function () {
+            Route::get('/users', [UserController::class, 'index']);
+            Route::get('/users/{id}', [UserController::class, 'show']);
+            Route::post('/users', [UserController::class, 'store']);
+            Route::put('/users/{id}', [UserController::class, 'update']);
+            Route::delete('/users/{id}', [UserController::class, 'destroy']);
 
-        Route::get('/positions', function () {
-            return response()->json([
-                'success' => true,
-                'data' => \App\Models\Position::all(),
-            ]);
+            Route::get('/units', function () {
+                return response()->json([
+                    'success' => true,
+                    'data' => \App\Models\Unit::all(),
+                ]);
+            });
+
+            Route::get('/roles', function () {
+                return response()->json([
+                    'success' => true,
+                    'data' => \App\Models\Role::all(),
+                ]);
+            });
+
+            Route::get('/positions', function () {
+                return response()->json([
+                    'success' => true,
+                    'data' => \App\Models\Position::all(),
+                ]);
+            });
         });
     });
+
+    //AdminUnit
+    Route::middleware(['checkRole:Admin_Unit'])->group(function () {
+
+        Route::get('/dashboard', function () {
+            return view('admin.dashboard');
+        })->name('admin.dashboard');
+        
+        Route::get('/laporan', function () {
+            return view('admin.laporan'); 
+        })->name('admin.laporan');
+
+        Route::get('/manajemen-ruangan', function () {
+            return view('admin.manajemenRuangan');
+        })->name('admin.manajemenRuangan');
+
+        Route::get('/pemblokiran-ruangan', function () {
+            return view('admin.pemblokiranRuangan');
+        })->name('admin.pemblokiranRuangan');
+
+        Route::get('/workflow-builder', function () {
+            return view('admin.workflowBuilder'); 
+        })->name('admin.workflowBuilder');
+
+    });
 });
+
+
 
 Route::middleware(['auth', 'checkRole:Approver'])->prefix('approver')->group(function () {
     Route::get('/dashboard', function () {
