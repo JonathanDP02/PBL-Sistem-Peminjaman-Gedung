@@ -55,9 +55,6 @@ Route::middleware(['auth', 'checkRole:SuperAdmin,Admin_Unit'])->prefix('admin')-
     Route::get('/kelola-user', function () {
         return view('admin.kelola-user');
     })->name('kelola-user');
-    Route::get('/user-management', function () {
-        return view('admin.user-management');
-    })->name('user-management');
 
     Route::post('/user', [UserController::class, 'store'])->name('tambah-user.store');
 
