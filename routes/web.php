@@ -69,26 +69,9 @@ Route::middleware(['auth', 'checkRole:SuperAdmin,Admin_Unit'])->prefix('admin')-
         Route::put('/users/{id}', [UserController::class, 'update']);
         Route::delete('/users/{id}', [UserController::class, 'destroy']);
 
-        Route::get('/units', function () {
-            return response()->json([
-                'success' => true,
-                'data' => Unit::all(),
-            ]);
-        });
-
-        Route::get('/roles', function () {
-            return response()->json([
-                'success' => true,
-                'data' => Role::all(),
-            ]);
-        });
-
-        Route::get('/positions', function () {
-            return response()->json([
-                'success' => true,
-                'data' => Position::all(),
-            ]);
-        });
+        Route::get('/units', [UserController::class, 'getUnitsDropdown']);
+        Route::get('/roles', [UserController::class, 'getRolesDropdown']);
+        Route::get('/positions', [UserController::class, 'getPositionsDropdown']);
 
         // Workflow API Routes
         Route::get('/workflows/{id}/requirements', [WorkflowController::class, 'showRequirements']);
