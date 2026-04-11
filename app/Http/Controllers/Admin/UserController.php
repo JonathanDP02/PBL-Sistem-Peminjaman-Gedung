@@ -9,7 +9,6 @@ use App\Models\Unit;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 
@@ -21,7 +20,13 @@ class UserController extends Controller
         $query = User::with(['role', 'unit', 'position']);
 
         if ($user->role->name !== 'SuperAdmin') {
-            $query->where('unit_id', $user->unit_id);
+            // Admin_Unit dapat melihat users dari unit mereka dan semua unit anak
+            $allowedUnitIds = Unit::where('id', $user->unit_id)
+                ->orWhere('parent_id', $user->unit_id)
+                ->pluck('id')
+                ->toArray();
+
+            $query->whereIn('unit_id', $allowedUnitIds);
         }
 
         $users = $query->orderBy('name')->paginate(15);
@@ -67,25 +72,62 @@ class UserController extends Controller
             ], 422);
         }
 
-        // Validasi: Admin_Unit tidak boleh assign role SuperAdmin atau Admin_Unit
+        // Validasi role assignment untuk Admin_Unit
         if ($authUser->role->name === 'Admin_Unit') {
             $targetRole = Role::find($request->role_id);
-            if ($targetRole && in_array($targetRole->name, ['SuperAdmin', 'Admin_Unit'])) {
+
+            // Tidak boleh assign SuperAdmin
+            if ($targetRole && $targetRole->name === 'SuperAdmin') {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Anda tidak memiliki izin untuk menetapkan role ' . $targetRole->name . '.',
+                    'message' => 'Anda tidak memiliki izin untuk menetapkan role SuperAdmin.',
                 ], 403);
+            }
+
+            // Admin_Unit hanya bisa assign Admin_Unit jika level Jurusan dan untuk organisasi anak
+            if ($targetRole && $targetRole->name === 'Admin_Unit') {
+                // Hanya Jurusan yang bisa membuat Admin_Unit
+                if ($authUser->unit->level !== 'Jurusan') {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Hanya admin Jurusan yang boleh membuat admin unit untuk organisasi.',
+                    ], 403);
+                }
+
+                // Unit target harus merupakan organisasi anak (bukan level Jurusan)
+                $targetUnit = Unit::find($request->unit_id);
+                if (! $targetUnit) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Unit tidak ditemukan.',
+                    ], 404);
+                }
+
+                if ($targetUnit->level !== 'Organisasi' || $targetUnit->parent_id !== $authUser->unit_id) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Admin unit hanya bisa dibuat untuk organisasi yang menjadi sub-unit Anda.',
+                    ], 403);
+                }
             }
         }
 
         // Cek konsistensi position vs unit, hanya jika position_id diisi
         if ($request->filled('position_id')) {
             $position = Position::find($request->position_id);
-            if ($position && $position->unit_id !== $request->unit_id) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Position yang dipilih tidak sesuai dengan unit.',
-                ], 422);
+            $selectedUnit = Unit::find($request->unit_id);
+
+            if ($position && $selectedUnit) {
+                // Position harus dari unit itu sendiri atau dari parent unit
+                $isValidPosition = $position->unit_id === $selectedUnit->id ||
+                    $position->unit_id === $selectedUnit->parent_id;
+
+                if (! $isValidPosition) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Position yang dipilih tidak sesuai dengan unit.',
+                    ], 422);
+                }
             }
         }
 
@@ -172,22 +214,60 @@ class UserController extends Controller
         if ($request->filled('position_id')) {
             $newUnitId = $request->unit_id ?? $targetUser->unit_id;
             $position = Position::find($request->position_id);
-            if ($position && $position->unit_id !== $newUnitId) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Position yang dipilih tidak sesuai dengan unit.',
-                ], 422);
+            $selectedUnit = Unit::find($newUnitId);
+
+            if ($position && $selectedUnit) {
+                // Position harus dari unit itu sendiri atau dari parent unit
+                $isValidPosition = $position->unit_id === $selectedUnit->id ||
+                    $position->unit_id === $selectedUnit->parent_id;
+
+                if (! $isValidPosition) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Position yang dipilih tidak sesuai dengan unit.',
+                    ], 422);
+                }
             }
         }
 
-        // Validasi: Admin_Unit tidak boleh assign role SuperAdmin atau Admin_Unit
+        // Validasi role assignment untuk Admin_Unit saat update
         if ($request->filled('role_id') && $authUser->role->name === 'Admin_Unit') {
             $targetRole = Role::find($request->role_id);
-            if ($targetRole && in_array($targetRole->name, ['SuperAdmin', 'Admin_Unit'])) {
+
+            // Tidak boleh assign SuperAdmin
+            if ($targetRole && $targetRole->name === 'SuperAdmin') {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Anda tidak memiliki izin untuk menetapkan role ' . $targetRole->name . '.',
+                    'message' => 'Anda tidak memiliki izin untuk menetapkan role SuperAdmin.',
                 ], 403);
+            }
+
+            // Admin_Unit hanya bisa assign Admin_Unit jika level Jurusan dan untuk organisasi anak
+            if ($targetRole && $targetRole->name === 'Admin_Unit') {
+                // Hanya Jurusan yang bisa membuat Admin_Unit
+                if ($authUser->unit->level !== 'Jurusan') {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Hanya admin Jurusan yang boleh menetapkan role admin unit.',
+                    ], 403);
+                }
+
+                // Unit target harus merupakan organisasi anak (bukan level Jurusan)
+                $newUnitId = $request->unit_id ?? $targetUser->unit_id;
+                $targetUnit = Unit::find($newUnitId);
+                if (! $targetUnit) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Unit tidak ditemukan.',
+                    ], 404);
+                }
+
+                if ($targetUnit->level !== 'Organisasi' || $targetUnit->parent_id !== $authUser->unit_id) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Role admin unit hanya bisa untuk organisasi yang menjadi sub-unit Anda.',
+                    ], 403);
+                }
             }
         }
 
@@ -314,11 +394,20 @@ class UserController extends Controller
                 ->orderBy('name')
                 ->get();
         } elseif ($authUser->role->name === 'Admin_Unit') {
-            // Admin_Unit: hanya User dan Approver
-            $roles = Role::select('id', 'name')
-                ->whereIn('name', ['User', 'Approver'])
-                ->orderBy('name')
-                ->get();
+            // Admin_Unit: tergantung level unit mereka
+            if ($authUser->unit && $authUser->unit->level === 'Jurusan') {
+                // Level Jurusan: bisa assign User, Approver, dan Admin_Unit (untuk organisasi anak)
+                $roles = Role::select('id', 'name')
+                    ->whereIn('name', ['User', 'Approver', 'Admin_Unit'])
+                    ->orderBy('name')
+                    ->get();
+            } else {
+                // Level Organisasi atau lain: hanya User dan Approver
+                $roles = Role::select('id', 'name')
+                    ->whereIn('name', ['User', 'Approver'])
+                    ->orderBy('name')
+                    ->get();
+            }
         } else {
             $roles = collect([]);
         }
