@@ -172,7 +172,9 @@
                     </tbody>
                 </table>
             </div>
-            
         </div>
+        <footer class="mt-auto pt-8 pb-4 text-center">
+            <p class="text-[9px] font-bold tracking-[0.2em] text-slate-400 dark:text-[#bbb] uppercase transition-colors duration-300">© 2026 SPACE.IN INFRASTRUCTURE ECOSYSTEM • V2.4.0 HIGH-PULSE EDITION</p>
+        </footer>
     </div>
 </x-app-layout>
