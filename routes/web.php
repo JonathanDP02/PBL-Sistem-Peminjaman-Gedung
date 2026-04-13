@@ -4,9 +4,9 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\WorkflowController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoomController;
-use App\Models\Position;
-use App\Models\Role;
-use App\Models\Unit;
+// use App\Models\Position;
+// use App\Models\Role;
+// use App\Models\Unit;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -42,10 +42,8 @@ Route::get('/riwayat', function () {
 
 // By Role
 // Fungsi prefix('kata') di Laravel digunakan untuk menambahkan "kata" tersebut di bagian paling depan dari semua URL yang ada di dalam grup tersebut.
-Route::middleware(['auth', 'checkRole:SuperAdmin,Admin_Unit'])->prefix('admin')->group(function () {
-    Route::get('/dashboard', function () {
-        return view('admin.dashboard');
-    })->name('admin.dashboard');
+//SUPER ADMIN
+Route::middleware(['auth', 'checkRole:SuperAdmin'])->prefix('admin')->group(function () {
     Route::get('/fasilitas', function () {
         return view('admin.fasilitas');
     })->name('fasilitas');
@@ -75,6 +73,27 @@ Route::middleware(['auth', 'checkRole:SuperAdmin,Admin_Unit'])->prefix('admin')-
     });
 });
 
+//AdminUnit
+Route::middleware(['checkRole:Admin_Unit'])->prefix('admin')->group(function () {
+    Route::get('/laporan', function () {
+        return view('admin.laporan'); 
+    })->name('laporan');
+
+    Route::get('/manajemen-ruangan', function () {
+        return view('admin.manajemenRuangan');
+    })->name('manajemenRuangan');
+
+    Route::get('/pemblokiran-ruangan', function () {
+        return view('admin.pemblokiranRuangan');
+    })->name('pemblokiranRuangan');
+
+    Route::get('/workflow-builder', function () {
+        return view('admin.workflowBuilder'); 
+    })->name('workflowBuilder');
+
+});
+
+//Approver
 Route::middleware(['auth', 'checkRole:Approver'])->prefix('approver')->group(function () {
     Route::get('/dashboard', function () {
         return view('approver.dashboard');
@@ -84,14 +103,17 @@ Route::middleware(['auth', 'checkRole:Approver'])->prefix('approver')->group(fun
     })->name('meja-kerja');
 });
 
+//User biasa atau Peminjam
 Route::middleware(['auth', 'checkRole:User'])->prefix('user')->group(function () {
     Route::get('/cari-ruangan', function () {
         return view('user.cari-ruangan');
     })->name('cari-ruangan');
-
     Route::get('/jadwal-saya', function () {
         return view('user.jadwal-saya');
     })->name('jadwal-saya');
+    Route::get('/peminjaman', function () {
+        return view('user.peminjaman');
+    })->name('peminjaman');
 
 });
 
