@@ -62,21 +62,6 @@ Route::middleware(['auth', 'checkRole:SuperAdmin,Admin_Unit'])->prefix('admin/ap
     Route::get('/workflows/{id}/requirements', [WorkflowController::class, 'showRequirements']);
 });
 
-// Route::middleware(['auth', 'checkRole:Admin_Unit'])->prefix('admin/api')->group(function () {
-//     Route::get('/users', [UserController::class, 'index']);
-//     Route::get('/users/{id}', [UserController::class, 'show']);
-//     Route::post('/users', [UserController::class, 'store']);
-//     Route::put('/users/{id}', [UserController::class, 'update']);
-//     Route::delete('/users/{id}', [UserController::class, 'destroy']);
-
-//     Route::get('/units', [UserController::class, 'getUnitsDropdown']);
-//     Route::get('/roles', [UserController::class, 'getRolesDropdown']);
-//     Route::get('/positions', [UserController::class, 'getPositionsDropdown']);
-
-//     // Workflow API Routes
-//     Route::get('/workflows/{id}/requirements', [WorkflowController::class, 'showRequirements']);
-// });
-
 Route::middleware(['auth', 'checkRole:Admin_Unit'])->prefix('admin')->group(function () {
     Route::get('/laporan', function () {
         return view('user.admin_unit.laporan');
