@@ -9,18 +9,13 @@ if (!function_exists('dashboardRoute')) {
         $role = Auth::user()?->role->name ?? null;
         
         return match ($role) {
-            'SuperAdmin', 'Admin_Unit' => route('admin.dashboard'),
-            default => route('user.dashboard'),
+            'Admin_Unit' => route('laporan'),
+            'Approver' => route('meja-kerja'),
+            default => route('dashboard'),
         };
     }
 }
 
-if (!function_exists('isDashboardRoute')) {
-    function isDashboardRoute()
-    {
-        return request()->routeIs('admin.dashboard', 'user.dashboard');
-    }
-}
 
 if (!function_exists('getPageTitle')) {
     /**

@@ -183,13 +183,8 @@
             </div>
             
         <!-- Footer -->
-        <footer class="mt-auto pt-8 pb-4 border-t border-slate-200 dark:border-kinetic-border/50 flex justify-between items-center text-xs text-slate-500 dark:text-gray-500">
-            <p><span class="font-heading font-bold text-slate-900 dark:text-white">Space.in</span> © 2026 Enterprise Booking System</p>
-            <div class="flex gap-6">
-                <a href="#" class="hover:text-slate-900 dark:hover:text-white transition">Syarat & Ketentuan</a>
-                <a href="#" class="hover:text-slate-900 dark:hover:text-white transition">Pusat Bantuan</a>
-                <a href="#" class="hover:text-slate-900 dark:hover:text-white transition">Privasi</a>
-            </div>
+        <footer class="mt-auto pt-8 pb-4 text-center">
+            <p class="text-[9px] font-bold tracking-[0.2em] text-slate-400 dark:text-[#bbb] uppercase transition-colors duration-300">© 2026 SPACE.IN INFRASTRUCTURE ECOSYSTEM • V2.4.0 HIGH-PULSE EDITION</p>
         </footer>
     </div>
 </x-app-layout>
