@@ -11,10 +11,11 @@
                     <p class="mt-3 text-sm text-slate-500 dark:text-gray-400 max-w-2xl">Definisikan peran pemberi persetujuan dalam struktur organisasi unit untuk mengotomatisasi alur kerja pemesanan ruang.</p>
                 </div>
 
-                <button type="button" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-kinetic-primary px-6 py-3 text-sm font-semibold text-white shadow-[0_20px_60px_rgba(20,184,166,0.18)] transition hover:bg-teal-600 dark:hover:bg-kinetic-secondary">
-                    <i class="ph-bold ph-plus"></i>
-                    Tambah Ruangan
+                <button onclick="openModal()" class="bg-teal-600 dark:bg-[#5EEAD4] hover:bg-teal-700 dark:hover:bg-teal-400 text-white dark:text-teal-950 font-bold px-5 py-3 rounded-full transition flex items-center gap-2 shadow-sm font-heading">
+                    <i class="ph-bold ph-plus-circle text-lg"></i> Tambah Ruangan
                 </button>
+
+                @include('user.admin_unit.modal-tambah-ruang')
             </div>
         </section>
 

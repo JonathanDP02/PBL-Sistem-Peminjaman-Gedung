@@ -4,9 +4,6 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\WorkflowController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoomController;
-// use App\Models\Position;
-// use App\Models\Role;
-// use App\Models\Unit;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -15,109 +12,105 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-// Dashboard
+// General Dashboard
 Route::get('/dashboard', function () {
     $view = match (Auth::user()->role->name) {
-        'SuperAdmin', 'Admin_Unit' => 'admin.dashboard',
-        'Approver' => 'approver.dashboard',
-        default => 'user.dashboard',
+        'SuperAdmin' => 'user.superadmin.dashboard',
+        'Approver' => 'user.approver.dashboard',
+        'User' => 'user.peminjam.dashboard',
+        default => 'user.superadmin.dashboard',
     };
-
     return view($view);
-})
-    ->middleware('auth')
-    ->name('dashboard');
+})->middleware('auth')->name('dashboard');
 
-Route::get('/riwayat', function () {
+// General kelola user route
+Route::get('/kelola-user', function () {
     $view = match (Auth::user()->role->name) {
-        'User' => 'user.riwayat',
-        'Approver' => 'approver.riwayat',
-        default => 'user.riwayat',
+        'SuperAdmin','Admin_Unit' => 'user.admin.kelola-user',
+        default => 'user.peminjam.kelola-user',
     };
-
     return view($view);
-})
-    ->middleware('auth')
-    ->name('riwayat');
+})->middleware('auth')->name('kelola-user');
 
-// By Role
-// Fungsi prefix('kata') di Laravel digunakan untuk menambahkan "kata" tersebut di bagian paling depan dari semua URL yang ada di dalam grup tersebut.
-//SUPER ADMIN
+// ======
+// SUPER ADMIN
 Route::middleware(['auth', 'checkRole:SuperAdmin'])->prefix('admin')->group(function () {
     Route::get('/fasilitas', function () {
-        return view('admin.fasilitas');
+        return view('user.superadmin.fasilitas');
     })->name('fasilitas');
+
     Route::get('/unit', function () {
-        return view('admin.unit');
+        return view('user.superadmin.unit');
     })->name('unit');
-    Route::get('/kelola-user', function () {
-        return view('admin.kelola-user');
-    })->name('kelola-user');
 
     Route::post('/user', [UserController::class, 'store'])->name('tambah-user.store');
-
-    // API Routes for User Management
-    Route::prefix('api')->group(function () {
-        Route::get('/users', [UserController::class, 'index']);
-        Route::get('/users/{id}', [UserController::class, 'show']);
-        Route::post('/users', [UserController::class, 'store']);
-        Route::put('/users/{id}', [UserController::class, 'update']);
-        Route::delete('/users/{id}', [UserController::class, 'destroy']);
-
-        Route::get('/units', [UserController::class, 'getUnitsDropdown']);
-        Route::get('/roles', [UserController::class, 'getRolesDropdown']);
-        Route::get('/positions', [UserController::class, 'getPositionsDropdown']);
-
-        // Workflow API Routes
-        Route::get('/workflows/{id}/requirements', [WorkflowController::class, 'showRequirements']);
-    });
 });
 
-//AdminUnit
-Route::middleware(['checkRole:Admin_Unit'])->prefix('admin')->group(function () {
+// API Routes for User Management - Accessible to SuperAdmin and Admin_Unit
+Route::middleware(['auth', 'checkRole:SuperAdmin,Admin_Unit'])->prefix('admin/api')->group(function () {
+    Route::get('/users', [UserController::class, 'index']);
+    Route::get('/users/{id}', [UserController::class, 'show']);
+    Route::post('/users', [UserController::class, 'store']);
+    Route::put('/users/{id}', [UserController::class, 'update']);
+    Route::delete('/users/{id}', [UserController::class, 'destroy']);
+
+    Route::get('/units', [UserController::class, 'getUnitsDropdown']);
+    Route::get('/roles', [UserController::class, 'getRolesDropdown']);
+    Route::get('/positions', [UserController::class, 'getPositionsDropdown']);
+
+    // Workflow API Routes
+    Route::get('/workflows/{id}/requirements', [WorkflowController::class, 'showRequirements']);
+});
+
+Route::middleware(['auth', 'checkRole:Admin_Unit'])->prefix('admin')->group(function () {
     Route::get('/laporan', function () {
-        return view('admin.laporan'); 
+        return view('user.admin_unit.laporan');
     })->name('laporan');
 
     Route::get('/manajemen-ruangan', function () {
-        return view('admin.manajemenRuangan');
+        return view('user.admin_unit.manajemenRuangan');
     })->name('manajemenRuangan');
 
     Route::get('/pemblokiran-ruangan', function () {
-        return view('admin.pemblokiranRuangan');
+        return view('user.admin_unit.pemblokiranRuangan');
     })->name('pemblokiranRuangan');
 
     Route::get('/workflow-builder', function () {
-        return view('admin.workflowBuilder'); 
+        return view('user.admin_unit.workflowBuilder');
     })->name('workflowBuilder');
-
 });
 
-//Approver
+// APPROVER
 Route::middleware(['auth', 'checkRole:Approver'])->prefix('approver')->group(function () {
-    Route::get('/dashboard', function () {
-        return view('approver.dashboard');
-    })->name('approver.dashboard');
     Route::get('/meja-kerja', function () {
-        return view('approver.meja-kerja');
+        return view('user.approver.meja-kerja');
     })->name('meja-kerja');
+
+    Route::get('/riwayat', function () {
+        return view('user.approver.riwayat');
+    })->name('approver.riwayat');
 });
 
-//User biasa atau Peminjam
+// USER / PEMINJAM
 Route::middleware(['auth', 'checkRole:User'])->prefix('user')->group(function () {
     Route::get('/cari-ruangan', function () {
-        return view('user.cari-ruangan');
+        return view('user.peminjam.cari-ruangan');
     })->name('cari-ruangan');
+
     Route::get('/jadwal-saya', function () {
-        return view('user.jadwal-saya');
+        return view('user.peminjam.jadwal-saya');
     })->name('jadwal-saya');
+
     Route::get('/peminjaman', function () {
-        return view('user.peminjaman');
+        return view('user.peminjam.peminjaman');
     })->name('peminjaman');
 
+    Route::get('/riwayat', function () {
+        return view('user.peminjam.riwayat');
+    })->name('peminjam.riwayat');
 });
 
-// ini route untuk halaman profile, hanya bisa diakses kalau sudah login (middleware auth)
+// Profile
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
