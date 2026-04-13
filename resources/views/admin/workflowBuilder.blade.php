@@ -31,7 +31,7 @@
             
             <!-- Breadcrumb -->
             <div class="mb-6 flex items-center gap-2 text-sm">
-                <a href="{{ route('admin.dashboard') }}" class="text-slate-500 dark:text-gray-400 hover:text-slate-700 dark:hover:text-gray-300 transition-colors">Workflow Builder</a>
+                <a href="{{ route('dashboard') }}" class="text-slate-500 dark:text-gray-400 hover:text-slate-700 dark:hover:text-gray-300 transition-colors">Workflow Builder</a>
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400 dark:text-gray-600"><polyline points="9 18 15 12 9 6"/></svg>
                 <span class="text-teal-600 dark:text-teal-400 font-semibold">Alur Peminjaman Auditorium</span>
             </div>
