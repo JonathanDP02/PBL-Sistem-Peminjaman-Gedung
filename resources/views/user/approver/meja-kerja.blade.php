@@ -174,11 +174,16 @@
             </table>
         </div>
 
-        <div class="fixed bottom-8 right-8 w-80 bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] rounded-2xl p-6 shadow-[0_20px_40px_rgba(0,0,0,0.2)] dark:shadow-[0_20px_40px_rgba(0,0,0,0.5)] z-50 transition-colors">
+        <div id="summaryCard" class="fixed bottom-8 right-8 w-80 bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] rounded-2xl p-6 shadow-[0_20px_40px_rgba(0,0,0,0.2)] dark:shadow-[0_20px_40px_rgba(0,0,0,0.5)] z-50 transition-all duration-300">
             
-            <div class="flex justify-between items-center mb-6">
-                <h4 class="text-sm font-bold text-slate-900 dark:text-white">Ringkasan Hari Ini</h4>
-                <i class="ph-fill ph-magic-wand text-teal-500 dark:text-kinetic-primary text-lg"></i>
+            <div class="flex justify-between items-start mb-6">
+                <div class="flex items-center gap-2">
+                    <h4 class="text-sm font-bold text-slate-900 dark:text-white">Ringkasan Hari Ini</h4>
+                    <i class="ph-fill ph-magic-wand text-teal-500 dark:text-kinetic-primary text-lg"></i>
+                </div>
+                <button onclick="document.getElementById('summaryCard').classList.add('hidden')" class="text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors">
+                    <i class="ph-bold ph-x text-lg"></i>
+                </button>
             </div>
 
             <div class="space-y-4 mb-6">
