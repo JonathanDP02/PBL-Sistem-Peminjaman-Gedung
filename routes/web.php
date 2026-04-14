@@ -16,14 +16,24 @@ Route::get('/', function () {
 Route::get('/dashboard', function () {
     $view = match (Auth::user()->role->name) {
         'SuperAdmin' => 'user.superadmin.dashboard',
+        'Admin_Unit' => 'user.admin_unit.dashboard',
         'Approver' => 'user.approver.dashboard',
         'User' => 'user.peminjam.dashboard',
-        default => 'user.superadmin.dashboard',
     };
     return view($view);
 })->middleware('auth')->name('dashboard');
 
-// General kelola user route
+// riwayat user route
+Route::get('/riwayat', function () {
+    $view = match (Auth::user()->role->name) {
+        'Approver' => 'user.approver.riwayat',
+        'User' => 'user.peminjam.riwayat',
+        default => 'user.peminjam.riwayat',
+    };
+    return view($view);
+})->middleware('auth')->name('riwayat');
+
+//
 Route::get('/kelola-user', function () {
     $view = match (Auth::user()->role->name) {
         'SuperAdmin','Admin_Unit' => 'user.admin.kelola-user',
@@ -85,10 +95,6 @@ Route::middleware(['auth', 'checkRole:Approver'])->prefix('approver')->group(fun
     Route::get('/meja-kerja', function () {
         return view('user.approver.meja-kerja');
     })->name('meja-kerja');
-
-    Route::get('/riwayat', function () {
-        return view('user.approver.riwayat');
-    })->name('approver.riwayat');
 });
 
 // USER / PEMINJAM
@@ -104,10 +110,6 @@ Route::middleware(['auth', 'checkRole:User'])->prefix('user')->group(function ()
     Route::get('/peminjaman', function () {
         return view('user.peminjam.peminjaman');
     })->name('peminjaman');
-
-    Route::get('/riwayat', function () {
-        return view('user.peminjam.riwayat');
-    })->name('peminjam.riwayat');
 });
 
 // Profile
