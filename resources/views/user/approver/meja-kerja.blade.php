@@ -39,10 +39,10 @@
                 </div>
             </div>
 
-            <div class="bg-gradient-to-br from-[#4ade80] to-[#2dd4bf] rounded-3xl p-6 md:p-8 text-slate-900 flex flex-col justify-center cursor-pointer hover:scale-[1.02] hover:shadow-[0_10px_30px_rgba(45,212,191,0.3)] transition-all relative overflow-hidden group">
+            <div class="bg-teal-400 dark:bg-teal-400 hover:bg-teal-500 dark:hover:bg-teal-400 border border-slate-200 dark:border-[#2A2A2A] rounded-3xl p-6 md:p-8 text-white  dark:text-black flex flex-col justify-center cursor-pointer hover:scale-[1.02] hover:shadow-[0_10px_30px_rgba(45,212,191,0.3)] transition-all relative overflow-hidden group">
                 <div class="absolute top-0 right-0 w-32 h-32 bg-white/20 rounded-full blur-3xl -mr-10 -mt-10 group-hover:bg-white/30 transition-all"></div>
                 
-                <i class="ph-bold ph-lightning text-3xl mb-3"></i>
+                <i class="ph-bold ph-lightning dark:text-yellow-400 text-3xl mb-3"></i>
                 <h3 class="font-heading text-2xl font-extrabold mb-1">SatSet Mode</h3>
                 <p class="text-sm font-medium opacity-90">Fokus pada pengajuan prioritas.</p>
             </div>
