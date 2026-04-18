@@ -170,12 +170,28 @@ This project has domain-specific skills available. You MUST activate the relevan
 - If you have modified any PHP files, you must run `vendor/bin/pint --dirty --format agent` before finalizing changes to ensure your code matches the project's expected style.
 - Do not run `vendor/bin/pint --test --format agent`, simply run `vendor/bin/pint --format agent` to fix any formatting issues.
 
-=== pest/core rules ===
+=== system context rules ===
 
-## Pest
+# System Context & MVP (Space.in)
 
-- This project uses Pest for testing. Create tests: `php artisan make:test --pest {name}`.
-- Run tests: `php artisan test --compact` or filter: `php artisan test --compact --filter=testName`.
-- Do NOT delete tests without approval.
+The system being built is **Space.in**, an action-oriented, Gen Z friendly Workflow Engine for Room/Building Reservations at Politeknik Negeri Malang. It is NOT just a digital form; it is a full workflow engine where bureaucracy rules and approval chains are stored dynamically in the database, not hardcoded.
+
+## Roles & Access Scopes
+1. **SuperAdmin (Pusat):** Full system control. Manages Global Master Data (buildings, rooms, national holidays). Only SuperAdmin can create/delete buildings and rooms. They also set the `unit_id` (ownership) for each room.
+2. **Admin_Unit (Lokal - Jurusan/Organisasi):** Manages their own unit and child units. They setup Approval Workflows for their own rooms, define document requirements per step, and can perform room maintenance (bypass workflow). They CANNOT manage rooms or workflows belonging to other units.
+3. **Approver (Pejabat Persetujuan):** Reviews incoming bookings. Can approve to advance the step, or reject with mandatory notes.
+4. **User / Peminjam (Mahasiswa/Staf):** Searches for rooms, checks availability, submits bookings (soft-locks), and uploads required documents. They can revise and resubmit if rejected.
+
+## Four Strict Workflow Phases
+1. **Setup (Fase 1):** Admin_Unit configures the approval chain (who approves first, second, etc.) and specifies document requirements (e.g., Proposal is mandatory) for their own rooms.
+2. **Pengajuan (Fase 2):** User selects a room and time. System auto-checks conflicts. If available, it creates a "Soft-Lock" (draft) to reserve the slot temporarily while the user uploads documents.
+3. **Persetujuan (Fase 3):** Booking goes through the defined Approver chain. A rejection requires a reason and allows user revision. Approvals advance the step.
+4. **Finalisasi (Fase 4):** Once all steps are approved, it becomes a "Hard-Lock" (status: Approved), and the system generates a secure PDF permit with a QR code.
+
+## Key Security & Business Logics
+- **Anti-Overlap:** Uses Soft-Locking (draft state for X minutes) and Hard-Locking (Approved).
+- **Atomic Transactions:** Uses Laravel's `lockForUpdate()` when validating/approving to handle race conditions perfectly.
+- **Strict Typing:** Must strictly validate inputs for PostgreSQL integer/UUID formats.
+- **Hierarchical Self-Referencing Units:** Units have `parent_id` and `level` (Pusat, Jurusan, Organisasi). Rooms belong to units via `unit_id` to strictly silo access.
 
 </laravel-boost-guidelines>
