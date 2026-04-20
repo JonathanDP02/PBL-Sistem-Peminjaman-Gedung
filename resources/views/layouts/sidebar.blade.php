@@ -1,7 +1,9 @@
 <aside class="w-64 bg-white dark:bg-kinetic-bg border-r border-slate-200 dark:border-kinetic-border flex flex-col justify-between shrink-0 z-20 transition-colors duration-300">
     <div>
-        <div class="p-6 h-20 flex items-center">
-            <h1 class="font-heading font-extrabold text-2xl tracking-tight text-slate-900 dark:text-white">Space<span class="text-kinetic-primary">.in</span></h1>
+        <div class="p-5 h-20 flex items-center">
+            <a href="/">
+                <x-application-logo class="h-8 w-auto" />
+            </a>
         </div>
         <div class="px-6 mb-4">
             <p class="text-[10px] font-bold tracking-widest text-slate-400 dark:text-gray-500 uppercase mb-4">Enterprise Booking</p>
