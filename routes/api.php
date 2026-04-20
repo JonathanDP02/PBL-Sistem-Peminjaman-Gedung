@@ -11,7 +11,16 @@ Route::middleware('auth')->get('/user', function (Request $request) {
     return $request->user();
 });
 
+use App\Http\Controllers\Api\WorkflowController;
+use App\Http\Controllers\Api\RoomController;
+use App\Http\Controllers\Api\BookingController;
+
 Route::middleware('auth')->group(function () {
+
+    // Weekly Tasks (Jo UI requirements)
+    Route::get('/workflows/{id}/requirements', [WorkflowController::class, 'requirements']);
+    Route::get('/rooms/available', [RoomController::class, 'available']);
+    Route::get('/bookings/{id}/timeline', [BookingController::class, 'timeline']);
 
     // Units
     Route::get('/units', [UnitController::class, 'index']);
