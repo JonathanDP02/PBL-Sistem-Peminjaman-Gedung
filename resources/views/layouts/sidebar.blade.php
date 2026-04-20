@@ -11,8 +11,8 @@
                     <a href="{{ route('dashboard') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm transition {{ request()->routeIs('dashboard') ? 'bg-teal-50 text-teal-700 dark:bg-kinetic-primary/10 dark:text-kinetic-secondary border border-teal-100 dark:border-kinetic-primary/20' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-kinetic-surface border border-slate-200 dark:border-kinetic-border' }}">
                         <i class="ph {{ request()->routeIs('dashboard') ? 'ph-fill' : '' }} ph-squares-four text-lg"></i> Dashboard
                     </a>
-                    <a href="{{ route('cari-ruangan') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm transition {{ request()->routeIs('cari-ruangan') ? 'bg-teal-50 text-teal-700 dark:bg-kinetic-primary/10 dark:text-kinetic-secondary border border-teal-100 dark:border-kinetic-primary/20' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-kinetic-surface border border-slate-200 dark:border-kinetic-border' }}">
-                        <i class="ph {{ request()->routeIs('cari-ruangan') ? 'ph-fill' : '' }} ph-magnifying-glass text-lg"></i> Cari Ruangan
+                    <a href="{{ route('booking') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm transition {{ request()->routeIs('booking') ? 'bg-teal-50 text-teal-700 dark:bg-kinetic-primary/10 dark:text-kinetic-secondary border border-teal-100 dark:border-kinetic-primary/20' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-kinetic-surface border border-slate-200 dark:border-kinetic-border' }}">
+                        <i class="ph {{ request()->routeIs('booking') ? 'ph-fill' : '' }} ph-magnifying-glass text-lg"></i> Booking Ruangan
                     </a>
                     <a href="{{ route('jadwal-saya') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm transition {{ request()->routeIs('jadwal-saya') ? 'bg-teal-50 text-teal-700 dark:bg-kinetic-primary/10 dark:text-kinetic-secondary border border-teal-100 dark:border-kinetic-primary/20' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-kinetic-surface border border-slate-200 dark:border-kinetic-border' }}">
                         <i class="ph {{ request()->routeIs('jadwal-saya') ? 'ph-fill' : '' }} ph-calendar-blank text-lg"></i> Jadwal Saya
@@ -85,7 +85,7 @@
             </span>
             <!-- Custom Switch UI -->
             <div class="w-8 h-4 bg-slate-300 dark:bg-kinetic-border rounded-full relative transition-colors">
-                <div class="absolute left-0.5 top-0.5 w-3 h-3 bg-white dark:bg-kinetic-primary rounded-full transition-transform dark:translate-x-3.5"></div>
+                <div class="absolute left-0.5 top-0.5 w-3 h-3 bg-white dark:bg-kinetic-primary rounded-full transition-transform dark:translate-x-2"></div>
             </div>
         </button>
 

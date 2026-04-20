@@ -1,4 +1,4 @@
-<x-app-layout title="Cari Ruangan">
+<x-app-layout title="Booking">
     <div class="relative px-8 pt-4 pb-8 space-y-10 z-10 flex flex-col min-h-full">
         
         <div>
@@ -102,7 +102,7 @@
                     </div>
 
                     <div class="mt-8">
-                        <button class="w-full bg-gradient-to-r from-kinetic-primary to-kinetic-secondary hover:from-teal-400 hover:to-cyan-400 text-slate-900 font-bold py-4 rounded-xl shadow-[0_0_20px_rgba(20,184,166,0.3)] transition transform hover:-translate-y-1">
+                        <button class="w-full bg-gradient-to-r from-kinetic-primary to-kinetic-secondary hover:from-teal-400 hover:to-cyan-400 text-slate-900 dark:text-white font-bold py-4 rounded-xl shadow-[0_0_20px_rgba(20,184,166,0.3)] transition transform hover:-translate-y-1">
                             Pesan Sekarang
                         </button>
                         <p class="text-[10px] text-center text-slate-500 dark:text-gray-500 mt-4">*Proses verifikasi dokumen memakan waktu ±24 jam hari kerja.</p>
