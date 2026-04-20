@@ -47,13 +47,8 @@
             <!-- Remember Me & Forgot Password -->
             <div class="flex items-center justify-between">
                 <label for="remember_me" class="inline-flex items-center gap-2 cursor-pointer">
-                    <input 
-                        id="remember_me" 
-                        type="checkbox" 
-                        class="w-4 h-4 rounded bg-gray-800 border border-gray-700 text-cyan-400 focus:ring-cyan-400 cursor-pointer" 
-                        name="remember"
-                    >
-                    <span class="text-sm text-gray-300">Ingat saya</span>
+                    <input id="remember_me" type="checkbox" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" name="remember">
+                    <span class="ms-2 text-sm text-gray-600">{{ __('Remember me') }}</span>
                 </label>
                 @if (Route::has('password.request'))
                     <a 
