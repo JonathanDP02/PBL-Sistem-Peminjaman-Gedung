@@ -17,6 +17,7 @@
 13. [Helper](#13-helper)
 14. [Database Seeder](#14-database-seeder)
 15. [Alur Kerja Sistem](#15-alur-kerja-sistem)
+16. [Konfigurasi Email & Mailable](#16-konfigurasi-email--mailable)
 
 ---
 
@@ -448,6 +449,12 @@ Approval belongsTo WorkflowStep (as step_id)
 
 ### `BookingLog` (`app/Models/BookingLog.php`)
 
+```
+BookingLog belongsTo Booking
+BookingLog belongsTo User (as actor_id)
+BookingLog belongsTo WorkflowStep (as step_id)
+```
+
 **Dapat Diisi:** `booking_id`, `actor_id`, `step_id`, `action`, `notes`
 
 ---
@@ -535,6 +542,28 @@ Rute dibagi menjadi dua file: `routes/web.php` dan `routes/auth.php`.
 | GET | `/user/cari-ruangan` | `cari-ruangan` | Halaman pencarian ruangan |
 | GET | `/user/jadwal-saya` | `jadwal-saya` | Jadwal peminjaman pribadi |
 
+### `routes/api.php` — Rute API (Dilindungi Auth)
+
+Semua endpoint di bawah dilindungi dengan `Route::middleware('auth')`. Endpoint ini dirancang untuk konsumsi frontend JavaScript atau mobile app.
+
+#### Workflow API
+
+| Metode | URI | Controller@Method | Deskripsi |
+|---|---|---|---|
+| GET | `/api/workflows/{id}/requirements` | `Api\WorkflowController@requirements` | Ambil daftar persyaratan dokumen untuk workflow tertentu. Returns JSON array dengan field `document_name` dan `is_mandatory` |
+
+#### Room API
+
+| Metode | URI | Controller@Method | Deskripsi |
+|---|---|---|---|
+| GET | `/api/rooms/available?date=&start=&end=` | `Api\RoomController@available` | Cek ketersediaan ruangan untuk tanggal dan jam tertentu. Query parameter: `date` (Y-m-d), `start` (H:i), `end` (H:i). Returns JSON array ruangan yang tersedia |
+
+#### Booking API
+
+| Metode | URI | Controller@Method | Deskripsi |
+|---|---|---|---|
+| GET | `/api/bookings/{id}/timeline` | `Api\BookingController@timeline` | Ambil timeline/riwayat peminjaman untuk tracking UI. Returns JSON array booking_logs dengan relasi actor dan step |
+
 ### `routes/auth.php` — Rute Autentikasi (Laravel Breeze)
 
 #### Rute Tamu
@@ -598,6 +627,71 @@ Ini adalah controller standar Laravel Breeze:
 | `NewPasswordController` | Reset kata sandi dengan token |
 | `PasswordController` | Perbarui kata sandi pengguna terautentikasi |
 | `ConfirmablePasswordController` | Gerbang konfirmasi kata sandi |
+
+---
+
+### `Api\WorkflowController` (`app/Http/Controllers/Api/WorkflowController.php`)
+
+| Metode | HTTP | Rute | Deskripsi |
+|---|---|---|---|
+| `requirements` | GET | `/api/workflows/{id}/requirements` | Ambil persyaratan dokumen wajib untuk workflow. Mengembalikan JSON array dengan field `document_name` (string) dan `is_mandatory` (boolean). Digunakan untuk rendering form upload dokumen di frontend. |
+
+**Logika:**
+1. Load workflow dengan eager-load relasi `requirements`
+2. Map requirements ke array minimal (hanya `document_name` dan `is_mandatory`)
+3. Return as JSON response
+
+---
+
+### `Api\RoomController` (`app/Http/Controllers/Api/RoomController.php`)
+
+| Metode | HTTP | Rute | Deskripsi |
+|---|---|---|---|
+| `available` | GET | `/api/rooms/available?date=&start=&end=` | Cek ketersediaan ruangan berdasarkan tanggal dan rentang waktu. Mengembalikan JSON array ruangan yang **tidak memiliki** booking aktif (status: Pending, Approved) pada jam yang bertabrakan. |
+
+**Validasi Query Parameter:**
+- `date` — required, format Y-m-d
+- `start` — required, format H:i (24-jam)
+- `end` — required, format H:i, harus after `start`
+
+**Logika Query:**
+```sql
+SELECT rooms.*
+FROM rooms
+WHERE NOT EXISTS (
+  SELECT 1 FROM bookings
+  WHERE bookings.room_id = rooms.id
+    AND bookings.booking_date = {date}
+    AND bookings.status IN ('Pending', 'Approved')
+    AND bookings.start_time < {end}
+    AND bookings.end_time > {start}
+)
+```
+
+---
+
+### `Api\BookingController` (`app/Http/Controllers/Api/BookingController.php`)
+
+| Metode | HTTP | Rute | Deskripsi |
+|---|---|---|---|
+| `timeline` | GET | `/api/bookings/{id}/timeline` | Ambil riwayat perubahan status booking (booking_logs) untuk timeline tracking UI. Eager-load relasi `actor` (User) dan `step` (WorkflowStep) untuk menampilkan nama approver dan posisi. |
+
+**Response Format:**
+```json
+[
+  {
+    "id": 1,
+    "booking_id": 5,
+    "actor_id": 3,
+    "step_id": 2,
+    "action": "SUBMITTED",
+    "notes": "Peminjaman diajukan ke alur persetujuan",
+    "created_at": "2026-04-19T10:30:00Z",
+    "actor": { "id": 3, "name": "Andi Mahasiswa TI", ... },
+    "step": { "id": 2, "step_order": 1, "position_id": 5, ... }
+  }
+]
+```
 | `EmailVerificationPromptController` | Tampilkan pemberitahuan verifikasi email |
 | `VerifyEmailController` | Tangani tautan verifikasi email |
 | `EmailVerificationNotificationController` | Kirim ulang email verifikasi |
@@ -1550,6 +1644,153 @@ Trigger events:
    → Email ke approver
    Subject: "Reminder: Ada {N} permintaan menunggu persetujuan Anda"
 ```
+
+---
+
+## 16. Konfigurasi Email & Mailable
+
+### Konfigurasi Email di `.env`
+
+Sistem menggunakan **Mailtrap** untuk email testing di development environment. Konfigurasi di `.env` (mulai April 2026):
+
+```env
+MAIL_MAILER=smtp
+MAIL_HOST=sandbox.smtp.mailtrap.io
+MAIL_PORT=2525
+MAIL_USERNAME=abe1c5ffa58a86              # Ganti dengan credential Mailtrap Anda
+MAIL_PASSWORD=a58346e5db55be              # Ganti dengan credential Mailtrap Anda
+MAIL_ENCRYPTION=tls
+MAIL_FROM_ADDRESS="no-reply@spacein.com"
+MAIL_FROM_NAME="${APP_NAME}"
+```
+
+**Setup Mailtrap:**
+1. Buka https://mailtrap.io dan buat akun (gratis)
+2. Pilih "Testing Inbox" / "My Inbox"
+3. Klik "Integrations" → Pilih "Laravel"
+4. Copy `MAIL_USERNAME` dan `MAIL_PASSWORD` dari instruksi yang diberikan
+5. Paste ke file `.env` Anda
+6. Setiap email yang dikirim akan tertangkap di Inbox Mailtrap untuk review
+
+### Mailable: `BookingSubmittedMail`
+
+**File:** `app/Mail/BookingSubmittedMail.php`
+
+**Tujuan:** Mengirim notifikasi ke approver pertama ketika booking baru disubmit oleh user.
+
+**Constructor:**
+```php
+public function __construct(Booking $booking)
+{
+    $this->booking = $booking;
+}
+```
+
+Menerima parameter `Booking` model dengan relasi yang sudah di-load.
+
+**Envelope (Subject):**
+```
+Subject: "Peminjaman Ruangan: [nama_acara]"
+```
+
+**Content (Template Markdown):**
+File: `resources/views/emails/booking/submitted.blade.php`
+
+Template menampilkan:
+- Judul: "Peminjaman Ruangan Baru"
+- Detail acara: nama, ruangan, tanggal, waktu, peminjam
+- Tombol CTA: "Lihat Detail & Berikan Persetujuan" → link ke `/approver/meja-kerja`
+- Footer branded dengan nama aplikasi
+
+### Template Email
+
+**File:** `resources/views/emails/booking/submitted.blade.php`
+
+Menggunakan komponen Markdown Mailable Laravel:
+- `<x-mail::message>` — Wrapper utama
+- `<x-mail::button>` — Tombol CTA dengan URL
+- Format: Markdown untuk email yang responsif di semua klien
+
+### Testing Email
+
+#### Cara 1: Tinker Interaktif
+
+```bash
+php artisan tinker
+```
+
+Dalam shell tinker:
+```php
+use App\Models\Booking;
+use App\Mail\BookingSubmittedMail;
+use Illuminate\Support\Facades\Mail;
+
+$booking = Booking::with(['user', 'room'])->first();
+Mail::to('test@example.com')->send(new BookingSubmittedMail($booking));
+```
+
+#### Cara 2: Script Standalone (`test_email.php`)
+
+Script otomatis membuat booking dummy jika tidak ada, lalu mengirim email:
+
+```php
+php test_email.php
+// Output:
+// ✅ Email berhasil dikirim!
+// 📌 Cek inbox Mailtrap Anda: https://mailtrap.io
+```
+
+#### Verifikasi di Mailtrap
+
+1. Login ke https://mailtrap.io
+2. Pilih "My Inbox"
+3. Email akan muncul dalam hitungan detik
+4. Klik untuk lihat HTML rendering, headers, dan plain text version
+
+---
+
+## 17. Database Factories
+
+### `BookingFactory` (`database/factories/BookingFactory.php`)
+
+Factory untuk menghasilkan dummy data `Booking` untuk testing.
+
+**Definition:**
+```php
+public function definition(): array
+{
+    return [
+        'user_id' => User::factory(),
+        'room_id' => Room::factory(),
+        'workflow_id' => Workflow::factory(),
+        'event_name' => $this->faker->words(3, asText: true),
+        'event_description' => $this->faker->sentence(),
+        'booking_date' => $this->faker->dateTimeBetween('now', '+30 days')->format('Y-m-d'),
+        'start_time' => $this->faker->time('H:i:s'),
+        'end_time' => $this->faker->time('H:i:s'),
+        'current_step' => 1,
+        'status' => 'Pending',
+        'revision_count' => 0,
+    ];
+}
+```
+
+**Penggunaan:**
+```php
+// Satu booking
+$booking = Booking::factory()->create();
+
+// Batch multiple bookings
+$bookings = Booking::factory()->count(5)->create();
+
+// Dengan relasi custom
+$booking = Booking::factory()->for(User::find(1))->create();
+```
+
+### `BookingFactory` juga membuat relasi secara otomatis:
+- `user_id` → Factory User (membuat user baru jika belum ada)
+- `room_id` → Factory Room (membuat room baru jika belum ada)
+- `workflow_id` → Factory Workflow (membuat workflow baru jika belum ada)
 
 ---
 

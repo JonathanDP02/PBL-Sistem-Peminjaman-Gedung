@@ -93,14 +93,11 @@
                                         <h4 class="text-xs font-bold text-slate-900 dark:text-white leading-tight">Aula Utama</h4>
                                     </div>
                                 @elseif($hour == 11 && $day == 19)
-                                    <div class="h-full bg-blue-50 dark:bg-[#101E28] border border-blue-200 dark:border-blue-900/50 rounded-xl p-3 shadow-sm cursor-pointer">
-                                        <i class="ph-fill ph-clock-counter-clockwise text-blue-500 absolute top-3 right-3 text-sm"></i>
-                                        <span class="text-[9px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider block mb-1">Pending Approval</span>
+                                    <div class="h-full bg-blue-50 dark:bg-[#101E28] border border-blue-200 dark:border-blue-900/50 rounded-xl p-3 shadow-sm cursor-pointer">                                        <span class="text-[9px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider block mb-1">Pending Approval</span>
                                         <h4 class="text-xs font-bold text-slate-900 dark:text-white leading-tight">Ruang Diskusi 04</h4>
                                     </div>
                                 @elseif($hour == 8 && $day == 17)
                                     <div class="h-full bg-red-50 dark:bg-[#2A1515] border border-red-200 dark:border-red-900/50 rounded-xl p-3 shadow-sm cursor-not-allowed">
-                                        <i class="ph-fill ph-lock-key text-red-500 absolute top-3 right-3 text-sm"></i>
                                         <span class="text-[9px] font-bold text-red-600 dark:text-red-400 uppercase tracking-wider block mb-1">Locked by IT</span>
                                         <h4 class="text-xs font-bold text-slate-900 dark:text-white leading-tight">Lab Komputer A</h4>
                                     </div>
@@ -124,7 +121,6 @@
                     <h3 class="font-heading font-bold flex items-center gap-2 text-slate-900 dark:text-white transition-colors">
                         <i class="ph-fill ph-sparkle text-kinetic-primary text-lg"></i> Rekomendasi Slot Hari Ini
                     </h3>
-                    <a href="#" class="text-xs font-bold text-teal-600 dark:text-kinetic-primary hover:underline transition-colors">Lihat Semua</a>
                 </div>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
