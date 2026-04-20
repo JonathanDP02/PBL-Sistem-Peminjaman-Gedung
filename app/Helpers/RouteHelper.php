@@ -27,7 +27,7 @@ if (!function_exists('getPageTitle')) {
         $titles = [
             'admin.dashboard' => 'Dashboard',
             'user.dashboard' => 'Dashboard',
-            'cari-ruangan' => 'Cari Ruangan',
+            'peminjam.booking' => 'Booking',
             'jadwal-saya' => 'Jadwal Saya',
             'riwayat' => 'Riwayat',
             'profile.edit' => 'Profil',
