@@ -87,7 +87,7 @@
                                 <span x-show="!doc.required" class="text-xs font-bold text-slate-500 dark:text-gray-500 uppercase tracking-widest">Tambahan (Opsional)</span>
                                 
                                 <button type="button" @click="doc.required = !doc.required" class="relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors" :class="doc.required ? 'bg-teal-500 dark:bg-teal-600' : 'bg-slate-300 dark:bg-gray-600'">
-                                    <span class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white transition duration-200" :class="doc.required ? 'translate-x-4' : 'translate-x-0'"></span>
+                                    <span class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white transition duration-200" :class="doc.required ? 'translate-x-2' : 'translate-x-0'"></span>
                                 </button>
                                 <input type="hidden" :name="'documents['+index+'][required]'" :value="doc.required ? 1 : 0">
                             </div>
@@ -147,7 +147,7 @@
                                     <div class="flex items-center justify-between pt-3 border-t border-slate-200 dark:border-kinetic-border">
                                         <span class="text-xs font-bold text-slate-600 dark:text-gray-400 uppercase tracking-widest">Wajib Lampiran Balik</span>
                                         <button type="button" @click="step.type = step.type === 'wajib_lampiran_balik' ? 'opsional' : 'wajib_lampiran_balik'" class="relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors" :class="step.type === 'wajib_lampiran_balik' ? 'bg-teal-500 dark:bg-teal-500' : 'bg-slate-300 dark:bg-gray-600'">
-                                            <span class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white transition duration-200" :class="step.type === 'wajib_lampiran_balik' ? 'translate-x-4' : 'translate-x-0'"></span>
+                                            <span class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white transition duration-200" :class="step.type === 'wajib_lampiran_balik' ? 'translate-x-2' : 'translate-x-0'"></span>
                                         </button>
                                         <input type="hidden" :name="'steps['+index+'][type]'" :value="step.type">
                                     </div>
@@ -197,7 +197,7 @@
                         <p class="text-2xl font-bold text-slate-900 dark:text-white mb-1\">Terhubung</p>
                         <p class="text-xs text-slate-600 dark:text-gray-400">Semua Sarpras universitas terhubung</p>
                     </div>
-                </div>\n
+                </div>
             </div>
 
             <!-- Action Buttons -->

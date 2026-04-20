@@ -31,7 +31,7 @@ class AuthenticatedSessionController extends Controller
         $role = $request->user()->role->name;
 
         $redirectRoute = match ($role) {
-            'User' => 'cari-ruangan',
+            'User' => 'booking',
             'Approver' => 'meja-kerja',
             default => 'dashboard',
         };

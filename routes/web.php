@@ -99,9 +99,9 @@ Route::middleware(['auth', 'checkRole:Approver'])->prefix('approver')->group(fun
 
 // USER / PEMINJAM
 Route::middleware(['auth', 'checkRole:User'])->prefix('user')->group(function () {
-    Route::get('/cari-ruangan', function () {
-        return view('user.peminjam.cari-ruangan');
-    })->name('cari-ruangan');
+    Route::get('/booking', function () {
+        return view('user.peminjam.booking');
+    })->name('booking');
 
     Route::get('/jadwal-saya', function () {
         return view('user.peminjam.jadwal-saya');
