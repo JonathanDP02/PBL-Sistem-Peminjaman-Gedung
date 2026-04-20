@@ -33,6 +33,16 @@ Membuat commit baru yang membatalkan efek commit lama (sangat disarankan saat be
 git revert <commit-hash>
 ```
 
+**Membatalkan `git revert` (Jika berubah pikiran)**
+*   Jika revert **sedang berlangsung** (kena conflict & ingin batal):
+    ```bash
+    git revert --abort
+    ```
+*   Jika revert **sudah selesai** (commit revert sudah terbuat) dan ingin dikembalikan ke sebelum revert:
+    ```bash
+    git reset --hard HEAD~1
+    ```
+
 ### C. Menghapus Commit (Reset)
 *   **Soft Reset** (Kembali, tapi perubahan masuk ke area Staging): `git reset --soft <commit-hash>`
 *   **Mixed Reset** (Kembali, perubahan tidak di-stage - Default): `git reset <commit-hash>`
