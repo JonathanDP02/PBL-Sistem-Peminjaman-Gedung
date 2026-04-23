@@ -1,167 +1,102 @@
-<x-app-layout title="Lacak Pesanan">
-    <div class="relative px-8 pt-4 pb-8 space-y-8 z-10 flex flex-col min-h-full transition-colors duration-300">
-        
-        <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
-            <div>
-                <nav class="flex items-center gap-2 text-xs font-medium text-slate-400 mb-2">
-                    <a href="#" class="hover:text-kinetic-primary transition">Riwayat</a>
-                    <i class="ph ph-caret-right text-[10px]"></i>
-                    <span class="text-slate-500">Detail Pesanan</span>
-                </nav>
-                <h2 class="font-heading text-3xl font-extrabold text-slate-900 dark:text-white mb-2">Lacak Pesanan</h2>
-                <div class="flex items-center gap-3">
-                    <span class="text-sm font-mono font-bold text-slate-400">#SP-20261024-001</span>
-                    <span class="px-2 py-0.5 bg-red-500/10 text-red-500 border border-red-500/20 rounded text-[10px] font-bold uppercase tracking-wider">Butuh Tindakan</span>
+<x-app-layout>
+    <div class="bg-slate-50 dark:bg-[#0f0f0f] min-h-screen py-12 text-slate-800 dark:text-[#e5e5e5] font-sans transition-colors duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row justify-between items-start gap-6 mb-8">
+                <div>
+                    <p class="text-teal-600 dark:text-[#2dd4bf] text-xs font-bold tracking-widest uppercase mb-2">Pantau & lihat status</p>
+                    <h1 class="text-4xl font-bold text-slate-900 dark:text-white leading-tight mb-3">Riwayat Peminjaman</h1>
+                    <p class="text-slate-500 dark:text-gray-400 text-sm max-w-2xl">Pantau Riwayat gedung yang telah diBooking.</p>
                 </div>
             </div>
-            <div class="flex gap-3">
-                <button class="flex items-center gap-2 px-5 py-2.5 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl text-sm font-bold text-slate-700 dark:text-white hover:bg-slate-50 dark:hover:bg-[#222] transition shadow-sm dark:shadow-none">
-                    <i class="ph ph-printer text-lg"></i> Cetak Bukti
-                </button>
-                <button class="flex items-center gap-2 px-5 py-2.5 bg-teal-50 dark:bg-kinetic-primary/10 text-teal-600 dark:text-kinetic-primary border border-teal-200 dark:border-kinetic-primary/20 rounded-xl text-sm font-bold hover:bg-teal-100 dark:hover:bg-kinetic-primary/20 transition">
-                    <i class="ph ph-headset text-lg"></i> Bantuan CS
-                </button>
-            </div>
-        </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            
-            <div class="lg:col-span-5 space-y-6">
-                <div class="bg-red-500/10 border border-red-500/20 rounded-2xl p-5 flex gap-4">
-                    <div class="w-10 h-10 rounded-xl bg-red-500 text-white flex items-center justify-center shrink-0 shadow-lg shadow-red-500/20">
-                        <i class="ph-fill ph-warning text-xl"></i>
-                    </div>
-                    <div>
-                        <h4 class="text-sm font-bold text-red-500 mb-1">Butuh Tindakan Segera</h4>
-                        <p class="text-[11px] text-red-400 leading-relaxed">Dokumen pengajuan Anda dikembalikan oleh Kaprodi karena format proposal belum sesuai standar terbaru.</p>
-                    </div>
-                </div>
-
-                <div class="bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] rounded-3xl p-8 shadow-sm dark:shadow-none transition-colors">
-                    <h3 class="font-heading font-bold text-slate-900 dark:text-white mb-8">Status Progress</h3>
+            <div class="grid grid-cols-1 xl:grid-cols-[1.8fr_1fr] gap-6">
+                <div class="space-y-6">
                     
-                    <div class="relative space-y-10">
-                        <div class="absolute left-[15px] top-2 bottom-2 w-0.5 bg-slate-100 dark:bg-[#2A2A2A]"></div>
-
-                        <div class="relative flex gap-6">
-                            <div class="w-8 h-8 rounded-full bg-kinetic-primary text-slate-900 flex items-center justify-center z-10 shadow-lg shadow-kinetic-primary/20">
-                                <i class="ph-bold ph-check text-sm"></i>
-                            </div>
+                    <div class="rounded-[2rem] border border-slate-200 dark:border-kinetic-border bg-white dark:bg-[#161616] shadow-sm dark:shadow-none overflow-hidden">
+                        <div class="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
                             <div>
-                                <p class="text-[10px] font-bold text-teal-600 dark:text-kinetic-primary mb-1 uppercase tracking-widest">24 OKT 2026 • 09:12</p>
-                                <h4 class="text-sm font-bold text-slate-900 dark:text-white mb-1">Pesanan Diajukan (Submitted)</h4>
-                                <p class="text-xs text-slate-500 dark:text-gray-500 leading-relaxed">Peminjaman Ruang Lab Komputer A</p>
+                                <h2 class="text-lg font-bold text-slate-900 dark:text-white">Daftar Booking</h2>
+                                <p class="mt-1 text-sm text-slate-500 dark:text-gray-400">Kelola & pantau status booking Anda.</p>
+                            </div>
+                            <div class="inline-flex items-center gap-3 rounded-2xl bg-slate-50 dark:bg-[#111111] px-4 py-3 border border-slate-200 dark:border-kinetic-border">
+                                <span class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 dark:text-gray-400">Sort</span>
+                                <select class="bg-transparent outline-none text-sm text-slate-900 dark:text-white cursor-pointer">
+                                    <option>Terbaru</option>
+                                    <option>Kategori</option>
+                                    <option>Status</option>
+                                </select>
                             </div>
                         </div>
 
-                        <div class="relative flex gap-6">
-                            <div class="w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center z-10 shadow-lg shadow-red-500/20">
-                                <i class="ph-bold ph-x text-sm"></i>
-                            </div>
-                            <div>
-                                <p class="text-[10px] font-bold text-red-500 mb-1 uppercase tracking-widest">25 OKT 2026 • 14:00</p>
-                                <h4 class="text-sm font-bold text-slate-900 dark:text-white mb-1">Revisi Kaprodi</h4>
-                                <p class="text-xs text-slate-500 dark:text-gray-500 leading-relaxed">Menunggu perbaikan dokumen dari pemohon</p>
-                            </div>
-                        </div>
+                        <div class="p-6 pt-0 space-y-3">
+                            @foreach ([
+                                ['id' => 1, 'building' => 'Gedung Sipil', 'room' => 'Ruang Rapat 01', 'facility' => 'Proyektor Laser', 'capacity' => '40 Orang', 'status' => 'Approve'],
+                                ['id' => 2, 'building' => 'Gedung Mesin', 'room' => 'Auditorium', 'facility' => 'Microphone Wireless', 'capacity' => '60 orang', 'status' => 'Approve'],
+                                ['id' => 3, 'building' => 'Gedung Mesin', 'room' => 'Lab Komputer', 'facility' => 'Speaker Portable', 'capacity' => '40 orang', 'status' => 'Waiting'],
+                                ['id' => 4, 'building' => 'Gedung Sipil', 'room' => 'Gedung A', 'facility' => 'Kursi Lipat', 'capacity' => '30 orang', 'status' => 'Approve'],
+                                ['id' => 5, 'building' => 'Aula Pertamina', 'room' => 'Ruang Seminar', 'facility' => 'Laptop Presenter', 'capacity' => '60 orang', 'status' => 'Cancel'],
+                            ] as $item)
 
-                        <div class="relative flex gap-6">
-                            <div class="w-8 h-8 rounded-full bg-slate-100 dark:bg-[#151515] border-4 border-white dark:border-[#151515] ring-2 ring-slate-200 dark:ring-[#2A2A2A] flex items-center justify-center z-10">
-                                <div class="w-2 h-2 rounded-full bg-slate-400 dark:bg-gray-600"></div>
-                            </div>
-                            <div class="opacity-40">
-                                <p class="text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-widest">PENDING</p>
-                                <h4 class="text-sm font-bold text-slate-900 dark:text-white mb-1">Persetujuan Dekan</h4>
-                                <p class="text-xs text-slate-500 dark:text-gray-500 leading-relaxed">Verifikasi akhir dan penerbitan izin</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                               <a href="{{ route('detail') }}"
+                                   class="group block flex items-center justify-between p-4 border rounded-xl bg-slate-50 dark:bg-slate-800/30 border-slate-200 dark:border-slate-700/60 hover:bg-white dark:hover:bg-slate-800/80 hover:border-teal-500/50 hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 cursor-pointer">
+                                    
+                                    <div>
+                                        <h3 class="font-bold text-slate-900 dark:text-white group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">{{ $item['room'] }}</h3>
+                                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{{ $item['building'] }} - {{ $item['capacity'] }}</p>
+                                    </div>
 
-            <div class="lg:col-span-7 space-y-6">
-                
-                <div class="relative h-64 rounded-3xl overflow-hidden group shadow-xl border border-slate-200 dark:border-[#2A2A2A]">
-                    <img src="https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1200" alt="Room" class="w-full h-full object-cover group-hover:scale-105 transition duration-700">
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
-                    <div class="absolute bottom-8 left-8">
-                        <span class="px-2 py-1 bg-kinetic-primary/20 backdrop-blur-md text-kinetic-primary border border-kinetic-primary/30 rounded text-[10px] font-bold uppercase mb-3 inline-block">Lab Komputer A</span>
-                        <h3 class="text-3xl font-heading font-extrabold text-white">Gedung Science Center</h3>
-                        <p class="text-sm text-gray-300">Lantai 3 • Ruang 304</p>
-                    </div>
-                </div>
+                                    <span class="px-3 py-1.5 text-xs font-semibold rounded-full border 
+                                        @if($item['status'] === 'Approve') 
+                                            text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20
+                                        @elseif($item['status'] === 'Waiting') 
+                                            text-amber-700 dark:text-amber-400 bg-amber-500/10 border-amber-500/20
+                                        @elseif($item['status'] === 'Cancel') 
+                                            text-rose-700 dark:text-rose-400 bg-rose-500/10 border-rose-500/20
+                                        @else
+                                            text-slate-700 dark:text-slate-400 bg-slate-500/10 border-slate-500/20
+                                        @endif
+                                    ">
+                                        {{ $item['status'] }}
+                                    </span>
+                                </a>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] rounded-2xl p-6 transition-colors shadow-sm dark:shadow-none">
-                        <p class="text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-4">Waktu Peminjaman</p>
-                        <div class="space-y-4">
-                            <div class="flex items-center gap-3">
-                                <i class="ph ph-calendar text-kinetic-primary text-xl"></i>
-                                <div>
-                                    <p class="text-sm font-bold text-slate-900 dark:text-white">Kamis, 2 Nov 2026</p>
-                                    <p class="text-[10px] text-slate-500">Tanggal Kegiatan</p>
-                                </div>
-                            </div>
-                            <div class="flex items-center gap-3">
-                                <i class="ph ph-clock text-kinetic-primary text-xl"></i>
-                                <div>
-                                    <p class="text-sm font-bold text-slate-900 dark:text-white">08:00 - 12:00 WIB</p>
-                                    <p class="text-[10px] text-slate-500">Durasi: 4 Jam</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] rounded-2xl p-6 transition-colors shadow-sm dark:shadow-none">
-                        <p class="text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-4">Keperluan & Kapasitas</p>
-                        <div class="space-y-4">
-                            <div class="flex items-center gap-3">
-                                <i class="ph ph-users text-kinetic-primary text-xl"></i>
-                                <div>
-                                    <p class="text-sm font-bold text-slate-900 dark:text-white">45 Orang</p>
-                                    <p class="text-[10px] text-slate-500">Estimasi Peserta</p>
-                                </div>
-                            </div>
-                            <div class="flex items-center gap-3">
-                                <i class="ph ph-article text-kinetic-primary text-xl"></i>
-                                <div>
-                                    <p class="text-sm font-bold text-slate-900 dark:text-white line-clamp-1">Workshop UI/UX Design</p>
-                                    <p class="text-[10px] text-slate-500">Nama Kegiatan</p>
-                                </div>
-                            </div>
+                            @endforeach
                         </div>
                     </div>
                 </div>
 
-                <div class="bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-3xl p-8 flex items-center gap-8 transition-colors">
-                    <div class="w-32 h-32 bg-slate-200 dark:bg-[#222] rounded-2xl flex items-center justify-center border border-slate-300 dark:border-[#333] shrink-0 relative overflow-hidden group">
-                        <i class="ph-fill ph-lock-key text-4xl text-slate-400 dark:text-gray-600 transition-transform group-hover:scale-110"></i>
-                        <div class="absolute inset-0 bg-black/5 dark:bg-black/20"></div>
-                    </div>
-                    <div class="flex-1">
-                        <div class="flex justify-between items-start mb-4">
-                            <h3 class="font-heading text-xl font-bold text-slate-900 dark:text-white">E-Sertifikat & Izin Digital</h3>
-                            <div class="flex gap-1.5">
-                                <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-                                <span class="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-gray-600"></span>
-                            </div>
+                <aside class="space-y-6">
+                    <div class="rounded-[2rem] border border-slate-200 dark:border-kinetic-border bg-white dark:bg-[#161616] shadow-sm dark:shadow-none p-6">
+                        <h2 class="text-lg font-bold text-slate-900 dark:text-white">Status Booking</h2>
+                        <div class="mt-6 space-y-4">
+                            @foreach ([
+                                ['label' => 'Approve', 'value' => '3', 'color' => 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'],
+                                ['label' => 'Waiting', 'value' => '1', 'color' => 'bg-amber-500/10 text-amber-600 dark:text-amber-400'],
+                                ['label' => 'Cancel', 'value' => '1', 'color' => 'bg-red-500/10 text-red-600 dark:text-red-400'],
+                            ] as $status)
+                                <div class="rounded-3xl bg-slate-50 dark:bg-[#111111] p-4 border border-slate-200 dark:border-kinetic-border hover:border-slate-300 dark:hover:border-slate-600 transition-colors">
+                                    <div class="flex items-center justify-between gap-4">
+                                        <div>
+                                            <p class="text-sm font-semibold text-slate-900 dark:text-white">{{ $status['label'] }}</p>
+                                            <p class="text-xs text-slate-500 dark:text-gray-400 mt-1">{{ $status['value'] }} item</p>
+                                        </div>
+                                        <span class="inline-flex rounded-full px-3 py-1 text-xs font-semibold {{ $status['color'] }}">Aktif</span>
+                                    </div>
+                                </div>
+                            @endforeach
                         </div>
-                        <p class="text-xs text-slate-500 dark:text-gray-400 leading-relaxed mb-6">
-                            Dokumen digital dan QR Code akses pintu akan aktif secara otomatis setelah status pesanan berubah menjadi <span class="text-teal-600 dark:text-kinetic-primary font-bold">"Disetujui"</span>.
-                        </p>
-                        <button disabled class="flex items-center gap-2 px-6 py-2.5 bg-slate-200 dark:bg-[#111] text-slate-400 dark:text-gray-600 rounded-xl text-xs font-bold border border-slate-300 dark:border-[#2A2A2A] cursor-not-allowed transition-colors">
-                            <i class="ph ph-download-simple"></i> Unduh PDF Izin
-                        </button>
                     </div>
-                </div>
+
+                    <div class="rounded-[2rem] border border-slate-200 dark:border-kinetic-border bg-slate-50 dark:bg-[#111111] p-6 shadow-sm dark:shadow-none">
+                        <h2 class="text-lg font-bold text-slate-900 dark:text-white">Perhatian</h2>
+                        <ul class="mt-4 space-y-4 text-sm text-slate-600 dark:text-gray-400">
+                            <li class="flex gap-3"><span class="mt-1 inline-flex h-2.5 w-2.5 shrink-0 rounded-full bg-amber-500"></span>1 Booking sedang menunggu persetujuan.</li>
+                            <li class="flex gap-3"><span class="mt-1 inline-flex h-2.5 w-2.5 shrink-0 rounded-full bg-emerald-500"></span>3 Booking sudah di setujui.</li>
+                            <li class="flex gap-3"><span class="mt-1 inline-flex h-2.5 w-2.5 shrink-0 rounded-full bg-red-500"></span>1 Booking ditolak.</li>
+                        </ul>
+                    </div>
+                </aside>
             </div>
         </div>
-
-        <div class="fixed bottom-8 right-8 z-30">
-            <div class="bg-slate-900 dark:bg-[#2A2A2A] border border-slate-800 dark:border-[#3A3A3A] text-white px-4 py-2 rounded-full shadow-2xl flex items-center gap-3 animate-bounce">
-                <span class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-                <span class="text-[10px] font-bold uppercase tracking-tighter">Menunggu Tindakan</span>
-            </div>
-        </div>
-
     </div>
 </x-app-layout>
