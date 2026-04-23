@@ -5,10 +5,14 @@
             
             <!-- Bagian Kiri: Tulisan dan Branding -->
             <div class="order-1 flex flex-col justify-center gap-2">
+                <a href="{{ route('welcome') }}">
+                    <button class="w-max text-[#10ECE8] hover:text-white flex items-center gap-2 mb-6 transition px-4 py-2 border border-[#14B8A6]/30 rounded-lg hover:bg-[#14B8A6]/10">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                        Kembali
+                    </button>
+                </a>
                 <div class="flex items-center">
-                    <a href="/">
-                        <x-application-logo class="-ml-2 h-20 w-auto" />
-                    </a>
+                    <x-application-logo class="-ml-2 h-20 w-auto" />
                 </div>
                 <p class="text-sm lg:text-lg text-slate-400 leading-relaxed mb-6 lg:mb-10 max-w-lg hidden sm:block">
                     Sistem informasi reservasi fasilitas terpadu. Kami menyederhanakan alur birokrasi peminjaman ruang kelas, aula, dan laboratorium yang sebelumnya memakan waktu.
