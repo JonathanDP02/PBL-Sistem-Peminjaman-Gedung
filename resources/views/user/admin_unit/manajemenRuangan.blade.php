@@ -16,6 +16,7 @@
                 </button>
 
                 @include('user.admin_unit.modal-tambah-ruang')
+                @include('user.admin_unit.modal-edit-ruang')
             </div>
         </section>
 
@@ -64,13 +65,13 @@
                         </div>
 
                         <div class="flex justify-end">
-                            <button type="button" class="inline-flex items-center justify-center rounded-full border border-teal-500/20 bg-teal-500/10 px-4 py-2 text-sm font-semibold text-teal-200 transition hover:bg-teal-500/20">Edit</button>
+                            <button type="button" onclick="openEditModal('{{ $room['subtitle'] }}', '{{ $room['title'] }}', '{{ str_replace(' Orang', '', $room['capacity']) }}', '{{ implode(', ', $room['facilities']) }}')" class="inline-flex items-center justify-center rounded-full border border-teal-500/20 bg-teal-500/10 px-4 py-2 text-sm font-semibold text-teal-200 transition hover:bg-teal-500/20">Edit</button>
                         </div>
                     </div>
                 </article>
             @endforeach
 
-            <button type="button" class="flex min-h-[350px] flex-col items-center justify-center gap-3 rounded-[2rem] border-2 border-dashed border-slate-200/70 bg-white/30 dark:border-kinetic-border/70 dark:bg-slate-900/40 text-slate-500 transition hover:border-teal-400 hover:text-teal-600 dark:hover:border-kinetic-primary/60 dark:hover:text-kinetic-primary">
+            <button type="button" onclick="openModal()" class="flex min-h-[350px] flex-col items-center justify-center gap-3 rounded-[2rem] border-2 border-dashed border-slate-200/70 bg-white/30 dark:border-kinetic-border/70 dark:bg-slate-900/40 text-slate-500 transition hover:border-teal-400 hover:text-teal-600 dark:hover:border-kinetic-primary/60 dark:hover:text-kinetic-primary">
                 <span class="inline-flex h-16 w-16 items-center justify-center rounded-full bg-teal-50 text-3xl text-teal-600 dark:bg-kinetic-primary/10 dark:text-kinetic-primary">
                     <i class="ph-bold ph-plus"></i>
                 </span>
@@ -78,5 +79,60 @@
             </button>
         </div>
     </div>
+
+    @push('scripts')
+    <script>
+        function openModal() {
+            const modal = document.getElementById('modalTambahRuang');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modal.querySelector('div').classList.remove('scale-95');
+            }, 10);
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('modalTambahRuang');
+            modal.classList.add('opacity-0');
+            modal.querySelector('div').classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        function openEditModal(nama, gedung, kapasitas, fasilitas) {
+            const modal = document.getElementById('modalEditRuang');
+            
+            // Populate form fields
+            document.getElementById('editNamaRuangan').value = nama;
+            document.getElementById('editKapasitas').value = kapasitas;
+            document.getElementById('editFasilitas').value = fasilitas;
+            
+            const gedungSelect = document.getElementById('editLokasiGedung');
+            for(let i = 0; i < gedungSelect.options.length; i++) {
+                if(gedungSelect.options[i].text === gedung) {
+                    gedungSelect.selectedIndex = i;
+                    break;
+                }
+            }
+
+            // Show modal
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modal.querySelector('div').classList.remove('scale-95');
+            }, 10);
+        }
+
+        function closeEditModal() {
+            const modal = document.getElementById('modalEditRuang');
+            modal.classList.add('opacity-0');
+            modal.querySelector('div').classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+    </script>
+    @endpush
 </x-app-layout>
 
