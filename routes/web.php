@@ -110,6 +110,10 @@ Route::middleware(['auth', 'checkRole:User'])->prefix('user')->group(function ()
     Route::get('/peminjaman', function () {
         return view('user.peminjam.peminjaman');
     })->name('peminjaman');
+
+    Route::get('/detail', function () {
+        return view('user.peminjam.detail');
+    })->name('detail');
 });
 
 // Profile

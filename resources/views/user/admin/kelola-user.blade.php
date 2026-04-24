@@ -13,33 +13,26 @@
             </button>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div class="bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] rounded-2xl p-5 shadow-sm dark:shadow-none flex flex-col transition-colors">
                 <p class="text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">Total Pengguna</p>
                 <div class="flex items-end gap-2">
-                    <h2 class="font-heading text-3xl font-extrabold text-slate-900 dark:text-white leading-none">2,842</h2>
-                    <span class="text-xs font-bold text-teal-600 dark:text-kinetic-primary mb-0.5">+12%</span>
-                </div>
-            </div>
-            <div class="bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] rounded-2xl p-5 shadow-sm dark:shadow-none flex flex-col transition-colors">
-                <p class="text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">Super Admin</p>
-                <div class="flex items-end gap-2">
-                    <h2 class="font-heading text-3xl font-extrabold text-slate-900 dark:text-white leading-none">5</h2>
-                    <span class="text-xs font-medium text-slate-500 dark:text-gray-400 mb-0.5">Global</span>
+                    <h2 id="statTotalUsers" class="font-heading text-3xl font-extrabold text-slate-900 dark:text-white leading-none">0</h2>
+                    <span class="text-xs font-bold text-teal-600 dark:text-kinetic-primary mb-0.5" id="statTotalUsersLabel">Semua Role</span>
                 </div>
             </div>
             <div class="bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] rounded-2xl p-5 shadow-sm dark:shadow-none flex flex-col transition-colors">
                 <p class="text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">Unit Admin</p>
                 <div class="flex items-end gap-2">
-                    <h2 class="font-heading text-3xl font-extrabold text-slate-900 dark:text-white leading-none">48</h2>
+                    <h2 id="statUnitAdmin" class="font-heading text-3xl font-extrabold text-slate-900 dark:text-white leading-none">0</h2>
                     <span class="text-xs font-medium text-slate-500 dark:text-gray-400 mb-0.5">Tersebar</span>
                 </div>
             </div>
             <div class="bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] rounded-2xl p-5 shadow-sm dark:shadow-none flex flex-col transition-colors">
-                <p class="text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">Aktif Sekarang</p>
+                <p class="text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">Akun Aktif Sekarang</p>
                 <div class="flex items-center gap-2">
                     <span class="w-2.5 h-2.5 rounded-full bg-kinetic-primary animate-pulse"></span>
-                    <h2 class="font-heading text-3xl font-extrabold text-slate-900 dark:text-white leading-none">156</h2>
+                    <h2 id="statActiveNow" class="font-heading text-3xl font-extrabold text-slate-900 dark:text-white leading-none">0</h2>
                 </div>
             </div>
         </div>
@@ -63,7 +56,6 @@
                     <thead>
                         <tr class="border-b border-slate-200 dark:border-[#2A2A2A] bg-slate-50/50 dark:bg-[#111]">
                             <th class="px-6 py-5 text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest">Nama</th>
-                            <th class="px-6 py-5 text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest">Email</th>
                             <th class="px-6 py-5 text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest">Unit</th>
                             <th class="px-6 py-5 text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest">Level</th>
                             <th class="px-6 py-5 text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest">Role</th>
@@ -103,112 +95,10 @@
 
     </div>
 
-    <!-- Modal Add/Edit User -->
-    <div id="modalUserForm" class="hidden fixed inset-0 z-[99] flex items-center justify-center bg-black/60 backdrop-blur-sm transition-opacity duration-300 opacity-0">
-        <div class="bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] rounded-3xl w-full max-w-lg p-8 relative shadow-2xl transform scale-95 transition-transform duration-300 max-h-[90vh] overflow-y-auto">
-
-            <button onclick="closeUserModal()" class="absolute top-6 right-6 text-slate-400 hover:text-red-500 transition-colors z-50">
-                <i class="ph-bold ph-x text-xl"></i>
-            </button>
-
-            <div class="mb-6">
-                <h3 id="modalTitle" class="font-heading text-2xl font-bold text-slate-900 dark:text-white mb-1">Tambah User Baru</h3>
-                <p id="modalSubtitle" class="text-xs text-slate-500 dark:text-gray-400">Isi form di bawah untuk menambah user baru.</p>
-            </div>
-
-            <form id="userForm" class="space-y-5">
-                @csrf
-                <input type="hidden" id="userId" name="user_id" value="">
-
-                <!-- Name -->
-                <div>
-                    <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">Nama Lengkap</label>
-                    <input type="text" id="inputName" name="name" placeholder="Nama Lengkap" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-kinetic-primary transition-colors" required>
-                    <p id="errorName" class="text-xs text-red-500 mt-1 hidden"></p>
-                </div>
-
-                <!-- Email -->
-                <div>
-                    <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">Email</label>
-                    <input type="email" id="inputEmail" name="email" placeholder="email@example.com" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-kinetic-primary transition-colors" required>
-                    <p id="errorEmail" class="text-xs text-red-500 mt-1 hidden"></p>
-                </div>
-
-                <!-- Password -->
-                <div>
-                    <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">Password <span id="passwordNote" class="text-slate-400 text-[8px]">(Isi jika ingin mengubah)</span></label>
-                    <input type="password" id="inputPassword" name="password" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-kinetic-primary transition-colors">
-                    <p id="errorPassword" class="text-xs text-red-500 mt-1 hidden"></p>
-                </div>
-
-                <!-- Unit -->
-                <div>
-                    <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">Unit</label>
-                    <select id="inputUnit" name="unit_id" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-kinetic-primary transition-colors appearance-none" required>
-                        <option value="" disabled selected>Pilih Unit</option>
-                    </select>
-                    <p id="errorUnit" class="text-xs text-red-500 mt-1 hidden"></p>
-                </div>
-
-                <!-- Position -->
-                <div>
-                    <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">Jabatan <span class="text-slate-400 text-[8px]">(Opsional)</span></label>
-                    <select id="inputPosition" name="position_id" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-kinetic-primary transition-colors appearance-none">
-                        <option value="">Pilih Jabatan</option>
-                    </select>
-                    <p id="errorPosition" class="text-xs text-red-500 mt-1 hidden"></p>
-                </div>
-
-                <!-- Role -->
-                <div>
-                    <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">Role</label>
-                    <select id="inputRole" name="role_id" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-kinetic-primary transition-colors appearance-none" required>
-                        <option value="" disabled selected>Pilih Role</option>
-                    </select>
-                    <p id="errorRole" class="text-xs text-red-500 mt-1 hidden"></p>
-                </div>
-
-                <div class="flex gap-3 pt-4 border-t border-slate-200 dark:border-[#2A2A2A] mt-6">
-                    <button type="button" onclick="closeUserModal()" class="w-1/3 bg-slate-100 dark:bg-[#1A1A1A] text-slate-700 dark:text-white border border-slate-200 dark:border-[#2A2A2A] hover:bg-slate-200 dark:hover:bg-[#222] font-bold py-3.5 rounded-xl transition-colors text-sm">
-                        Batal
-                    </button>
-                    <button type="submit" id="submitBtn" class="w-2/3 bg-kinetic-primary hover:bg-teal-400 text-slate-900 font-bold py-3.5 rounded-xl transition-colors shadow-[0_0_15px_rgba(20,184,166,0.2)] text-sm">
-                        Simpan User
-                    </button>
-                </div>
-            </form>
-        </div>
-        
-    </div>
-
-    <!-- Modal Delete Confirmation -->
-    <div id="modalDeleteConfirm" class="hidden fixed inset-0 z-[98] flex items-center justify-center bg-black/60 backdrop-blur-sm transition-opacity duration-300 opacity-0">
-        <div class="bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] rounded-3xl w-full max-w-sm p-8 relative shadow-2xl transform scale-95 transition-transform duration-300">
-
-            <button onclick="closeDeleteConfirm()" class="absolute top-6 right-6 text-slate-400 hover:text-red-500 transition-colors">
-                <i class="ph-bold ph-x text-xl"></i>
-            </button>
-
-            <div class="text-center mb-6">
-                <div class="w-16 h-16 rounded-full bg-red-50 dark:bg-[#2A1515] flex items-center justify-center mx-auto mb-4">
-                    <i class="ph-bold ph-warning text-3xl text-red-500"></i>
-                </div>
-                <h3 class="font-heading text-xl font-bold text-slate-900 dark:text-white mb-2">Hapus User?</h3>
-                <p class="text-sm text-slate-500 dark:text-gray-400">
-                    Anda yakin ingin menghapus user <span id="deleteUserName" class="font-bold text-slate-900 dark:text-white"></span>? Tindakan ini tidak dapat dibatalkan.
-                </p>
-            </div>
-
-            <div class="flex gap-3">
-                <button type="button" onclick="closeDeleteConfirm()" class="w-1/2 bg-slate-100 dark:bg-[#1A1A1A] text-slate-700 dark:text-white border border-slate-200 dark:border-[#2A2A2A] hover:bg-slate-200 dark:hover:bg-[#222] font-bold py-3 rounded-xl transition-colors text-sm">
-                    Batal
-                </button>
-                <button type="button" onclick="confirmDelete()" id="confirmDeleteBtn" class="w-1/2 bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-xl transition-colors text-sm">
-                    Hapus User
-                </button>
-            </div>
-        </div>
-    </div>
+    <!-- Data Modals -->
+    @include('user.admin.modals.modal-user-form')
+    @include('user.admin.modals.modal-delete-confirm')
+    @include('user.admin.modals.modal-view-user')
 
 </x-app-layout>
 
@@ -278,6 +168,19 @@ function loadUsers() {
             if (totalUsersEl) {
                 totalUsersEl.textContent = (data.data.total || data.data.length);
             }
+            
+            // Update stats
+            if (data.stats) {
+                const statTotal = getElement('statTotalUsers');
+                if (statTotal) statTotal.textContent = data.stats.total;
+                
+                const statUnit = getElement('statUnitAdmin');
+                if (statUnit) statUnit.textContent = data.stats.unit_admin;
+                
+                const statActive = getElement('statActiveNow');
+                if (statActive) statActive.textContent = data.stats.active_now;
+            }
+            
         } else {
             showAlert('Gagal memuat data users: ' + (data.message || 'Unknown error'), 'error');
         }
@@ -297,7 +200,7 @@ function renderUsersTable(users) {
     if (!users || users.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="6" class="px-6 py-8 text-center text-slate-500 dark:text-gray-400">
+                <td colspan="5" class="px-6 py-8 text-center text-slate-500 dark:text-gray-400">
                     Tidak ada data user
                 </td>
             </tr>
@@ -311,7 +214,7 @@ function renderUsersTable(users) {
         const levelColor = getLevelColor(user.unit?.level);
         
         return `
-            <tr class="hover:bg-slate-50 dark:hover:bg-[#1A1A1A] transition-colors group cursor-pointer">
+            <tr class="hover:bg-slate-50 dark:hover:bg-[#1A1A1A] transition-colors group cursor-pointer" onclick="viewUser(${user.id})">
                 <td class="px-6 py-4">
                     <div class="flex items-center gap-4">
                         <div class="w-10 h-10 rounded-full bg-teal-50 dark:bg-[#0D2A27] text-teal-600 dark:text-kinetic-primary flex items-center justify-center text-sm font-bold border border-teal-100 dark:border-teal-900/50">
@@ -320,7 +223,6 @@ function renderUsersTable(users) {
                         <h4 class="text-sm font-bold text-slate-900 dark:text-white">${user.name}</h4>
                     </div>
                 </td>
-                <td class="px-6 py-4 text-sm text-slate-600 dark:text-gray-300">${user.email}</td>
                 <td class="px-6 py-4">
                     <span class="px-3 py-1 bg-slate-100 dark:bg-[#222] text-slate-600 dark:text-gray-300 rounded-full text-xs font-medium border border-slate-200 dark:border-[#333]">
                         ${user.unit?.unit_name || 'N/A'}
@@ -339,10 +241,10 @@ function renderUsersTable(users) {
                 </td>
                 <td class="px-6 py-4 text-center">
                     <div class="flex items-center justify-center gap-2">
-                        <button onclick="editUser(${user.id})" class="p-2 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/20 text-blue-600 dark:text-blue-400 transition-colors" title="Edit">
+                        <button onclick="event.stopPropagation(); editUser(${user.id})" class="p-2 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/20 text-blue-600 dark:text-blue-400 transition-colors" title="Edit">
                             <i class="ph-bold ph-pencil text-lg"></i>
                         </button>
-                        <button onclick="openDeleteConfirm(${user.id}, '${user.name}')" class="p-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 transition-colors" title="Hapus">
+                        <button onclick="event.stopPropagation(); openDeleteConfirm(${user.id}, '${user.name.replace(/'/g, "\\'")}')" class="p-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 transition-colors" title="Hapus">
                             <i class="ph-bold ph-trash text-lg"></i>
                         </button>
                     </div>
@@ -641,6 +543,65 @@ function closeDeleteConfirm() {
     currentDeleteUserId = null;
     userToDeleteName = null;
     closeModal('modalDeleteConfirm');
+}
+
+// View User Details
+function viewUser(userId) {
+    showLoading(true);
+    fetch(`/admin/api/users/${userId}`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(r => r.json())
+    .then(data => {
+        showLoading(false);
+        if (data.success && data.data) {
+            const user = data.data;
+            const initials = user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+            const roleColor = getRoleColor(user.role?.name);
+            
+            getElement('viewUserInitials').textContent = initials;
+            getElement('viewUserName').textContent = user.name;
+            getElement('viewUserEmail').textContent = user.email;
+            
+            const roleEl = getElement('viewUserRole');
+            roleEl.textContent = user.role?.name || '-';
+            
+            // Apply role colors classes dynamically
+            roleEl.className = 'px-3 py-1 rounded-full text-xs font-medium border border-slate-200 dark:border-[#333]'; // reset base
+            
+            if (user.role?.name === 'SuperAdmin') {
+                roleEl.classList.add('bg-teal-50', 'dark:bg-[#0D2A27]', 'text-teal-700', 'dark:text-kinetic-primary');
+            } else if (user.role?.name === 'Admin_Unit') {
+                roleEl.classList.add('bg-cyan-50', 'dark:bg-cyan-900/20', 'text-cyan-700', 'dark:text-cyan-400');
+            } else if (user.role?.name === 'Approver') {
+                roleEl.classList.add('bg-purple-50', 'dark:bg-purple-900/20', 'text-purple-700', 'dark:text-purple-400');
+            } else {
+                roleEl.classList.add('bg-slate-100', 'dark:bg-[#222]', 'text-slate-600', 'dark:text-gray-300');
+            }
+            
+            getElement('viewUserUnit').textContent = user.unit?.unit_name || '-';
+            getElement('viewUserLevel').textContent = user.unit?.level || '-';
+            getElement('viewUserPosition').textContent = user.position?.name || '-';
+            
+            openModal('modalViewUser');
+        } else {
+            showAlert('Gagal memuat detail user', 'error');
+        }
+    })
+    .catch(error => {
+        showLoading(false);
+        console.error('Error:', error);
+        showAlert('Terjadi kesalahan memuat detail user', 'error');
+    });
+}
+
+function closeViewUserModal() {
+    closeModal('modalViewUser');
 }
 
 // Confirm delete

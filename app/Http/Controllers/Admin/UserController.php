@@ -31,9 +31,23 @@ class UserController extends Controller
 
         $users = $query->orderBy('name')->paginate(15);
 
+        $superAdminCount = (clone $query)->whereHas('role', fn($q) => $q->where('name', 'SuperAdmin'))->count();
+        $unitAdminCount = (clone $query)->whereHas('role', fn($q) => $q->where('name', 'Admin_Unit'))->count();
+        
+        $activeNow = (clone $query)->join('sessions', 'users.id', '=', 'sessions.user_id')
+            ->where('sessions.last_activity', '>=', now()->subMinutes(15)->getTimestamp())
+            ->distinct()
+            ->count('users.id');
+        
         return response()->json([
             'success' => true,
             'data' => $users,
+            'stats' => [
+                'total' => $users->total(),
+                'super_admin' => $superAdminCount,
+                'unit_admin' => $unitAdminCount,
+                'active_now' => $activeNow,
+            ]
         ]);
     }
 

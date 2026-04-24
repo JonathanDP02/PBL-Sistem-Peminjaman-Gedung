@@ -2,6 +2,16 @@
     <div x-data="{
             activeTab: 'dokumen',
             jenisWorkflow: 'auditorium',
+            availableApprovers: [
+                'Ketua Himpunan', 
+                'Dosen Pembimbing', 
+                'Kepala Bagian Sarpras', 
+                'Admin Kemahasiswaan', 
+                'Wakil Dekan Bidang II', 
+                'Rektorat', 
+                'Ketua BEM', 
+                'Pihak Keamanan / Satpam'
+            ],
             steps: [
                 { id: 1, role: 'Ketua Himpunan', description: 'Verifikasi internal organisasi mahasiswa.', type: 'wajib_lampiran_balik' },
                 { id: 2, role: 'Dosen Pembimbing', description: 'Persetujuan akademis dan supervisi kegiatan.', type: 'wajib_lampiran_balik' },
@@ -31,7 +41,7 @@
             
             <!-- Breadcrumb -->
             <div class="mb-6 flex items-center gap-2 text-sm">
-                <a href="{{ route('dashboard') }}" class="text-slate-500 dark:text-gray-400 hover:text-slate-700 dark:hover:text-gray-300 transition-colors">Workflow Builder</a>
+                <a href="{{ route('workflowsBuilder') }}" class="text-slate-500 dark:text-gray-400 hover:text-slate-700 dark:hover:text-gray-300 transition-colors">Manajemen Workflow</a>
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400 dark:text-gray-600"><polyline points="9 18 15 12 9 6"/></svg>
                 <span class="text-teal-600 dark:text-teal-400 font-semibold">Alur Peminjaman Auditorium</span>
             </div>
@@ -132,7 +142,16 @@
                                             <!-- Step Info -->
                                             <div class="flex-1">
                                                 <p class="text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wider mb-1">Tahap <span x-text="String(index + 1).padStart(2, '0')"></span></p>
-                                                <input type="text" x-model="step.role" :name="'steps['+index+'][role]'" placeholder="Nama role" class="text-lg font-bold text-slate-900 dark:text-white bg-transparent border-none focus:ring-0 p-0 mb-2 w-full">
+                                                <select x-model="step.role" :name="'steps['+index+'][role]'" class="text-lg font-bold text-slate-900 dark:text-white bg-transparent border-b border-dashed border-slate-300 dark:border-kinetic-border focus:border-teal-500 focus:ring-0 p-0 pb-1 mb-3 w-full cursor-pointer appearance-none transition-colors">
+                                                    <option value="" disabled class="text-slate-500 bg-white dark:bg-kinetic-bg font-normal">-- Pilih Approver --</option>
+                                                    <template x-for="approver in availableApprovers" :key="approver">
+                                                        <option :value="approver" x-text="approver" class="text-slate-700 bg-white dark:bg-kinetic-surface dark:text-gray-200 font-medium"></option>
+                                                    </template>
+                                                    <!-- Option fallback for the ones already inserted implicitly -->
+                                                    <template x-if="!availableApprovers.includes(step.role) && step.role !== ''">
+                                                        <option :value="step.role" x-text="step.role" class="text-slate-700 bg-white dark:bg-kinetic-surface dark:text-gray-200 font-medium"></option>
+                                                    </template>
+                                                </select>
                                                 <textarea :name="'steps['+index+'][description]'" x-model="step.description" placeholder="Deskripsi tahapan" class="w-full text-sm text-slate-600 dark:text-gray-400 bg-transparent border-none focus:ring-0 p-0 resize-none"></textarea>
                                             </div>
                                         </div>
@@ -209,6 +228,10 @@
                 <div class="flex gap-3">
                     <button type="reset" class="px-6 py-2.5 rounded-lg font-semibold text-slate-700 dark:text-gray-300 bg-white dark:bg-kinetic-card border border-slate-200 dark:border-kinetic-border hover:bg-slate-50 dark:hover:bg-kinetic-surface transition-colors">
                         Batalkan Perubahan
+                    </button>
+                    <button type="submit" class="px-6 py-2.5 rounded-lg font-semibold text-white dark:text-black bg-black hover:bg-slate-500 dark:bg-white dark:hover:bg-slate-300 transition-colors flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                        Draft Alur
                     </button>
                     <button type="submit" class="px-6 py-2.5 rounded-lg font-semibold text-white bg-teal-500 hover:bg-teal-600 dark:bg-teal-500 dark:hover:bg-teal-400 transition-colors flex items-center gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
