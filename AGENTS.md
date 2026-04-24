@@ -170,12 +170,30 @@ This project has domain-specific skills available. You MUST activate the relevan
 - If you have modified any PHP files, you must run `vendor/bin/pint --dirty --format agent` before finalizing changes to ensure your code matches the project's expected style.
 - Do not run `vendor/bin/pint --test --format agent`, simply run `vendor/bin/pint --format agent` to fix any formatting issues.
 
-=== pest/core rules ===
+=== system context rules ===
 
-## Pest
+# System Context & Core Rules (Space.in)
 
-- This project uses Pest for testing. Create tests: `php artisan make:test --pest {name}`.
-- Run tests: `php artisan test --compact` or filter: `php artisan test --compact --filter=testName`.
-- Do NOT delete tests without approval.
+**IDENTITY:**
+You are working on **Space.in**, a modern, action-oriented Workflow Engine for Room/Building Reservations at Politeknik Negeri Malang (Polinema). 
+**CRITICAL RULE:** This is NOT a standard CRUD form application. It is a dynamic Workflow Engine where approval chains and document requirements are stored in the database (`workflows`, `workflow_steps`, `workflow_requirements`), NOT hardcoded in the controllers.
+
+## 1. Roles & Absolute Access Scopes (MUST FOLLOW)
+* **SuperAdmin (Pusat):** Full system control. Manages Global Master Data (buildings, rooms, national holidays). **ONLY** SuperAdmin can create/delete buildings and rooms. They set the `unit_id` (ownership) for each room.
+* **Admin_Unit (Lokal - Jurusan/Organisasi):** Manages their own unit and child units. **MUST ALWAYS** be scoped by `parent_id` and `unit_id`. They setup Approval Workflows for their own rooms and can perform room maintenance. They **NEVER** manage rooms or workflows belonging to other units.
+* **Approver (Pejabat Persetujuan):** Reviews incoming bookings. Can approve to advance the `current_step`, or reject. **REJECTIONS MUST** include mandatory notes written to `booking_logs`.
+* **User / Peminjam (Mahasiswa/Staf):** Searches for rooms, checks availability, submits bookings (triggers Soft-Lock), and uploads required documents. Can revise and resubmit rejected bookings without changing the booking ID.
+
+## 2. Four Strict Workflow Phases
+1.  **Setup (Fase 1):** Admin_Unit configures the approval chain (who approves first, second, etc.) and specifies document requirements (e.g., "Proposal is mandatory") for their own rooms.
+2.  **Pengajuan (Fase 2):** User selects a room and time. System auto-checks conflicts. If available, it creates a "Soft-Lock" (status: Pending) to reserve the slot temporarily while the user uploads documents.
+3.  **Persetujuan (Fase 3):** Booking goes through the defined Approver chain. Approvals advance the step. Rejections drop the status to 'Revising' and record logs.
+4.  **Finalisasi (Fase 4):** Once all steps are approved, the status changes to "Hard-Lock" (Approved), and the system generates a secure PDF permit with a QR code.
+
+## 3. Backend & Security Directives (ZERO TOLERANCE)
+* **Anti-Overlap Guard:** You **MUST ALWAYS** use Laravel's `DB::transaction()` and pessimistic locking (`lockForUpdate()`) when inserting or validating bookings to prevent race conditions at the millisecond level.
+* **Audit Trail:** Any change to a booking's status **MUST** be accompanied by inserting a record into the `booking_logs` table (using `LoggerService::logAction`). Do not change a status without logging it.
+* **Strict Typing:** Must strictly validate inputs for PostgreSQL. IDs are standard Big Integers (not UUIDs). Ensure foreign keys match `unsignedBigInteger`.
+* **Ownership Check:** Every eloquent query in Admin/Approver controllers **MUST** include an ownership `where` clause (e.g., matching `unit_id`). Never use `Model::find($id)` without verifying the user's right to access it.
 
 </laravel-boost-guidelines>
