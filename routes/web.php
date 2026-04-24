@@ -6,6 +6,8 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoomController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\BookingController;
+use App\Http\Controllers\ApprovalController;
 
 // Guest
 Route::get('/', function () {
@@ -95,6 +97,10 @@ Route::middleware(['auth', 'checkRole:Approver'])->prefix('approver')->group(fun
     Route::get('/meja-kerja', function () {
         return view('user.approver.meja-kerja');
     })->name('meja-kerja');
+
+    Route::get('/approvals',                    [ApprovalController::class, 'index'])   ->name('approval.index');
+    Route::post('/approvals/{id}/approve',      [ApprovalController::class, 'approve']) ->name('approval.approve');
+    Route::post('/approvals/{id}/reject',       [ApprovalController::class, 'reject'])  ->name('approval.reject');
 });
 
 // USER / PEMINJAM
@@ -114,6 +120,12 @@ Route::middleware(['auth', 'checkRole:User'])->prefix('user')->group(function ()
     Route::get('/detail', function () {
         return view('user.peminjam.detail');
     })->name('detail');
+
+    Route::get('/bookings',                [BookingController::class, 'index'])   ->name('booking.index');
+    Route::get('/bookings/create',         [BookingController::class, 'create'])  ->name('booking.create');
+    Route::post('/bookings',               [BookingController::class, 'store'])   ->name('booking.store');
+    Route::get('/bookings/{id}',           [BookingController::class, 'show'])    ->name('booking.show');
+    Route::patch('/bookings/{id}/cancel',  [BookingController::class, 'cancel'])  ->name('booking.cancel');
 });
 
 // Profile
