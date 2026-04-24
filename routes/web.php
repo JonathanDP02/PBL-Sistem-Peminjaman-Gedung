@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\ApprovalController;
+use App\Http\Controllers\BookingAttachmentController;
 
 // Guest
 Route::get('/', function () {
@@ -126,6 +127,7 @@ Route::middleware(['auth', 'checkRole:User'])->prefix('user')->group(function ()
     Route::post('/bookings',               [BookingController::class, 'store'])   ->name('booking.store');
     Route::get('/bookings/{id}',           [BookingController::class, 'show'])    ->name('booking.show');
     Route::patch('/bookings/{id}/cancel',  [BookingController::class, 'cancel'])  ->name('booking.cancel');
+    Route::get('/bookings/{id}/attachments/{attachmentId}', [BookingAttachmentController::class, 'show'])->name('booking.attachment.show');
 });
 
 // Profile
