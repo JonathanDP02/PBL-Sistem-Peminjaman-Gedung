@@ -172,26 +172,28 @@ This project has domain-specific skills available. You MUST activate the relevan
 
 === system context rules ===
 
-# System Context & MVP (Space.in)
+# System Context & Core Rules (Space.in)
 
-The system being built is **Space.in**, an action-oriented, Gen Z friendly Workflow Engine for Room/Building Reservations at Politeknik Negeri Malang. It is NOT just a digital form; it is a full workflow engine where bureaucracy rules and approval chains are stored dynamically in the database, not hardcoded.
+**IDENTITY:**
+You are working on **Space.in**, a modern, action-oriented Workflow Engine for Room/Building Reservations at Politeknik Negeri Malang (Polinema). 
+**CRITICAL RULE:** This is NOT a standard CRUD form application. It is a dynamic Workflow Engine where approval chains and document requirements are stored in the database (`workflows`, `workflow_steps`, `workflow_requirements`), NOT hardcoded in the controllers.
 
-## Roles & Access Scopes
-1. **SuperAdmin (Pusat):** Full system control. Manages Global Master Data (buildings, rooms, national holidays). Only SuperAdmin can create/delete buildings and rooms. They also set the `unit_id` (ownership) for each room.
-2. **Admin_Unit (Lokal - Jurusan/Organisasi):** Manages their own unit and child units. They setup Approval Workflows for their own rooms, define document requirements per step, and can perform room maintenance (bypass workflow). They CANNOT manage rooms or workflows belonging to other units.
-3. **Approver (Pejabat Persetujuan):** Reviews incoming bookings. Can approve to advance the step, or reject with mandatory notes.
-4. **User / Peminjam (Mahasiswa/Staf):** Searches for rooms, checks availability, submits bookings (soft-locks), and uploads required documents. They can revise and resubmit if rejected.
+## 1. Roles & Absolute Access Scopes (MUST FOLLOW)
+* **SuperAdmin (Pusat):** Full system control. Manages Global Master Data (buildings, rooms, national holidays). **ONLY** SuperAdmin can create/delete buildings and rooms. They set the `unit_id` (ownership) for each room.
+* **Admin_Unit (Lokal - Jurusan/Organisasi):** Manages their own unit and child units. **MUST ALWAYS** be scoped by `parent_id` and `unit_id`. They setup Approval Workflows for their own rooms and can perform room maintenance. They **NEVER** manage rooms or workflows belonging to other units.
+* **Approver (Pejabat Persetujuan):** Reviews incoming bookings. Can approve to advance the `current_step`, or reject. **REJECTIONS MUST** include mandatory notes written to `booking_logs`.
+* **User / Peminjam (Mahasiswa/Staf):** Searches for rooms, checks availability, submits bookings (triggers Soft-Lock), and uploads required documents. Can revise and resubmit rejected bookings without changing the booking ID.
 
-## Four Strict Workflow Phases
-1. **Setup (Fase 1):** Admin_Unit configures the approval chain (who approves first, second, etc.) and specifies document requirements (e.g., Proposal is mandatory) for their own rooms.
-2. **Pengajuan (Fase 2):** User selects a room and time. System auto-checks conflicts. If available, it creates a "Soft-Lock" (draft) to reserve the slot temporarily while the user uploads documents.
-3. **Persetujuan (Fase 3):** Booking goes through the defined Approver chain. A rejection requires a reason and allows user revision. Approvals advance the step.
-4. **Finalisasi (Fase 4):** Once all steps are approved, it becomes a "Hard-Lock" (status: Approved), and the system generates a secure PDF permit with a QR code.
+## 2. Four Strict Workflow Phases
+1.  **Setup (Fase 1):** Admin_Unit configures the approval chain (who approves first, second, etc.) and specifies document requirements (e.g., "Proposal is mandatory") for their own rooms.
+2.  **Pengajuan (Fase 2):** User selects a room and time. System auto-checks conflicts. If available, it creates a "Soft-Lock" (status: Pending) to reserve the slot temporarily while the user uploads documents.
+3.  **Persetujuan (Fase 3):** Booking goes through the defined Approver chain. Approvals advance the step. Rejections drop the status to 'Revising' and record logs.
+4.  **Finalisasi (Fase 4):** Once all steps are approved, the status changes to "Hard-Lock" (Approved), and the system generates a secure PDF permit with a QR code.
 
-## Key Security & Business Logics
-- **Anti-Overlap:** Uses Soft-Locking (draft state for X minutes) and Hard-Locking (Approved).
-- **Atomic Transactions:** Uses Laravel's `lockForUpdate()` when validating/approving to handle race conditions perfectly.
-- **Strict Typing:** Must strictly validate inputs for PostgreSQL integer/UUID formats.
-- **Hierarchical Self-Referencing Units:** Units have `parent_id` and `level` (Pusat, Jurusan, Organisasi). Rooms belong to units via `unit_id` to strictly silo access.
+## 3. Backend & Security Directives (ZERO TOLERANCE)
+* **Anti-Overlap Guard:** You **MUST ALWAYS** use Laravel's `DB::transaction()` and pessimistic locking (`lockForUpdate()`) when inserting or validating bookings to prevent race conditions at the millisecond level.
+* **Audit Trail:** Any change to a booking's status **MUST** be accompanied by inserting a record into the `booking_logs` table (using `LoggerService::logAction`). Do not change a status without logging it.
+* **Strict Typing:** Must strictly validate inputs for PostgreSQL. IDs are standard Big Integers (not UUIDs). Ensure foreign keys match `unsignedBigInteger`.
+* **Ownership Check:** Every eloquent query in Admin/Approver controllers **MUST** include an ownership `where` clause (e.g., matching `unit_id`). Never use `Model::find($id)` without verifying the user's right to access it.
 
 </laravel-boost-guidelines>
