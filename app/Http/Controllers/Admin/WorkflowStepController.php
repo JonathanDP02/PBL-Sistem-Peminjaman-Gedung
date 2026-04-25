@@ -10,34 +10,33 @@ use Illuminate\Support\Facades\Auth;
 
 class WorkflowStepController extends Controller
 {
+    public function index()
+    {
+        $user = Auth::user();
+        $query = Workflow::query()->withCount(['steps', 'requirements']);
+
+        if ($user->role->name === 'Admin_Unit') {
+            $query->where('unit_id', $user->unit_id);
+        }
+
+        return response()->json($query->get());
+    }
+
     /**
      * Store a newly created workflow step.
      */
     public function store(Request $request)
     {
-        $user = Auth::user();
-
-        if ($user->role->name !== 'Admin_Unit') {
-            abort(403, 'Hanya Admin Unit yang dapat menambah workflow step');
-        }
-
-        $workflow = Workflow::findOrFail($request->workflow_id);
-
-        // Pastikan workflow milik unit user
-        if ($workflow->unit_id !== $user->unit_id) {
-            abort(403, 'Anda tidak memiliki akses ke workflow unit lain');
-        }
-
         $validated = $request->validate([
-            'workflow_id' => 'required|exists:workflows,id',
-            'position_id' => 'required|exists:positions,id',
-            'step_order' => 'required|integer|min:1',
-            'requires_attachment' => 'nullable|boolean',
+        'name' => 'required|string|max:255',
+        'description' => 'nullable|string',
         ]);
 
-        $validated['requires_attachment'] = (bool) $request->input('requires_attachment', false);
-
-        return WorkflowStep::create($validated);
+        $validated['unit_id'] = Auth::user()->unit_id;
+        
+        $workflow = Workflow::create($validated);
+        
+        return response()->json($workflow, 201);
     }
 
     /**

@@ -2,39 +2,41 @@
 
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\WorkflowController;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\RoomController;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\BookingController;
+use App\Http\Controllers\Admin\WorkflowRequirementController;
+use App\Http\Controllers\Admin\WorkflowStepController;
 use App\Http\Controllers\ApprovalController;
 use App\Http\Controllers\BookingAttachmentController;
-
-use App\Models\Building;
+use App\Http\Controllers\BookingController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RoomController;
 use App\Models\Booking;
+use App\Models\Building;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Route;
 
 // Guest
 Route::get('/', function () {
     $startOfWeek = Carbon::now()->startOfWeek();
     $endOfWeek = Carbon::now()->endOfWeek();
-    
+
     $bookings = Booking::with('room')
         ->whereBetween('booking_date', [$startOfWeek, $endOfWeek])
         ->whereIn('status', ['Approved', 'Pending'])
         ->orderBy('start_time')
         ->get();
-        
+
     $weekDates = collect();
     for ($i = 0; $i < 7; $i++) {
         $weekDates->push($startOfWeek->copy()->addDays($i));
     }
-    
+
     return view('welcome', compact('bookings', 'weekDates'));
 })->name('welcome');
 
 Route::get('ruangan', function () {
     $buildings = Building::with('rooms')->get();
+
     return view('ruangan', compact('buildings'));
 })->name('ruangan');
 
@@ -46,6 +48,7 @@ Route::get('/dashboard', function () {
         'Approver' => 'user.approver.dashboard',
         'User' => 'user.peminjam.dashboard',
     };
+
     return view($view);
 })->middleware('auth')->name('dashboard');
 
@@ -56,6 +59,7 @@ Route::get('/riwayat', function () {
         'User' => 'user.peminjam.riwayat',
         default => 'user.peminjam.riwayat',
     };
+
     return view($view);
 })->middleware('auth')->name('riwayat');
 
@@ -65,12 +69,13 @@ Route::get('/kelola-user', function () {
         'SuperAdmin','Admin_Unit' => 'user.admin.kelola-user',
         default => 'user.peminjam.kelola-user',
     };
+
     return view($view);
 })->middleware('auth')->name('kelola-user');
 
 // ======
 // SUPER ADMIN
-Route::middleware(['auth', 'checkRole:SuperAdmin'])->prefix('admin')->group(function () {
+Route::middleware(['auth', 'checkRole:SuperAdmin'])->prefix('superadmin')->group(function () {
     Route::get('/fasilitas', function () {
         return view('user.superadmin.fasilitas');
     })->name('fasilitas');
@@ -93,12 +98,9 @@ Route::middleware(['auth', 'checkRole:SuperAdmin,Admin_Unit'])->prefix('admin/ap
     Route::get('/units', [UserController::class, 'getUnitsDropdown']);
     Route::get('/roles', [UserController::class, 'getRolesDropdown']);
     Route::get('/positions', [UserController::class, 'getPositionsDropdown']);
-
-    // Workflow API Routes
-    Route::get('/workflows/{id}/requirements', [WorkflowController::class, 'showRequirements']);
 });
 
-Route::middleware(['auth', 'checkRole:Admin_Unit'])->prefix('admin')->group(function () {
+Route::middleware(['auth', 'checkRole:Admin_Unit'])->prefix('admin_unit')->group(function () {
     Route::get('/laporan', function () {
         return view('user.admin_unit.laporan');
     })->name('laporan');
@@ -111,13 +113,38 @@ Route::middleware(['auth', 'checkRole:Admin_Unit'])->prefix('admin')->group(func
         return view('user.admin_unit.pemblokiranRuangan');
     })->name('pemblokiranRuangan');
 
-    Route::get('/workflow-builder', function () {
+    Route::get('/workflows-builder', function () {
         return view('user.admin_unit.workflowsBuilder');
     })->name('workflowsBuilder');
-    
-    Route::get('/workflow-index', function () {
-        return view('user.admin_unit.workflows-index');
+
+    Route::get('/workflows-index', function () {
+        return view('user.admin_unit.workflowsIndex');
     })->name('workflowsIndex');
+
+    Route::prefix('api')->group(function () {
+        // Master Data
+        Route::get('/positions', [WorkflowController::class, 'getPositions']);
+        
+        // Workflow Core
+        Route::get('/workflows', [WorkflowController::class, 'index']);
+        Route::post('/workflows', [WorkflowController::class, 'store']);
+        
+        // Workflow Parameterized (Dilindungi Regex Mutlak)
+        Route::get('/workflows/{id}', [WorkflowController::class, 'show'])->where('id', '[0-9]+');
+        Route::put('/workflows/{id}', [WorkflowController::class, 'update'])->where('id', '[0-9]+');
+        Route::delete('/workflows/{id}', [WorkflowController::class, 'destroy'])->where('id', '[0-9]+');
+        Route::post('/workflows/{id}/sync-details', [WorkflowController::class, 'syncDetails'])->where('id', '[0-9]+');
+        Route::get('/workflows/{id}/requirements', [WorkflowController::class, 'showRequirements'])->where('id', '[0-9]+');
+
+        // Jika Ota/Febri masih butuh Controller Terpisah untuk API spesifik, pastikan ada Regex:
+        Route::post('/workflow-requirements', [WorkflowRequirementController::class, 'store']);
+        Route::put('/workflow-requirements/{id}', [WorkflowRequirementController::class, 'update'])->where('id', '[0-9]+');
+        Route::delete('/workflow-requirements/{id}', [WorkflowRequirementController::class, 'destroy'])->where('id', '[0-9]+');
+
+        Route::post('/workflow-steps', [WorkflowStepController::class, 'store']);
+        Route::put('/workflow-steps/{id}', [WorkflowStepController::class, 'update'])->where('id', '[0-9]+');
+        Route::delete('/workflow-steps/{id}', [WorkflowStepController::class, 'destroy'])->where('id', '[0-9]+');
+    });
 });
 
 // APPROVER
@@ -126,9 +153,9 @@ Route::middleware(['auth', 'checkRole:Approver'])->prefix('approver')->group(fun
         return view('user.approver.meja-kerja');
     })->name('meja-kerja');
 
-    Route::get('/approvals',                    [ApprovalController::class, 'index'])   ->name('approval.index');
-    Route::post('/approvals/{id}/approve',      [ApprovalController::class, 'approve']) ->name('approval.approve');
-    Route::post('/approvals/{id}/reject',       [ApprovalController::class, 'reject'])  ->name('approval.reject');
+    Route::get('/approvals', [ApprovalController::class, 'index'])->name('approval.index');
+    Route::post('/approvals/{id}/approve', [ApprovalController::class, 'approve'])->name('approval.approve');
+    Route::post('/approvals/{id}/reject', [ApprovalController::class, 'reject'])->name('approval.reject');
 });
 
 // USER / PEMINJAM
@@ -149,11 +176,11 @@ Route::middleware(['auth', 'checkRole:User'])->prefix('user')->group(function ()
         return view('user.peminjam.detail');
     })->name('detail');
 
-    Route::get('/bookings',                [BookingController::class, 'index'])   ->name('booking.index');
-    Route::get('/bookings/create',         [BookingController::class, 'create'])  ->name('booking.create');
-    Route::post('/bookings',               [BookingController::class, 'store'])   ->name('booking.store');
-    Route::get('/bookings/{id}',           [BookingController::class, 'show'])    ->name('booking.show');
-    Route::patch('/bookings/{id}/cancel',  [BookingController::class, 'cancel'])  ->name('booking.cancel');
+    Route::get('/bookings', [BookingController::class, 'index'])->name('booking.index');
+    Route::get('/bookings/create', [BookingController::class, 'create'])->name('booking.create');
+    Route::post('/bookings', [BookingController::class, 'store'])->name('booking.store');
+    Route::get('/bookings/{id}', [BookingController::class, 'show'])->name('booking.show');
+    Route::patch('/bookings/{id}/cancel', [BookingController::class, 'cancel'])->name('booking.cancel');
     Route::get('/bookings/{id}/attachments/{attachmentId}', [BookingAttachmentController::class, 'show'])->name('booking.attachment.show');
 });
 

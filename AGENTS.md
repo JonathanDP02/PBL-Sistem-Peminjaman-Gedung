@@ -196,4 +196,197 @@ You are working on **Space.in**, a modern, action-oriented Workflow Engine for R
 * **Strict Typing:** Must strictly validate inputs for PostgreSQL. IDs are standard Big Integers (not UUIDs). Ensure foreign keys match `unsignedBigInteger`.
 * **Ownership Check:** Every eloquent query in Admin/Approver controllers **MUST** include an ownership `where` clause (e.g., matching `unit_id`). Never use `Model::find($id)` without verifying the user's right to access it.
 
+# Space.in - Sistem Peminjaman Gedung (Comprehensive Overview)
+
+## 1. IDENTITAS & KONSEP CORE
+- **Nama Produk:** Space.in (Workflow Engine, bukan sekadar form digital)
+- **Target:** Politeknik Negeri Malang
+- **Karakteristik:** Action-oriented, Gen Z friendly, Enterprise-level security
+
+## 2. ARSITEKTUR DATABASE (PostgreSQL)
+
+### Hierarki Unit (Self-referencing)
+```
+Pusat (root)
+├── Jurusan TI
+│   ├── HMTI (Organisasi)
+│   └── BEM TI (Organisasi)
+├── Jurusan Sipil
+│   ├── HM Sipil (Organisasi)
+│   └── BEM Sipil (Organisasi)
+└── Jurusan Elektro
+    ├── HM Elektro (Organisasi)
+    └── BEM Elektro (Organisasi)
+```
+
+### Kunci Model Relations
+- **Roles (4 tipe):** SuperAdmin, Admin_Unit, Approver, User
+- **Units:** parent_id nullable (self-referencing), level enum (Pusat/Jurusan/Organisasi)
+- **Users:** unit_id FK, position_id FK (nullable, untuk Approver), role_id FK
+- **Rooms:** building_id FK, unit_id FK (CRUCIAL: pemilik ruang)
+- **Workflow:** unit_id FK (alur kerja per unit), hasMany WorkflowSteps
+- **WorkflowSteps:** workflow_id FK, position_id FK, requires_attachment bool, step_order
+- **Bookings:** user_id, room_id, workflow_id, current_step, status, revision_count
+- **Approvals:** booking_id, approver_id, step_id, approval_status, signature_image, qr_code, attempt
+
+## 3. EMPAT PERAN & JOB DESK
+
+### SuperAdmin (Administrator Pusat)
+**Jangkauan:** Seluruh sistem
+**Tanggung Jawab:**
+- Kelola Master Data Global: Gedung (buildings) & Ruangan (rooms)
+- Tentukan unit_id (kepemilikan) setiap ruangan → Siapa boleh manage apa
+- Setup Libur Nasional (Global Blocking)
+- Kelola semua pengguna (global) → assign role & unit
+- View audit logs sistem
+
+**Oto Bisnis:** Hanya SuperAdmin yang boleh CREATE/DELETE buildings & rooms
+
+### Admin_Unit (Administrator Lokal - Jurusan/Organisasi)
+**Jangkauan:** Unit-nya sendiri + child units
+**Tanggung Jawab:**
+- Kelola pengguna dalam unit-nya (Peminjam & Approver lokal)
+- Setup Alur Persetujuan (Workflow) untuk ruangan unit-nya
+- Setup Syarat Dokumen (Workflow Requirements) per alur
+- Definisi Kewajiban Lampiran Approver (requires_attachment per step)
+- Blokir jadwal / Maintenance ruangan unit-nya (via dummy booking)
+- TIDAK boleh: Mengatur workflow ruangan milik unit lain, assign SuperAdmin role
+
+### Approver (Pejabat Persetujuan)
+**Jangkauan:** Booking yang sampai di "meja"-nya (based on position)
+**Tanggung Jawab:**
+- Review Pengajuan Masuk (inbox approval)
+- Setuju: Lanjut ke pejabat berikutnya (current_step++)
+- Tolak: Wajib input alasan (notes) & status → Revised
+- Upload Lampiran (jika requires_attachment = true)
+- Download Surat Izin Final & Surat Disposisi (generated otomatis)
+
+### User/Peminjam (Mahasiswa/Staf)
+**Jangkauan:** Personal bookings hanya
+**Tanggung Jawab:**
+- Cari ruang & lihat kalender ketersediaan
+- Ajukan Peminjaman Ruangan
+  1. Pilih jadwal → Auto-check bentrok
+  2. Soft-Lock (kunci sementara saat isi form)
+  3. Upload dokumen syarat (WorkflowRequirements wajib)
+  4. Submit
+- Revisi Dokumen (jika Approver tolak)
+- Download surat final
+
+## 4. EMPAT FASE TEGAS ALUR KERJA
+
+### Fase 1: SETUP (Admin_Unit)
+Admin_Unit menyusun "rantai persetujuan" & dokumen syarat
+```
+Workflow (per unit)
+├── Step 1: Position X, requires_attachment: false
+├── Step 2: Position Y, requires_attachment: false
+└── Step 3: Position Z, requires_attachment: true ← Harus upload surat
+WorkflowRequirements
+├── Proposal Acara (is_mandatory: true)
+├── Surat Resmi dari Unit (is_mandatory: true)
+└── Persetujuan Dosen Pembimbing (is_mandatory: false)
+```
+
+**Aturan Emas:** Admin Organisasi (BEM/HMTI) TIDAK boleh setup workflow untuk ruangan milik Pusat/Jurusan. Sistem auto-apply workflow pemilik ruangan berdasarkan unit_id rooms table.
+
+### Fase 2: PENGAJUAN (Peminjam)
+User membuat booking dengan validasi ketat
+```
+1. Pilih Ruangan → Sistem auto-detect: unit_id → Cari workflow untuk unit ini
+2. Pilih Jadwal → Query: SELECT * FROM bookings WHERE room_id = ? 
+   AND booking_date = ? AND ((start_time <= ? AND end_time > ?) OR (...))
+   → Conflict? Jika ya: Reject. Jika tidak: Soft-Lock (buat record temp).
+3. Upload Dokumen Syarat → Validasi vs WorkflowRequirements (wajib) 
+4. Submit → Status: Pending, current_step: 1, revision_count: 0
+```
+
+### Fase 3: PERSETUJUAN (Approver Chain)
+Setiap langkah adalah satu pejabat, satu keputusan
+```
+Approver 1 (Step 1 - Kaprodi):
+- Review dokumen & booking details
+- Approve → INSERT approval (status: Approved) → current_step++, lanjut Step 2
+- Reject → INSERT approval (status: Rejected) → booking status: Rejected, notes wajib
+
+Approver 2 (Step 2 - Ketua Jurusan):
+- [Same logic as Approver 1]
+
+Approver 3 (Step 3 - Wakil Direktur):
+- [Step ini: requires_attachment = true]
+- Tombol "Approve" TERKUNCI sampai upload lampiran (surat disposisi)
+- Upload → Unlock → Approve → Lanjut to validation (lihat Fase 4)
+```
+
+### Fase 4: FINALISASI (Sistem Auto)
+Semua setuju? → Hard-Lock
+```
+1. Query: SELECT * FROM approvals WHERE booking_id = ? GROUP BY step_id
+   Check: Semua step ada approval dengan status Approved?
+2. Jika yes:
+   - booking.status = Approved
+   - booking.current_step = MAX(step_order) + 1 (selesai)
+   - Generate Surat Izin PDF (dengan QR Code validasi)
+   - Insert booking_log: action = FINALIZED
+3. Jika no:
+   - Wait (state: Pending di step berikutnya)
+```
+
+## 5. MEKANISME KEAMANAN (Soft-Lock & Hard-Lock)
+
+### Soft-Lock (Kunci Sementara)
+- Triggered saat user start pengisian data booking
+- INSERT booking dengan status: Draft
+- Reservasi ruangan untuk X menit (cegah double-submit)
+- Jika user tidak finish: Cleanup job akan hapus draft stale
+
+### Hard-Lock (Kunci Permanen)
+- Triggered saat booking status: Approved (finalisasi)
+- Ruangan SUDAH TERJUAL untuk waktu tersebut
+- Tidak bisa override/cancel kecuali SuperAdmin
+- Atomic Transaction: lockForUpdate() Laravel untuk race condition
+
+## 6. HANDLING KASUS NYATA
+
+### Blokir Jadwal / Maintenance
+**Siapa:** Admin Unit pemilik ruangan
+**Cara:** Membuat transaksi booking biasa dengan event_name: "Maintenance"
+- Bypass approval chain (skip workflow)
+- Hard-Lock langsung
+- Status: Approved
+
+### Libur Nasional (Global Blocking)
+**Siapa:** SuperAdmin
+**Cara:** Hybrid method
+1. Tarik API Kalender Nasional → Review/edit manual
+2. Generate booking massal ke tabel bookings (event_name: "Libur Nasional")
+3. Set status: Approved untuk semua ruangan sekaligus
+4. User tidak bisa booking di hari ini
+
+### Revisi Dokumen (User Reject)
+**Trigger:** Approver tolak di Step N
+**Flow:**
+1. INSERT approval (status: Rejected, notes: reason)
+2. booking.status = Revised, revision_count++
+3. User see notification: "Dokumen ditolak, alasan: [notes]"
+4. User upload dokumen baru
+5. Re-submit → Reset current_step = 1, attempt++ (di approvals table)
+
+## 7. DATABASE INDICES (Performance)
+- `idx_bookings_conflict` pada (room_id, booking_date, start_time, end_time, status)
+  → Fast conflict detection saat peminjam pilih jadwal
+- `idx_approvals_tracking` pada (booking_id, step_id)
+  → Fast audit trail lookup
+
+## 8. TESTING SEED DATA
+All passwords default: `12345`
+- superadmin@spacein.test | SuperAdmin | Pusat
+- admin.ti@spacein.test | Admin_Unit | Jurusan TI
+- user@spacein.test | User | HMTI
+- kajur.ti@spacein.test | Approver | Jurusan TI
+
+Alur pre-built:
+- "Peminjaman JTI": Kaprodi TI → Ketua JTI → Wakil Direktur (3 step)
+- "Peminjaman Auditorium": Ketua JTI → Wakil Direktur (2 step, last require attachment)
+
 </laravel-boost-guidelines>
