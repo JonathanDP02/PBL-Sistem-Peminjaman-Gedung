@@ -10,10 +10,33 @@ use App\Http\Controllers\BookingController;
 use App\Http\Controllers\ApprovalController;
 use App\Http\Controllers\BookingAttachmentController;
 
+use App\Models\Building;
+use App\Models\Booking;
+use Carbon\Carbon;
+
 // Guest
 Route::get('/', function () {
-    return view('welcome');
-});
+    $startOfWeek = Carbon::now()->startOfWeek();
+    $endOfWeek = Carbon::now()->endOfWeek();
+    
+    $bookings = Booking::with('room')
+        ->whereBetween('booking_date', [$startOfWeek, $endOfWeek])
+        ->whereIn('status', ['Approved', 'Pending'])
+        ->orderBy('start_time')
+        ->get();
+        
+    $weekDates = collect();
+    for ($i = 0; $i < 7; $i++) {
+        $weekDates->push($startOfWeek->copy()->addDays($i));
+    }
+    
+    return view('welcome', compact('bookings', 'weekDates'));
+})->name('welcome');
+
+Route::get('ruangan', function () {
+    $buildings = Building::with('rooms')->get();
+    return view('ruangan', compact('buildings'));
+})->name('ruangan');
 
 // General Dashboard
 Route::get('/dashboard', function () {
@@ -89,8 +112,12 @@ Route::middleware(['auth', 'checkRole:Admin_Unit'])->prefix('admin')->group(func
     })->name('pemblokiranRuangan');
 
     Route::get('/workflow-builder', function () {
-        return view('user.admin_unit.workflowBuilder');
-    })->name('workflowBuilder');
+        return view('user.admin_unit.workflowsBuilder');
+    })->name('workflowsBuilder');
+    
+    Route::get('/workflow-index', function () {
+        return view('user.admin_unit.workflows-index');
+    })->name('workflowsIndex');
 });
 
 // APPROVER

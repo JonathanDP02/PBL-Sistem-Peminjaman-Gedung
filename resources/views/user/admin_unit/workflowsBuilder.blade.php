@@ -57,7 +57,7 @@
             <!-- Workflow Grid -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <template x-for="workflow in filteredWorkflows" :key="workflow.id">
-                    <a href="{{ route('workflows-index') }}" class="group block h-full">
+                    <a href="{{ route('workflowsIndex') }}" class="group block h-full">
                         <div class="bg-white dark:bg-kinetic-card rounded-xl border border-slate-200 dark:border-kinetic-border p-6 hover:shadow-lg hover:border-teal-500 dark:hover:border-teal-400 transition-all h-full flex flex-col relative overflow-hidden">
                             <!-- Decorative bg pattern -->
                             <div class="absolute -right-6 -top-6 w-24 h-24 bg-teal-50 dark:bg-teal-900/20 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-500"></div>
