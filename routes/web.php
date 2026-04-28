@@ -42,10 +42,15 @@ Route::get('ruangan', function () {
 
 // General Dashboard
 Route::get('/dashboard', function () {
-    $view = match (Auth::user()->role->name) {
+    $approver = Auth::user();
+
+    if ($approver->role->name === 'Approver') {
+        return app(ApprovalController::class)->dashboard(request());
+    }
+
+    $view = match ($approver->role->name) {
         'SuperAdmin' => 'user.superadmin.dashboard',
         'Admin_Unit' => 'user.admin_unit.dashboard',
-        'Approver' => 'user.approver.dashboard',
         'User' => 'user.peminjam.dashboard',
     };
 
@@ -62,6 +67,13 @@ Route::get('/riwayat', function () {
 
     return view($view);
 })->middleware('auth')->name('riwayat');
+
+// Approver Routes
+Route::middleware(['auth', 'checkRole:Approver'])->group(function () {
+    Route::get('/approvals/{id}', function ($id) {
+        return view('user.approver.detail', ['booking_id' => $id]);
+    })->name('approvals.show');
+});
 
 //
 Route::get('/kelola-user', function () {
@@ -124,11 +136,11 @@ Route::middleware(['auth', 'checkRole:Admin_Unit'])->prefix('admin_unit')->group
     Route::prefix('api')->group(function () {
         // Master Data
         Route::get('/positions', [WorkflowController::class, 'getPositions']);
-        
+
         // Workflow Core
         Route::get('/workflows', [WorkflowController::class, 'index']);
         Route::post('/workflows', [WorkflowController::class, 'store']);
-        
+
         // Workflow Parameterized (Dilindungi Regex Mutlak)
         Route::get('/workflows/{id}', [WorkflowController::class, 'show'])->where('id', '[0-9]+');
         Route::put('/workflows/{id}', [WorkflowController::class, 'update'])->where('id', '[0-9]+');
