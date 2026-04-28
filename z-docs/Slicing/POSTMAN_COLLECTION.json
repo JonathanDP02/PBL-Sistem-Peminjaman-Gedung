@@ -1,0 +1,220 @@
+{
+  "info": {
+    "_postman_id": "spacein-api-collection-2026",
+    "name": "Space.in API - Mock Collection",
+    "description": "Complete API documentation with mock responses for Space.in (Sistem Peminjaman Gedung)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"kajur.ti@spacein.test\",\n  \"password\": \"12345\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "login"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "200 Success",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"kajur.ti@spacein.test\",\n  \"password\": \"12345\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/login",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "login"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [],
+              "body": "{\n  \"success\": true,\n  \"user\": {\n    \"id\": 3,\n    \"name\": \"Dr. Bambang Suryanto\",\n    \"email\": \"kajur.ti@spacein.test\",\n    \"role\": \"Approver\",\n    \"unit\": {\n      \"id\": 2,\n      \"name\": \"Jurusan Teknik Informatika\",\n      \"level\": \"Jurusan\"\n    },\n    \"position\": {\n      \"id\": 1,\n      \"name\": \"Ketua Jurusan\"\n    },\n    \"avatar_url\": \"https://api.spacein.test/storage/avatars/user3.jpg\"\n  },\n  \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Approver Dashboard - Dasbor Pejabat",
+      "item": [
+        {
+          "name": "GET Pending Approvals (Meja Kerja)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/approvals/pending?sort=-created_at&filter=all",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "approvals",
+                "pending"
+              ],
+              "query": [
+                {
+                  "key": "sort",
+                  "value": "-created_at",
+                  "disabled": false
+                },
+                {
+                  "key": "filter",
+                  "value": "all",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Fetch all pending approvals for current approver (Meja Kerja / Work Desk)"
+          },
+          "response": [
+            {
+              "name": "200 Success with Pending Bookings",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/approvals/pending?sort=-created_at",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "approvals",
+                    "pending"
+                  ],
+                  "query": [
+                    {
+                      "key": "sort",
+                      "value": "-created_at"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [],
+              "body": "{\n  \"success\": true,\n  \"count\": 3,\n  \"data\": [\n    {\n      \"id\": 1,\n      \"booking\": {\n        \"id\": 5,\n        \"event_name\": \"Seminar Cybersecurity 2026\",\n        \"booking_date\": \"2026-05-15\",\n        \"start_time\": \"09:00\",\n        \"end_time\": \"12:00\",\n        \"status\": \"Pending\",\n        \"current_step\": 2,\n        \"created_at\": \"2026-04-28T10:30:00Z\"\n      },\n      \"room\": {\n        \"id\": 3,\n        \"room_name\": \"Auditorium Utama\",\n        \"capacity\": 500,\n        \"building\": {\n          \"id\": 1,\n          \"building_name\": \"Gedung Rektorat\"\n        }\n      },\n      \"peminjam\": {\n        \"id\": 8,\n        \"name\": \"Rini Kusuma\",\n        \"email\": \"rini.kusuma@student.polinema.ac.id\",\n        \"unit\": {\n          \"id\": 3,\n          \"name\": \"HMTI\"\n        }\n      },\n      \"current_approver_required\": {\n        \"step_order\": 2,\n        \"position\": {\n          \"id\": 1,\n          \"name\": \"Ketua Jurusan\"\n        },\n        \"requires_attachment\": true\n      },\n      \"priority_indicator\": \"high\",\n      \"time_remaining\": \"17 days\"\n    },\n    {\n      \"id\": 2,\n      \"booking\": {\n        \"id\": 6,\n        \"event_name\": \"Workshop Frontend Development\",\n        \"booking_date\": \"2026-04-30\",\n        \"start_time\": \"14:00\",\n        \"end_time\": \"17:00\",\n        \"status\": \"Pending\",\n        \"current_step\": 1,\n        \"created_at\": \"2026-04-28T09:00:00Z\"\n      },\n      \"room\": {\n        \"id\": 5,\n        \"room_name\": \"Lab Komputer A\",\n        \"capacity\": 30,\n        \"building\": {\n          \"id\": 2,\n          \"building_name\": \"Gedung Akademik Blok C\"\n        }\n      },\n      \"peminjam\": {\n        \"id\": 9,\n        \"name\": \"Budi Hartono\",\n        \"email\": \"budi.hartono@student.polinema.ac.id\",\n        \"unit\": {\n          \"id\": 4,\n          \"name\": \"BEM TI\"\n        }\n      },\n      \"current_approver_required\": {\n        \"step_order\": 1,\n        \"position\": {\n          \"id\": 2,\n          \"name\": \"Kaprodi\"\n        },\n        \"requires_attachment\": false\n      },\n      \"priority_indicator\": \"normal\",\n      \"time_remaining\": \"2 days\"\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET Approval Detail",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/approvals/5",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "approvals",
+                "5"
+              ]
+            },
+            "description": "Get detailed booking for approval review"
+          },
+          "response": [
+            {
+              "name": "200 Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/approvals/5",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "approvals",
+                    "5"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [],
+              "body": "{\n  \"success\": true,\n  \"booking\": {\n    \"id\": 5,\n    \"event_name\": \"Seminar Cybersecurity 2026\",\n    \"event_description\": \"Seminar internasional dengan pembicara dari Google & Microsoft\",\n    \"booking_date\": \"2026-05-15\",\n    \"start_time\": \"09:00\",\n    \"end_time\": \"12:00\",\n    \"status\": \"Pending\",\n    \"current_step\": 2,\n    \"room\": {\n      \"id\": 3,\n      \"room_name\": \"Auditorium Utama\",\n      \"capacity\": 500,\n      \"building\": {\n        \"id\": 1,\n        \"building_name\": \"Gedung Rektorat\",\n        \"address\": \"Jl. Raya Tlogomas No. 246, Malang\"\n      },\n      \"facilities\": [\"Projector 4K\", \"Sound System\", \"AC\", \"WiFi\"]\n    },\n    \"peminjam\": {\n      \"id\": 8,\n      \"name\": \"Rini Kusuma\",\n      \"nim\": \"2141720123\",\n      \"email\": \"rini.kusuma@student.polinema.ac.id\"\n    },\n    \"approval_timeline\": {\n      \"step_1\": {\n        \"position\": \"Kaprodi\",\n        \"approver_name\": \"Dr. Ahmad Syaiful Rohman\",\n        \"approval_status\": \"Approved\",\n        \"approved_at\": \"2026-04-28T08:15:00Z\",\n        \"notes\": \"Disetujui. Sudah sesuai dengan SOP.\"\n      },\n      \"step_2\": {\n        \"position\": \"Ketua Jurusan\",\n        \"approval_status\": \"Pending\",\n        \"requires_attachment\": true\n      }\n    },\n    \"documents\": [\n      {\n        \"id\": 10,\n        \"document_name\": \"Proposal Acara\",\n        \"file_url\": \"storage/bookings/5/proposal_seminar.pdf\",\n        \"uploaded_at\": \"2026-04-28T10:35:00Z\"\n      },\n      {\n        \"id\": 11,\n        \"document_name\": \"Surat Resmi dari HMTI\",\n        \"file_url\": \"storage/bookings/5/surat_hmti.pdf\",\n        \"uploaded_at\": \"2026-04-28T10:38:00Z\"\n      }\n    ]\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "POST Approve Booking",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notes\": \"Disetujui. Dokumentasi lengkap dan terverifikasi.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/approvals/5/approve",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "approvals",
+                "5",\n                \"approve\"\n              ]\n            }\n          },\n          \"response\": [\n            {\n              \"name\": \"200 Success\",\n              \"originalRequest\": {\n                \"method\": \"POST\",\n                \"header\": [],\n                \"body\": {\n                  \"mode\": \"raw\",\n                  \"raw\": \"{\\n  \\\"notes\\\": \\\"Disetujui. Dokumentasi lengkap dan terverifikasi.\\\"\\n}\"\n                },\n                \"url\": {\n                  \"raw\": \"{{base_url}}/api/approvals/5/approve\",\n                  \"host\": [\n                    \"{{base_url}}\"\n                  ],\n                  \"path\": [\n                    \"api\",\n                    \"approvals\",\n                    \"5\",\n                    \"approve\"\n                  ]\n                }\n              },\n              \"status\": \"OK\",\n              \"code\": 200,\n              \"_postman_previewlanguage\": \"json\",\n              \"header\": [],\n              \"body\": \"{\\n  \\\"success\\\": true,\\n  \\\"message\\\": \\\"Booking berhasil disetujui.\\\",\\n  \\\"booking\\\": {\\n    \\\"id\\\": 5,\\n    \\\"status\\\": \\\"Pending\\\",\\n    \\\"current_step\\\": 3,\\n    \\\"next_approver\\\": {\\n      \\\"step_order\\\": 3,\\n      \\\"position\\\": \\\"Wakil Direktur\\\"\\n    }\\n  },\\n  \\\"log\\\": {\\n    \\\"id\\\": 45,\\n    \\\"action\\\": \\\"APPROVED\\\",\\n    \\\"actor\\\": \\\"Dr. Bambang Suryanto\\\",\\n    \\\"created_at\\\": \\\"2026-04-28T11:00:00Z\\\"\\n  }\\n}\"\n            }\n          ]\n        },\n        {\n          \"name\": \"POST Reject Booking\",\n          \"request\": {\n            \"method\": \"POST\",\n            \"header\": [\n              {\n                \"key\": \"Authorization\",\n                \"value\": \"Bearer {{token}}\"\n              },\n              {\n                \"key\": \"Content-Type\",\n                \"value\": \"application/json\"\n              }\n            ],\n            \"body\": {\n              \"mode\": \"raw\",\n              \"raw\": \"{\\n  \\\"notes\\\": \\\"Proposal belum memenuhi standar. Silakan perbaiki poin no. 3 dan kirim ulang.\\\"\\n}\"\n            },\n            \"url\": {\n              \"raw\": \"{{base_url}}/api/approvals/6/reject\",\n              \"host\": [\n                \"{{base_url}}\"\n              ],\n              \"path\": [\n                \"api\",\n                \"approvals\",\n                \"6\",\n                \"reject\"\n              ]\n            }\n          },\n          \"response\": [\n            {\n              \"name\": \"200 Success\",\n              \"originalRequest\": {\n                \"method\": \"POST\",\n                \"header\": [],\n                \"body\": {\n                  \"mode\": \"raw\",\n                  \"raw\": \"{\\n  \\\"notes\\\": \\\"Proposal belum memenuhi standar.\\\"\\n}\"\n                },\n                \"url\": {\n                  \"raw\": \"{{base_url}}/api/approvals/6/reject\",\n                  \"host\": [\n                    \"{{base_url}}\"\n                  ],\n                  \"path\": [\n                    \"api\",\n                    \"approvals\",\n                    \"6\",\n                    \"reject\"\n                  ]\n                }\n              },\n              \"status\": \"OK\",\n              \"code\": 200,\n              \"_postman_previewlanguage\": \"json\",\n              \"header\": [],\n              \"body\": \"{\\n  \\\"success\\\": true,\\n  \\\"message\\\": \\\"Booking ditolak. Menunggu revisi dari peminjam.\\\",\\n  \\\"booking\\\": {\\n    \\\"id\\\": 6,\\n    \\\"status\\\": \\\"Revising\\\",\\n    \\\"revision_count\\\": 1\\n  }\\n}\"\n            }\n          ]\n        }\n      ]\n    },\n    {\n      \"name\": \"Room Management\",\n      \"item\": [\n        {\n          \"name\": \"GET Available Rooms\",\n          \"request\": {\n            \"method\": \"GET\",\n            \"header\": [\n              {\n                \"key\": \"Authorization\",\n                \"value\": \"Bearer {{token}}\"\n              }\n            ],\n            \"url\": {\n              \"raw\": \"{{base_url}}/api/rooms/available?date=2026-05-20&start=09:00&end=12:00\",\n              \"host\": [\n                \"{{base_url}}\"\n              ],\n              \"path\": [\n                \"api\",\n                \"rooms\",\n                \"available\"\n              ],\n              \"query\": [\n                {\n                  \"key\": \"date\",\n                  \"value\": \"2026-05-20\"\n                },\n                {\n                  \"key\": \"start\",\n                  \"value\": \"09:00\"\n                },\n                {\n                  \"key\": \"end\",\n                  \"value\": \"12:00\"\n                }\n              ]\n            }\n          },\n          \"response\": [\n            {\n              \"name\": \"200 Success\",\n              \"originalRequest\": {\n                \"method\": \"GET\",\n                \"header\": [],\n                \"url\": {\n                  \"raw\": \"{{base_url}}/api/rooms/available?date=2026-05-20&start=09:00&end=12:00\",\n                  \"host\": [\n                    \"{{base_url}}\"\n                  ],\n                  \"path\": [\n                    \"api\",\n                    \"rooms\",\n                    \"available\"\n                  ],\n                  \"query\": [\n                    {\n                      \"key\": \"date\",\n                      \"value\": \"2026-05-20\"\n                    },\n                    {\n                      \"key\": \"start\",\n                      \"value\": \"09:00\"\n                    },\n                    {\n                      \"key\": \"end\",\n                      \"value\": \"12:00\"\n                    }\n                  ]\n                }\n              },\n              \"status\": \"OK\",\n              \"code\": 200,\n              \"_postman_previewlanguage\": \"json\",\n              \"header\": [],\n              \"body\": \"{\\n  \\\"success\\\": true,\\n  \\\"count\\\": 4,\\n  \\\"available_rooms\\\": [\\n    {\\n      \\\"id\\\": 3,\\n      \\\"room_name\\\": \\\"Auditorium Utama\\\",\\n      \\\"room_code\\\": \\\"AUD-001\\\",\\n      \\\"capacity\\\": 500,\\n      \\\"building\\\": {\\n        \\\"id\\\": 1,\\n        \\\"building_name\\\": \\\"Gedung Rektorat\\\"\\n      },\\n      \\\"facilities\\\": [\\\"Projector 4K\\\", \\\"Sound System\\\", \\\"AC\\\", \\\"WiFi\\\"],\\n      \\\"booking_workflow\\\": {\\n        \\\"id\\\": 2,\\n        \\\"workflow_name\\\": \\\"Peminjaman Auditorium\\\",\\n        \\\"total_steps\\\": 2\\n      }\\n    },\\n    {\\n      \\\"id\\\": 5,\\n      \\\"room_name\\\": \\\"Lab Komputer A\\\",\\n      \\\"room_code\\\": \\\"LAB-A\\\",\\n      \\\"capacity\\\": 30,\\n      \\\"building\\\": {\\n        \\\"id\\\": 2,\\n        \\\"building_name\\\": \\\"Gedung Akademik Blok C\\\"\\n      },\\n      \\\"facilities\\\": [\\\"AC\\\", \\\"WiFi\\\", \\\"Komputer (30 unit)\\\", \\\"Proyektor\\\"],\\n      \\\"booking_workflow\\\": {\\n        \\\"id\\\": 1,\\n        \\\"workflow_name\\\": \\\"Peminjaman JTI\\\",\\n        \\\"total_steps\\\": 3\\n      }\\n    }\\n  ]\\n}\"\n            }\n          ]\n        }\n      ]\n    },\n    {\n      \"name\": \"Workflow Management\",\n      \"item\": [\n        {\n          \"name\": \"GET Workflow Requirements\",\n          \"request\": {\n            \"method\": \"GET\",\n            \"header\": [\n              {\n                \"key\": \"Authorization\",\n                \"value\": \"Bearer {{token}}\"\n              }\n            ],\n            \"url\": {\n              \"raw\": \"{{base_url}}/api/workflows/2/requirements\",\n              \"host\": [\n                \"{{base_url}}\"\n              ],\n              \"path\": [\n                \"api\",\n                \"workflows\",\n                \"2\",\n                \"requirements\"\n              ]\n            }\n          },\n          \"response\": [\n            {\n              \"name\": \"200 Success\",\n              \"originalRequest\": {\n                \"method\": \"GET\",\n                \"header\": [],\n                \"url\": {\n                  \"raw\": \"{{base_url}}/api/workflows/2/requirements\",\n                  \"host\": [\n                    \"{{base_url}}\"\n                  ],\n                  \"path\": [\n                    \"api\",\n                    \"workflows\",\n                    \"2\",\n                    \"requirements\"\n                  ]\n                }\n              },\n              \"status\": \"OK\",\n              \"code\": 200,\n              \"_postman_previewlanguage\": \"json\",\n              \"header\": [],\n              \"body\": \"{\\n  \\\"success\\\": true,\\n  \\\"workflow\\\": {\\n    \\\"id\\\": 2,\\n    \\\"name\\\": \\\"Peminjaman Auditorium\\\",\\n    \\\"total_steps\\\": 2\\n  },\\n  \\\"requirements\\\": [\\n    {\\n      \\\"id\\\": 1,\\n      \\\"document_name\\\": \\\"Proposal Acara\\\",\\n      \\\"is_mandatory\\\": true,\\n      \\\"max_file_size\\\": \\\"5 MB\\\",\\n      \\\"allowed_formats\\\": [\\\"pdf\\\", \\\"doc\\\", \\\"docx\\\"]\\n    },\\n    {\\n      \\\"id\\\": 2,\\n      \\\"document_name\\\": \\\"Surat Resmi dari Unit\\\",\\n      \\\"is_mandatory\\\": true,\\n      \\\"max_file_size\\\": \\\"5 MB\\\",\\n      \\\"allowed_formats\\\": [\\\"pdf\\\", \\\"doc\\\", \\\"docx\\\"]\\n    }\\n  ]\\n}\"\n            }\n          ]\n        }\n      ]\n    },\n    {\n      \"name\": \"Booking Management\",\n      \"item\": [\n        {\n          \"name\": \"GET Booking Detail\",\n          \"request\": {\n            \"method\": \"GET\",\n            \"header\": [\n              {\n                \"key\": \"Authorization\",\n                \"value\": \"Bearer {{token}}\"\n              }\n            ],\n            \"url\": {\n              \"raw\": \"{{base_url}}/api/bookings/5\",\n              \"host\": [\n                \"{{base_url}}\"\n              ],\n              \"path\": [\n                \"api\",\n                \"bookings\",\n                \"5\"\n              ]\n            }\n          },\n          \"response\": [\n            {\n              \"name\": \"200 Success\",\n              \"originalRequest\": {\n                \"method\": \"GET\",\n                \"header\": [],\n                \"url\": {\n                  \"raw\": \"{{base_url}}/api/bookings/5\",\n                  \"host\": [\n                    \"{{base_url}}\"\n                  ],\n                  \"path\": [\n                    \"api\",\n                    \"bookings\",\n                    \"5\"\n                  ]\n                }\n              },\n              \"status\": \"OK\",\n              \"code\": 200,\n              \"_postman_previewlanguage\": \"json\",\n              \"header\": [],\n              \"body\": \"{\\n  \\\"success\\\": true,\\n  \\\"booking\\\": {\\n    \\\"id\\\": 5,\\n    \\\"event_name\\\": \\\"Seminar Cybersecurity 2026\\\",\\n    \\\"booking_date\\\": \\\"2026-05-15\\\",\\n    \\\"start_time\\\": \\\"09:00\\\",\\n    \\\"end_time\\\": \\\"12:00\\\",\\n    \\\"status\\\": \\\"Pending\\\",\\n    \\\"current_step\\\": 2,\\n    \\\"room\\\": {\\n      \\\"id\\\": 3,\\n      \\\"room_name\\\": \\\"Auditorium Utama\\\",\\n      \\\"building\\\": \\\"Gedung Rektorat\\\"\\n    }\\n  }\\n}\"\n            }\n          ]\n        },\n        {\n          \"name\": \"GET Approval Timeline\",\n          \"request\": {\n            \"method\": \"GET\",\n            \"header\": [\n              {\n                \"key\": \"Authorization\",\n                \"value\": \"Bearer {{token}}\"\n              }\n            ],\n            \"url\": {\n              \"raw\": \"{{base_url}}/api/bookings/5/approvals\",\n              \"host\": [\n                \"{{base_url}}\"\n              ],\n              \"path\": [\n                \"api\",\n                \"bookings\",\n                \"5\",\n                \"approvals\"\n              ]\n            }\n          },\n          \"response\": [\n            {\n              \"name\": \"200 Success\",\n              \"originalRequest\": {\n                \"method\": \"GET\",\n                \"header\": [],\n                \"url\": {\n                  \"raw\": \"{{base_url}}/api/bookings/5/approvals\",\n                  \"host\": [\n                    \"{{base_url}}\"\n                  ],\n                  \"path\": [\n                    \"api\",\n                    \"bookings\",\n                    \"5\",\n                    \"approvals\"\n                  ]\n                }\n              },\n              \"status\": \"OK\",\n              \"code\": 200,\n              \"_postman_previewlanguage\": \"json\",\n              \"header\": [],\n              \"body\": \"{\\n  \\\"success\\\": true,\\n  \\\"timeline\\\": [\\n    {\\n      \\\"step_order\\\": 1,\\n      \\\"position\\\": \\\"Kaprodi\\\",\\n      \\\"approver_name\\\": \\\"Dr. Ahmad Syaiful Rohman\\\",\\n      \\\"approval_status\\\": \\\"Approved\\\",\\n      \\\"approved_at\\\": \\\"2026-04-28T08:15:00Z\\\",\\n      \\\"notes\\\": \\\"Disetujui. Sudah sesuai dengan SOP.\\\"\\n    },\\n    {\\n      \\\"step_order\\\": 2,\\n      \\\"position\\\": \\\"Ketua Jurusan\\\",\\n      \\\"approval_status\\\": \\\"Pending\\\",\\n      \\\"requires_attachment\\\": true\\n    }\\n  ]\\n}\"\n            }\n          ]\n        }\n      ]\n    }\n  ],\n  \"variable\": [\n    {\n      \"key\": \"base_url\",\n      \"value\": \"http://localhost:8000\",\n      \"type\": \"string\"\n    },\n    {\n      \"key\": \"token\",\n      \"value\": \"YOUR_JWT_TOKEN_HERE\",\n      \"type\": \"string\"\n    }\n  ]\n}\n

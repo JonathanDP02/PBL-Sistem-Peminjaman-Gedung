@@ -20,7 +20,7 @@ class BookingFactory extends Factory
         return [
             'user_id' => \App\Models\User::factory(),
             'room_id' => \App\Models\Room::factory(),
-            'workflow_id' => \App\Models\Workflow::factory(),
+            'workflow_id' => \App\Models\Workflow::factory()->has(\App\Models\WorkflowStep::factory()->count(3)),
             'event_name' => $this->faker->words(3, asText: true),
             'event_description' => $this->faker->sentence(),
             'booking_date' => $this->faker->dateTimeBetween('now', '+30 days')->format('Y-m-d'),
