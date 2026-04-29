@@ -97,6 +97,11 @@ Route::middleware(['auth', 'checkRole:SuperAdmin'])->prefix('superadmin')->group
     })->name('unit');
 
     Route::post('/user', [UserController::class, 'store'])->name('tambah-user.store');
+    
+    Route::get('/dashboard', [ApprovalController::class, 'dashboard'])->name('approver.dashboard');
+    Route::get('/approvals/pending', [ApprovalController::class, 'index'])->name('approval.index');
+    Route::post('/approvals/{booking_id}/approve', [ApprovalController::class, 'approve'])->name('approval.approve');
+    Route::post('/approvals/{booking_id}/reject', [ApprovalController::class, 'reject'])->name('approval.reject');
 });
 
 // API Routes for User Management - Accessible to SuperAdmin and Admin_Unit
