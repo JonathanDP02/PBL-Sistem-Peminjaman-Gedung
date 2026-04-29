@@ -229,6 +229,19 @@ class ApprovalController extends Controller
                 ->where('position_id', $positionId)
                 ->firstOrFail();
 
+            if ($currentStep->requires_attachment) {
+                $hasAttachment = BookingAttachment::where('booking_id', $booking->id)
+                    ->where('uploader_id', $approver->id)
+                    ->exists();
+
+                if (!$hasAttachment) {
+                    throw new \Exception(
+                        'Step ini memerlukan lampiran file balasan. ' .
+                        'Harap upload dokumen terlebih dahulu sebelum menyetujui.'
+                    );
+                }
+            }
+
             // $nextStep = WorkflowStep::where('workflow_id', $booking->workflow_id)
             //     ->where('step_order', '>', $booking->current_step)
             //     ->orderBy('step_order')
@@ -247,12 +260,12 @@ class ApprovalController extends Controller
 
             $nextApprover = app(WorkflowService::class)->getNextApprover($booking->id);
 
-            if ($nextApprover) {
-                $nextStep = WorkflowStep::where('workflow_id', $booking->workflow_id)
-                    ->where('step_order', '>', $booking->current_step)
-                    ->orderBy('step_order')
-                    ->first();
-
+            $nextStep = WorkflowStep::where('workflow_id', $booking->workflow_id)
+                ->where('step_order', '>', $booking->current_step)
+                ->orderBy('step_order')
+                ->first();
+                
+            if ($nextApprover && $nextStep) {
                 $booking->update([
                     'current_step' => $nextStep->step_order,
                     'status'       => 'Pending',
@@ -268,13 +281,26 @@ class ApprovalController extends Controller
                 'notes' => $request->notes,
             ]);
 
-            BookingLog::create([
-                'booking_id' => $booking->id,
-                'actor_id' => $approver->id,
-                'step_id' => $currentStep->id,
-                'action' => 'APPROVED',
-                'notes' => $request->notes ?? 'Disetujui.',
-            ]);
+             if ($currentStep->requires_attachment) {
+                $hasAttachment = BookingAttachment::where('booking_id', $booking->id)
+                    ->where('uploader_id', $approver->id)
+                    ->exists();
+
+                if (!$hasAttachment) {
+                    throw new \Exception(
+                        'Step ini memerlukan lampiran file balasan. ' .
+                        'Harap upload dokumen terlebih dahulu sebelum menyetujui.'
+                    );
+                }
+            }
+
+            // BookingLog::create([
+            //     'booking_id' => $booking->id,
+            //     'actor_id' => $approver->id,
+            //     'step_id' => $currentStep->id,
+            //     'action' => 'APPROVED',
+            //     'notes' => $request->notes ?? 'Disetujui.',
+            // ]);
 
             LoggerService::logAction($booking->id, 'APPROVED', $currentStep->id, $request->notes); 
         });
@@ -374,6 +400,7 @@ class ApprovalController extends Controller
             // ]);
 
             LoggerService::logAction($booking->id, 'REJECTED', $currentStep->id, $request->notes);
+
         });
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'error' => $e->getMessage()], 422);
