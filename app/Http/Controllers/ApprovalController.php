@@ -7,6 +7,9 @@ use App\Models\Booking;
 use App\Models\BookingLog;
 use App\Models\WorkflowStep;
 use Illuminate\Http\Request;
+use App\Models\BookingAttachment;
+use App\Services\LoggerService;
+use App\Services\WorkflowService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -217,6 +220,7 @@ class ApprovalController extends Controller
         $booking = null;
         $approval = null;
 
+        try {
         DB::transaction(function () use ($request, $bookingId, $approver, $positionId, &$booking, &$approval) {
             $booking = Booking::lockForUpdate()->findOrFail($bookingId);
 
@@ -225,22 +229,37 @@ class ApprovalController extends Controller
                 ->where('position_id', $positionId)
                 ->firstOrFail();
 
-            $nextStep = WorkflowStep::where('workflow_id', $booking->workflow_id)
-                ->where('step_order', '>', $booking->current_step)
-                ->orderBy('step_order')
-                ->first();
+            // $nextStep = WorkflowStep::where('workflow_id', $booking->workflow_id)
+            //     ->where('step_order', '>', $booking->current_step)
+            //     ->orderBy('step_order')
+            //     ->first();
 
-            if ($nextStep) {
+            // if ($nextStep) {
+            //     $booking->update([
+            //         'current_step' => $nextStep->step_order,
+            //         'status' => 'Pending',
+            //     ]);
+            // } else {
+            //     $booking->update([
+            //         'status' => 'Approved',
+            //     ]);
+            // }
+
+            $nextApprover = app(WorkflowService::class)->getNextApprover($booking->id);
+
+            if ($nextApprover) {
+                $nextStep = WorkflowStep::where('workflow_id', $booking->workflow_id)
+                    ->where('step_order', '>', $booking->current_step)
+                    ->orderBy('step_order')
+                    ->first();
+
                 $booking->update([
                     'current_step' => $nextStep->step_order,
-                    'status' => 'Pending',
+                    'status'       => 'Pending',
                 ]);
             } else {
-                $booking->update([
-                    'status' => 'Approved',
-                ]);
+                $booking->update(['status' => 'Approved']);
             }
-
             $approval = Approval::create([
                 'booking_id' => $booking->id,
                 'approver_id' => $approver->id,
@@ -256,7 +275,12 @@ class ApprovalController extends Controller
                 'action' => 'APPROVED',
                 'notes' => $request->notes ?? 'Disetujui.',
             ]);
+
+            LoggerService::logAction($booking->id, 'APPROVED', $currentStep->id, $request->notes); 
         });
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'error' => $e->getMessage()], 422);
+        }
 
         $booking->refresh();
 
@@ -307,6 +331,7 @@ class ApprovalController extends Controller
         $booking = null;
         $approval = null;
 
+        try {
         DB::transaction(function () use ($request, $bookingId, $approver, $positionId, &$booking, &$approval) {
             $booking = Booking::lockForUpdate()->findOrFail($bookingId);
 
@@ -315,6 +340,18 @@ class ApprovalController extends Controller
                 ->where('position_id', $positionId)
                 ->firstOrFail();
 
+            if ($currentStep->requires_attachment) {
+                $hasAttachment = BookingAttachment::where('booking_id', $booking->id)
+                    ->where('uploader_id', $approver->id)
+                    ->exists();
+
+                if (!$hasAttachment) {
+                    throw new \Exception(
+                        'Step ini memerlukan lampiran file balasan. ' .
+                        'Harap upload dokumen terlebih dahulu sebelum menyetujui.'
+                    );
+                }
+            }
             $booking->update([
                 'status' => 'Revising',
                 'revision_count' => $booking->revision_count + 1,
@@ -328,14 +365,19 @@ class ApprovalController extends Controller
                 'notes' => $request->notes,
             ]);
 
-            BookingLog::create([
-                'booking_id' => $booking->id,
-                'actor_id' => $approver->id,
-                'step_id' => $currentStep->id,
-                'action' => 'REJECTED',
-                'notes' => $request->notes,
-            ]);
+            // BookingLog::create([
+            //     'booking_id' => $booking->id,
+            //     'actor_id' => $approver->id,
+            //     'step_id' => $currentStep->id,
+            //     'action' => 'REJECTED',
+            //     'notes' => $request->notes,
+            // ]);
+
+            LoggerService::logAction($booking->id, 'REJECTED', $currentStep->id, $request->notes);
         });
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'error' => $e->getMessage()], 422);
+        }
 
         $booking->refresh();
 
