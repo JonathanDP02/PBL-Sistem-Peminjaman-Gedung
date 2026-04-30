@@ -4,12 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\Approval;
 use App\Models\Booking;
+use App\Models\BookingAttachment;
 use App\Models\BookingLog;
 use App\Models\WorkflowStep;
-use Illuminate\Http\Request;
-use App\Models\BookingAttachment;
 use App\Services\LoggerService;
 use App\Services\WorkflowService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -79,7 +81,7 @@ class ApprovalController extends Controller
             })
             ->values();
 
-        $documentsUploaded = $booking->attachments->map(function ($attachment) {
+        $documentsUploaded = $booking->attachments->map(function ($attachment) use ($booking) {
             return [
                 'id' => $attachment->id,
                 'document_name' => $attachment->document_name,
@@ -221,89 +223,89 @@ class ApprovalController extends Controller
         $approval = null;
 
         try {
-        DB::transaction(function () use ($request, $bookingId, $approver, $positionId, &$booking, &$approval) {
-            $booking = Booking::lockForUpdate()->findOrFail($bookingId);
+            DB::transaction(function () use ($request, $bookingId, $approver, $positionId, &$booking, &$approval) {
+                $booking = Booking::lockForUpdate()->findOrFail($bookingId);
 
-            $currentStep = WorkflowStep::where('workflow_id', $booking->workflow_id)
-                ->where('step_order', $booking->current_step)
-                ->where('position_id', $positionId)
-                ->firstOrFail();
+                $currentStep = WorkflowStep::where('workflow_id', $booking->workflow_id)
+                    ->where('step_order', $booking->current_step)
+                    ->where('position_id', $positionId)
+                    ->firstOrFail();
 
-            if ($currentStep->requires_attachment) {
-                $hasAttachment = BookingAttachment::where('booking_id', $booking->id)
-                    ->where('uploader_id', $approver->id)
-                    ->exists();
+                if ($currentStep->requires_attachment) {
+                    $hasAttachment = BookingAttachment::where('booking_id', $booking->id)
+                        ->where('uploader_id', $approver->id)
+                        ->exists();
 
-                if (!$hasAttachment) {
-                    throw new \Exception(
-                        'Step ini memerlukan lampiran file balasan. ' .
-                        'Harap upload dokumen terlebih dahulu sebelum menyetujui.'
-                    );
+                    if (! $hasAttachment) {
+                        throw new \Exception(
+                            'Step ini memerlukan lampiran file balasan. '.
+                            'Harap upload dokumen terlebih dahulu sebelum menyetujui.'
+                        );
+                    }
                 }
-            }
 
-            // $nextStep = WorkflowStep::where('workflow_id', $booking->workflow_id)
-            //     ->where('step_order', '>', $booking->current_step)
-            //     ->orderBy('step_order')
-            //     ->first();
+                // $nextStep = WorkflowStep::where('workflow_id', $booking->workflow_id)
+                //     ->where('step_order', '>', $booking->current_step)
+                //     ->orderBy('step_order')
+                //     ->first();
 
-            // if ($nextStep) {
-            //     $booking->update([
-            //         'current_step' => $nextStep->step_order,
-            //         'status' => 'Pending',
-            //     ]);
-            // } else {
-            //     $booking->update([
-            //         'status' => 'Approved',
-            //     ]);
-            // }
+                // if ($nextStep) {
+                //     $booking->update([
+                //         'current_step' => $nextStep->step_order,
+                //         'status' => 'Pending',
+                //     ]);
+                // } else {
+                //     $booking->update([
+                //         'status' => 'Approved',
+                //     ]);
+                // }
 
-            $nextApprover = app(WorkflowService::class)->getNextApprover($booking->id);
+                $nextApprover = app(WorkflowService::class)->getNextApprover($booking->id);
 
-            $nextStep = WorkflowStep::where('workflow_id', $booking->workflow_id)
-                ->where('step_order', '>', $booking->current_step)
-                ->orderBy('step_order')
-                ->first();
-                
-            if ($nextApprover && $nextStep) {
-                $booking->update([
-                    'current_step' => $nextStep->step_order,
-                    'status'       => 'Pending',
+                $nextStep = WorkflowStep::where('workflow_id', $booking->workflow_id)
+                    ->where('step_order', '>', $booking->current_step)
+                    ->orderBy('step_order')
+                    ->first();
+
+                if ($nextApprover && $nextStep) {
+                    $booking->update([
+                        'current_step' => $nextStep->step_order,
+                        'status' => 'Pending',
+                    ]);
+                } else {
+                    $booking->update(['status' => 'Approved']);
+                }
+                $approval = Approval::create([
+                    'booking_id' => $booking->id,
+                    'approver_id' => $approver->id,
+                    'step_id' => $currentStep->id,
+                    'approval_status' => 'Approved',
+                    'notes' => $request->notes,
                 ]);
-            } else {
-                $booking->update(['status' => 'Approved']);
-            }
-            $approval = Approval::create([
-                'booking_id' => $booking->id,
-                'approver_id' => $approver->id,
-                'step_id' => $currentStep->id,
-                'approval_status' => 'Approved',
-                'notes' => $request->notes,
-            ]);
 
-             if ($currentStep->requires_attachment) {
-                $hasAttachment = BookingAttachment::where('booking_id', $booking->id)
-                    ->where('uploader_id', $approver->id)
-                    ->exists();
+                if ($currentStep->requires_attachment) {
+                    $hasAttachment = BookingAttachment::where('booking_id', $booking->id)
+                        ->where('uploader_id', $approver->id)
+                        ->exists();
 
-                if (!$hasAttachment) {
-                    throw new \Exception(
-                        'Step ini memerlukan lampiran file balasan. ' .
-                        'Harap upload dokumen terlebih dahulu sebelum menyetujui.'
-                    );
+                    if (! $hasAttachment) {
+                        throw new \Exception(
+                            'Step ini memerlukan lampiran file balasan. '.
+                            'Harap upload dokumen terlebih dahulu sebelum menyetujui.'
+                        );
+                    }
                 }
-            }
 
-            // BookingLog::create([
-            //     'booking_id' => $booking->id,
-            //     'actor_id' => $approver->id,
-            //     'step_id' => $currentStep->id,
-            //     'action' => 'APPROVED',
-            //     'notes' => $request->notes ?? 'Disetujui.',
-            // ]);
+                // BookingLog::create([
+                //     'booking_id' => $booking->id,
+                //     'actor_id' => $approver->id,
+                //     'step_id' => $currentStep->id,
+                //     'action' => 'APPROVED',
+                //     'notes' => $request->notes ?? 'Disetujui.',
+                // ]);
 
-            LoggerService::logAction($booking->id, 'APPROVED', $currentStep->id, $request->notes); 
-        });
+                LoggerService::logAction($booking->id, 'APPROVED', $currentStep->id, $request->notes);
+            });
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'error' => $e->getMessage()], 422);
         }
@@ -358,50 +360,50 @@ class ApprovalController extends Controller
         $approval = null;
 
         try {
-        DB::transaction(function () use ($request, $bookingId, $approver, $positionId, &$booking, &$approval) {
-            $booking = Booking::lockForUpdate()->findOrFail($bookingId);
+            DB::transaction(function () use ($request, $bookingId, $approver, $positionId, &$booking, &$approval) {
+                $booking = Booking::lockForUpdate()->findOrFail($bookingId);
 
-            $currentStep = WorkflowStep::where('workflow_id', $booking->workflow_id)
-                ->where('step_order', $booking->current_step)
-                ->where('position_id', $positionId)
-                ->firstOrFail();
+                $currentStep = WorkflowStep::where('workflow_id', $booking->workflow_id)
+                    ->where('step_order', $booking->current_step)
+                    ->where('position_id', $positionId)
+                    ->firstOrFail();
 
-            if ($currentStep->requires_attachment) {
-                $hasAttachment = BookingAttachment::where('booking_id', $booking->id)
-                    ->where('uploader_id', $approver->id)
-                    ->exists();
+                if ($currentStep->requires_attachment) {
+                    $hasAttachment = BookingAttachment::where('booking_id', $booking->id)
+                        ->where('uploader_id', $approver->id)
+                        ->exists();
 
-                if (!$hasAttachment) {
-                    throw new \Exception(
-                        'Step ini memerlukan lampiran file balasan. ' .
-                        'Harap upload dokumen terlebih dahulu sebelum menyetujui.'
-                    );
+                    if (! $hasAttachment) {
+                        throw new \Exception(
+                            'Step ini memerlukan lampiran file balasan. '.
+                            'Harap upload dokumen terlebih dahulu sebelum menyetujui.'
+                        );
+                    }
                 }
-            }
-            $booking->update([
-                'status' => 'Revising',
-                'revision_count' => $booking->revision_count + 1,
-            ]);
+                $booking->update([
+                    'status' => 'Revising',
+                    'revision_count' => $booking->revision_count + 1,
+                ]);
 
-            $approval = Approval::create([
-                'booking_id' => $booking->id,
-                'approver_id' => $approver->id,
-                'step_id' => $currentStep->id,
-                'approval_status' => 'Rejected',
-                'notes' => $request->notes,
-            ]);
+                $approval = Approval::create([
+                    'booking_id' => $booking->id,
+                    'approver_id' => $approver->id,
+                    'step_id' => $currentStep->id,
+                    'approval_status' => 'Rejected',
+                    'notes' => $request->notes,
+                ]);
 
-            // BookingLog::create([
-            //     'booking_id' => $booking->id,
-            //     'actor_id' => $approver->id,
-            //     'step_id' => $currentStep->id,
-            //     'action' => 'REJECTED',
-            //     'notes' => $request->notes,
-            // ]);
+                // BookingLog::create([
+                //     'booking_id' => $booking->id,
+                //     'actor_id' => $approver->id,
+                //     'step_id' => $currentStep->id,
+                //     'action' => 'REJECTED',
+                //     'notes' => $request->notes,
+                // ]);
 
-            LoggerService::logAction($booking->id, 'REJECTED', $currentStep->id, $request->notes);
+                LoggerService::logAction($booking->id, 'REJECTED', $currentStep->id, $request->notes);
 
-        });
+            });
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'error' => $e->getMessage()], 422);
         }
@@ -485,6 +487,89 @@ class ApprovalController extends Controller
             'stats' => $stats,
             'monthlyApprovals' => $monthlyApprovals,
             'monthlyRejections' => $monthlyRejections,
+            'approver' => $approver,
+        ]);
+    }
+
+    /**
+     * GET /meja-kerja
+     * Render Meja Kerja (Work Desk) view with all pending approvals for current approver
+     */
+    public function mejaKerja(Request $request)
+    {
+        $approver = Auth::user();
+        $positionId = $approver->position_id;
+
+        // Fetch all pending approvals (sama seperti API index tapi render sebagai view)
+        $bookings = Booking::with([
+            'room.building',
+            'user.unit',
+            'workflow.steps.position',
+            'attachments',
+            'approvals.approver.position',
+            'approvals.step',
+        ])
+            ->whereIn('status', ['Pending', 'Revising'])
+            ->whereHas('workflow.steps', function ($q) use ($positionId) {
+                $q->where('position_id', $positionId)
+                    ->whereColumn('step_order', 'bookings.current_step');
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Transform ke format approval response
+        $approvals = $bookings->map(function ($booking) use ($positionId) {
+            return $this->formatApprovalResponse($booking, $positionId);
+        });
+
+        // Calculate summary stats
+        $stats = [
+            'pending_count' => $approvals->count(),
+            'urgent_count' => $approvals->filter(fn ($a) => $a['priority_indicator'] === 'urgent')->count(),
+            'high_count' => $approvals->filter(fn ($a) => $a['priority_indicator'] === 'high')->count(),
+        ];
+
+        return view('user.approver.meja-kerja', [
+            'approvals' => $approvals->values(),
+            'stats' => $stats,
+            'approver' => $approver,
+        ]);
+    }
+
+    /**
+     * GET /approver/approvals/{id}
+     * Show detail view for single approval/booking
+     */
+    public function show($id)
+    {
+        $approver = Auth::user();
+        $positionId = $approver->position_id;
+
+        // Fetch booking with all relations
+        $booking = Booking::with([
+            'room.building',
+            'user.unit',
+            'workflow.steps.position',
+            'attachments',
+            'approvals.approver.position',
+            'approvals.step',
+        ])->findOrFail($id);
+
+        // Verify approver can access this booking (must have position in workflow)
+        $hasAccess = $booking->workflow->steps
+            ->where('position_id', $positionId)
+            ->isNotEmpty();
+
+        if (! $hasAccess) {
+            abort(403, 'Anda tidak memiliki akses untuk meninjau pengajuan ini.');
+        }
+
+        // Format approval response
+        $approval = $this->formatApprovalResponse($booking, $positionId);
+
+        return view('user.approver.detail', [
+            'approval' => $approval,
+            'booking' => $booking,
             'approver' => $approver,
         ]);
     }
