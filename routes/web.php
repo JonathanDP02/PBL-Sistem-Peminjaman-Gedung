@@ -9,6 +9,8 @@ use App\Http\Controllers\BookingAttachmentController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoomController;
+use App\Http\Controllers\BookingPdfController;
+use App\Http\Controllers\BookingValidationController;
 use App\Models\Booking;
 use App\Models\Building;
 use Carbon\Carbon;
@@ -191,6 +193,8 @@ Route::middleware(['auth', 'checkRole:User'])->prefix('user')->group(function ()
     Route::get('/bookings/{id}', [BookingController::class, 'show'])->name('booking.show');
     Route::patch('/bookings/{id}/cancel', [BookingController::class, 'cancel'])->name('booking.cancel');
     Route::get('/bookings/{id}/attachments/{attachmentId}', [BookingAttachmentController::class, 'show'])->name('booking.attachment.show');
+    Route::get('/bookings/{id}/download-pdf', [BookingPdfController::class, 'generate'])->name('booking.pdf');
+    Route::get('/validate/{bookingId}', [BookingValidationController::class, 'show'])->name('booking.validate');
 });
 
 // Profile
@@ -203,3 +207,6 @@ Route::middleware('auth')->group(function () {
 require __DIR__.'/auth.php';
 
 Route::get('/rooms/{id}', [RoomController::class, 'showApi']);
+
+// Preview PDF Surat Izin (dengan auth check di controller)
+Route::middleware('auth')->get('/preview-surat/{bookingId}', [BookingPdfController::class, 'preview'])->name('booking.pdf.preview');
