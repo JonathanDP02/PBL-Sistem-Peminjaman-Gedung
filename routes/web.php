@@ -66,7 +66,6 @@ Route::get('/riwayat', function () {
         'User' => 'user.peminjam.riwayat',
         default => 'user.peminjam.riwayat',
     };
-
     return view($view);
 })->middleware('auth')->name('riwayat');
 
