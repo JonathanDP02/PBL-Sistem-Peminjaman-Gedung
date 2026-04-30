@@ -1,7 +1,6 @@
 <?php
 
 namespace App\Http\Controllers;
-
 use App\Models\Approval;
 use App\Models\Booking;
 use App\Models\BookingAttachment;
@@ -12,9 +11,9 @@ use App\Services\WorkflowService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use App\Models\BookingAttachment;
-use App\Services\LoggerService;
-use App\Services\WorkflowService;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Storage;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -255,20 +254,28 @@ class ApprovalController extends Controller
                     ->first();
 
                 if ($nextApprover && $nextStep) {
-                    $booking->update([
-                        'current_step' => $nextStep->step_order,
-                        'status' => 'Pending',
-                    ]);
-                } else {
-                    $booking->update(['status' => 'Approved']);
-                }
-                $approval = Approval::create([
-                    'booking_id' => $booking->id,
-                    'approver_id' => $approver->id,
-                    'step_id' => $currentStep->id,
-                    'approval_status' => 'Approved',
-                    'notes' => $request->notes,
-                ]);
+    $booking->update([
+        'current_step' => $nextStep->step_order,
+        'status' => 'Pending',
+    ]);
+} else {
+    $booking->load(['room', 'user', 'approvals.step.position', 'approvals.approver']);
+
+    $qrCode = QrCode::format('svg')->size(120)->generate(url('/validate/' . $booking->id));
+
+    $pdf = Pdf::loadView('pdf.surat-izin', [
+        'booking' => $booking,
+        'qrCode'  => $qrCode,
+    ])->setPaper('a4', 'portrait');
+
+    $pdfPath = "permits/booking-{$booking->id}.pdf";
+    Storage::disk('private')->put($pdfPath, $pdf->output());
+
+    $booking->update([
+        'status'   => 'Approved',
+        'pdf_path' => $pdfPath,
+    ]);
+}
 
                 if ($currentStep->requires_attachment) {
                     $hasAttachment = BookingAttachment::where('booking_id', $booking->id)
@@ -283,12 +290,22 @@ class ApprovalController extends Controller
                     }
                 }
 
+                $approval = Approval::create([
+                    'booking_id' => $booking->id,
+                    'approver_id' => $approver->id,
+                    'step_id' => $currentStep->id,
+                    'approval_status' => 'Approved',
+                    'notes' => $request->notes,
+                ]);
+
                 LoggerService::logAction($booking->id, 'APPROVED', $currentStep->id, $request->notes);
             });
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'error' => $e->getMessage()], 422);
         }
 
+        /** @var Booking $booking */
+        /** @var Approval $approval */
         $booking->refresh();
 
         return response()->json([
@@ -379,6 +396,8 @@ class ApprovalController extends Controller
             return response()->json(['success' => false, 'error' => $e->getMessage()], 422);
         }
 
+        /** @var Booking $booking */
+        /** @var Approval $approval */
         $booking->refresh();
 
         return response()->json([
