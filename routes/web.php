@@ -66,6 +66,7 @@ Route::get('/riwayat', function () {
         'User' => 'user.peminjam.riwayat',
         default => 'user.peminjam.riwayat',
     };
+
     return view($view);
 })->middleware('auth')->name('riwayat');
 
@@ -158,12 +159,8 @@ Route::middleware(['auth', 'checkRole:Admin_Unit'])->prefix('admin_unit')->group
 
 // APPROVER
 Route::middleware(['auth', 'checkRole:Approver'])->prefix('approver')->group(function () {
-    Route::get('/meja-kerja', function () {
-        return view('user.approver.meja-kerja');
-    })->name('meja-kerja');
-    Route::get('/approvals/{id}', function ($id) {
-        return view('user.approver.detail', ['booking_id' => $id]);
-    })->name('approvals.show');
+    Route::get('/meja-kerja', [ApprovalController::class, 'mejaKerja'])->name('meja-kerja');
+    Route::get('/approvals/{id}', [ApprovalController::class, 'show'])->name('approvals.show');
 
     Route::get('/approvals', [ApprovalController::class, 'index'])->name('approval.index');
     Route::get('/approvals/pending', [ApprovalController::class, 'index'])->name('approval.index');
