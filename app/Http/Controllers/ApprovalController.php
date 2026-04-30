@@ -244,22 +244,6 @@ class ApprovalController extends Controller
                     }
                 }
 
-                // $nextStep = WorkflowStep::where('workflow_id', $booking->workflow_id)
-                //     ->where('step_order', '>', $booking->current_step)
-                //     ->orderBy('step_order')
-                //     ->first();
-
-                // if ($nextStep) {
-                //     $booking->update([
-                //         'current_step' => $nextStep->step_order,
-                //         'status' => 'Pending',
-                //     ]);
-                // } else {
-                //     $booking->update([
-                //         'status' => 'Approved',
-                //     ]);
-                // }
-
                 $nextApprover = app(WorkflowService::class)->getNextApprover($booking->id);
 
                 $nextStep = WorkflowStep::where('workflow_id', $booking->workflow_id)
@@ -295,14 +279,6 @@ class ApprovalController extends Controller
                         );
                     }
                 }
-
-                // BookingLog::create([
-                //     'booking_id' => $booking->id,
-                //     'actor_id' => $approver->id,
-                //     'step_id' => $currentStep->id,
-                //     'action' => 'APPROVED',
-                //     'notes' => $request->notes ?? 'Disetujui.',
-                // ]);
 
                 LoggerService::logAction($booking->id, 'APPROVED', $currentStep->id, $request->notes);
             });
@@ -392,15 +368,7 @@ class ApprovalController extends Controller
                     'approval_status' => 'Rejected',
                     'notes' => $request->notes,
                 ]);
-
-                // BookingLog::create([
-                //     'booking_id' => $booking->id,
-                //     'actor_id' => $approver->id,
-                //     'step_id' => $currentStep->id,
-                //     'action' => 'REJECTED',
-                //     'notes' => $request->notes,
-                // ]);
-
+                
                 LoggerService::logAction($booking->id, 'REJECTED', $currentStep->id, $request->notes);
 
             });
