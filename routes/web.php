@@ -39,6 +39,7 @@ Route::get('ruangan', function () {
 
     return view('ruangan', compact('buildings'));
 })->name('ruangan');
+// ====
 
 // General Dashboard
 Route::get('/dashboard', function () {
@@ -56,6 +57,7 @@ Route::get('/dashboard', function () {
 
     return view($view);
 })->middleware('auth')->name('dashboard');
+// ====
 
 // riwayat user route
 Route::get('/riwayat', function () {
@@ -64,18 +66,10 @@ Route::get('/riwayat', function () {
         'User' => 'user.peminjam.riwayat',
         default => 'user.peminjam.riwayat',
     };
-
     return view($view);
 })->middleware('auth')->name('riwayat');
 
-// Approver Routes
-Route::middleware(['auth', 'checkRole:Approver'])->group(function () {
-    Route::get('/approvals/{id}', function ($id) {
-        return view('user.approver.detail', ['booking_id' => $id]);
-    })->name('approvals.show');
-});
-
-//
+// Untuk SuperAdmin dan Admin_Unit
 Route::get('/kelola-user', function () {
     $view = match (Auth::user()->role->name) {
         'SuperAdmin','Admin_Unit' => 'user.admin.kelola-user',
@@ -97,11 +91,6 @@ Route::middleware(['auth', 'checkRole:SuperAdmin'])->prefix('superadmin')->group
     })->name('unit');
 
     Route::post('/user', [UserController::class, 'store'])->name('tambah-user.store');
-    
-    Route::get('/dashboard', [ApprovalController::class, 'dashboard'])->name('approver.dashboard');
-    Route::get('/approvals/pending', [ApprovalController::class, 'index'])->name('approval.index');
-    Route::post('/approvals/{booking_id}/approve', [ApprovalController::class, 'approve'])->name('approval.approve');
-    Route::post('/approvals/{booking_id}/reject', [ApprovalController::class, 'reject'])->name('approval.reject');
 });
 
 // API Routes for User Management - Accessible to SuperAdmin and Admin_Unit
@@ -116,7 +105,9 @@ Route::middleware(['auth', 'checkRole:SuperAdmin,Admin_Unit'])->prefix('admin/ap
     Route::get('/roles', [UserController::class, 'getRolesDropdown']);
     Route::get('/positions', [UserController::class, 'getPositionsDropdown']);
 });
+// ====
 
+// Admin Unit
 Route::middleware(['auth', 'checkRole:Admin_Unit'])->prefix('admin_unit')->group(function () {
     Route::get('/laporan', function () {
         return view('user.admin_unit.laporan');
@@ -163,16 +154,21 @@ Route::middleware(['auth', 'checkRole:Admin_Unit'])->prefix('admin_unit')->group
         Route::delete('/workflow-steps/{id}', [WorkflowStepController::class, 'destroy'])->where('id', '[0-9]+');
     });
 });
+// ====
 
 // APPROVER
 Route::middleware(['auth', 'checkRole:Approver'])->prefix('approver')->group(function () {
     Route::get('/meja-kerja', function () {
         return view('user.approver.meja-kerja');
     })->name('meja-kerja');
+    Route::get('/approvals/{id}', function ($id) {
+        return view('user.approver.detail', ['booking_id' => $id]);
+    })->name('approvals.show');
 
     Route::get('/approvals', [ApprovalController::class, 'index'])->name('approval.index');
-    Route::post('/approvals/{id}/approve', [ApprovalController::class, 'approve'])->name('approval.approve');
-    Route::post('/approvals/{id}/reject', [ApprovalController::class, 'reject'])->name('approval.reject');
+    Route::get('/approvals/pending', [ApprovalController::class, 'index'])->name('approval.index');
+    Route::post('/approvals/{booking_id}/approve', [ApprovalController::class, 'approve'])->name('approval.approve');
+    Route::post('/approvals/{booking_id}/reject', [ApprovalController::class, 'reject'])->name('approval.reject');
 });
 
 // USER / PEMINJAM
