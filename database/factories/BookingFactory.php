@@ -3,6 +3,9 @@
 namespace Database\Factories;
 
 use App\Models\Booking;
+use App\Models\Room;
+use App\Models\User;
+use App\Models\Workflow;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -18,9 +21,9 @@ class BookingFactory extends Factory
     public function definition(): array
     {
         return [
-            'user_id' => \App\Models\User::factory(),
-            'room_id' => \App\Models\Room::factory(),
-            'workflow_id' => \App\Models\Workflow::factory()->has(\App\Models\WorkflowStep::factory()->count(3)),
+            'user_id' => User::factory(),
+            'room_id' => Room::factory(),
+            'workflow_id' => Workflow::factory(),
             'event_name' => $this->faker->words(3, asText: true),
             'event_description' => $this->faker->sentence(),
             'booking_date' => $this->faker->dateTimeBetween('now', '+30 days')->format('Y-m-d'),
@@ -30,5 +33,49 @@ class BookingFactory extends Factory
             'status' => 'Pending',
             'revision_count' => 0,
         ];
+    }
+
+    /**
+     * State: Pending approval
+     */
+    public function pending(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => 'Pending',
+            'current_step' => 1,
+        ]);
+    }
+
+    /**
+     * State: Approved
+     */
+    public function approved(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => 'Approved',
+            'current_step' => 2,
+        ]);
+    }
+
+    /**
+     * State: Rejected
+     */
+    public function rejected(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => 'Rejected',
+            'revision_count' => $this->faker->numberBetween(1, 3),
+        ]);
+    }
+
+    /**
+     * State: Completed
+     */
+    public function completed(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => 'Completed',
+            'current_step' => 3,
+        ]);
     }
 }

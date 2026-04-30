@@ -13,18 +13,20 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class ApprovalFactory extends Factory
 {
+    protected $model = Approval::class;
+
     public function definition(): array
     {
         return [
             'booking_id' => Booking::factory(),
             'approver_id' => User::factory(),
             'step_id' => WorkflowStep::factory(),
-            'approval_status' => $this->faker->randomElement(['Pending', 'Approved', 'Rejected']),
-            'notes' => $this->faker->optional()->sentence(),
-            'signature_image' => $this->faker->optional()->imagePath(),
-            'qr_code' => $this->faker->optional()->imagePath(),
-            'approved_at' => $this->faker->dateTime(),
-            'attempt' => $this->faker->numberBetween(1, 3),
+            'approval_status' => 'Pending',
+            'notes' => null,
+            'signature_image' => null,
+            'qr_code' => null,
+            'approved_at' => now(),
+            'attempt' => 1,
         ];
     }
 
@@ -33,6 +35,7 @@ class ApprovalFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'approval_status' => 'Pending',
             'notes' => null,
+            'signature_image' => null,
         ]);
     }
 
@@ -40,8 +43,8 @@ class ApprovalFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'approval_status' => 'Approved',
-            'notes' => $this->faker->sentence(),
-            'signature_image' => $this->faker->imagePath(),
+            'notes' => null,
+            'approved_at' => now(),
         ]);
     }
 
@@ -49,6 +52,14 @@ class ApprovalFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'approval_status' => 'Rejected',
+            'notes' => $this->faker->sentence(),
+        ]);
+    }
+
+    public function revising(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'approval_status' => 'Revising',
             'notes' => $this->faker->sentence(),
         ]);
     }
