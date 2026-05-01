@@ -210,6 +210,7 @@ class ApprovalController extends Controller
     /**
      * POST /api/approvals/{booking_id}/approve
      * Approve a booking at current step
+     * If final step: dispatch async job to generate PDF & email
      * Response format matches API_DOCUMENTATION.md
      */
     public function approve(Request $request, $bookingId)
@@ -246,48 +247,25 @@ class ApprovalController extends Controller
                     }
                 }
 
-                $nextApprover = app(WorkflowService::class)->getNextApprover($booking->id);
-
                 $nextStep = WorkflowStep::where('workflow_id', $booking->workflow_id)
                     ->where('step_order', '>', $booking->current_step)
                     ->orderBy('step_order')
                     ->first();
 
-                if ($nextApprover && $nextStep) {
-    $booking->update([
-        'current_step' => $nextStep->step_order,
-        'status' => 'Pending',
-    ]);
-} else {
-    $booking->load(['room', 'user', 'approvals.step.position', 'approvals.approver']);
+                if ($nextStep) {
+                    // Ada step selanjutnya - lanjut ke pejabat berikutnya
+                    $booking->update([
+                        'current_step' => $nextStep->step_order,
+                        'status' => 'Pending',
+                    ]);
+                } else {
+                    // Ini step terakhir - update status dan dispatch job untuk generate PDF
+                    $booking->update([
+                        'status' => 'Approved',
+                    ]);
 
-    $qrCode = QrCode::format('svg')->size(120)->generate(url('/validate/' . $booking->id));
-
-    $pdf = Pdf::loadView('pdf.surat-izin', [
-        'booking' => $booking,
-        'qrCode'  => $qrCode,
-    ])->setPaper('a4', 'portrait');
-
-    $pdfPath = "permits/booking-{$booking->id}.pdf";
-    Storage::disk('private')->put($pdfPath, $pdf->output());
-
-    $booking->update([
-        'status'   => 'Approved',
-        'pdf_path' => $pdfPath,
-    ]);
-}
-
-                if ($currentStep->requires_attachment) {
-                    $hasAttachment = BookingAttachment::where('booking_id', $booking->id)
-                        ->where('uploader_id', $approver->id)
-                        ->exists();
-
-                    if (! $hasAttachment) {
-                        throw new \Exception(
-                            'Step ini memerlukan lampiran file balasan. '.
-                            'Harap upload dokumen terlebih dahulu sebelum menyetujui.'
-                        );
-                    }
+                    // Dispatch async job untuk generate PDF certificate & email
+                    dispatch(new \App\Jobs\GenerateApprovalCertificateJob($booking->id));
                 }
 
                 $approval = Approval::create([
@@ -310,7 +288,9 @@ class ApprovalController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Booking berhasil disetujui.',
+            'message' => $booking->status === 'Approved' 
+                ? 'Booking disetujui! Surat izin sedang digenerate dan akan dikirim ke email peminjam dalam beberapa saat.'
+                : 'Booking berhasil dilanjutkan ke pejabat berikutnya.',
             'booking' => [
                 'id' => $booking->id,
                 'status' => $booking->status,

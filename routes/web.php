@@ -206,6 +206,8 @@ Route::middleware('auth')->group(function () {
 
 require __DIR__.'/auth.php';
 
+Route::get('/validate/{bookingId}', [BookingValidationController::class, 'show'])->name('booking.validate');
+
 Route::get('/rooms/{id}', [RoomController::class, 'showApi']);
 
 // Preview PDF Surat Izin (dengan auth check di controller)
