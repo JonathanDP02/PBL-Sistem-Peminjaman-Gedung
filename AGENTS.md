@@ -58,6 +58,13 @@ This project has domain-specific skills available. You MUST activate the relevan
 
 - Be concise in your explanations - focus on what's important rather than explaining obvious details.
 
+## Mandatory Testing & Quality Assurance
+
+- **Test-Driven Mentality**: For every new feature, model, or complex logic, you **MUST** create a corresponding Pest test file in `tests/Feature`.
+- **Run Tests Before Completion**: Before finalizing any task, you **MUST** run the relevant tests (using `php artisan test` or `vendor/bin/pest`) to ensure no regressions and that the new feature works as expected.
+- **Seeder Support**: If a feature requires specific data state, update `database/seeders/TestApprovalDataSeeder.php` or create relevant factories/seeders to support testing and manual verification.
+- **Zero Tolerance for Errors**: Do not submit code that breaks existing tests. If tests fail, you must fix the code or update the tests if the behavior change was intentional.
+
 === boost rules ===
 
 # Laravel Boost
