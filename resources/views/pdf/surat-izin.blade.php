@@ -46,7 +46,7 @@
 
     <div class="number">
         No. Booking: <strong>#{{ $booking->id }}</strong> &nbsp;|&nbsp;
-        Status: <span class="badge badge-approved">{{ $booking->status }}</span>
+        Status: <span style="background: #d1fae5; color: #065f46; padding: 2px 8px; border-radius: 4px; font-weight: bold;">{{ $booking->status }}</span>
     </div>
 
     {{-- Detail Event --}}
@@ -76,12 +76,12 @@
                 </tr>
             </thead>
             <tbody>
-                @forelse ($booking->approvals as $approval)
+                @forelse ($booking->approvals->where('approval_status', 'Approved') as $approval)
                 <tr>
                     <td>{{ $approval->step->step_order ?? '-' }}</td>
                     <td>{{ $approval->step->position->name ?? '-' }}</td>
                     <td>{{ $approval->approver->name ?? '-' }}</td>
-                    <td>{{ $approval->status }}</td>
+                    <td style="color: #065f46; font-weight: bold;">Approved</td>
                     <td>{{ $approval->notes ?? '-' }}</td>
                 </tr>
                 @empty
@@ -91,17 +91,6 @@
         </table>
     </div>
 
-    {{-- Tanda Tangan --}}
-    <div class="footer">
-        <div class="sign-box">
-            <div class="sign-line">Peminjam<br><strong>{{ $booking->user->name ?? '-' }}</strong></div>
-        </div>
-        <div class="sign-box">
-            <div class="sign-line">Pejabat Berwenang<br><strong>(...........................)</strong></div>
-        </div>
-    </div>
-
-    {{-- QR Code --}}
     <div class="qr-section">
         {!! $qrCode !!}
         <p>Scan untuk memverifikasi keaslian surat ini</p>

@@ -7,10 +7,10 @@ use App\Http\Controllers\Admin\WorkflowStepController;
 use App\Http\Controllers\ApprovalController;
 use App\Http\Controllers\BookingAttachmentController;
 use App\Http\Controllers\BookingController;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\RoomController;
 use App\Http\Controllers\BookingPdfController;
 use App\Http\Controllers\BookingValidationController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RoomController;
 use App\Models\Booking;
 use App\Models\Building;
 use Carbon\Carbon;
@@ -68,6 +68,7 @@ Route::get('/riwayat', function () {
         'User' => 'user.peminjam.riwayat',
         default => 'user.peminjam.riwayat',
     };
+
     return view($view);
 })->middleware('auth')->name('riwayat');
 
@@ -206,7 +207,12 @@ Route::middleware('auth')->group(function () {
 
 require __DIR__.'/auth.php';
 
+Route::get('/validate/{bookingId}', [BookingValidationController::class, 'show'])->name('booking.validate');
+
 Route::get('/rooms/{id}', [RoomController::class, 'showApi']);
 
 // Preview PDF Surat Izin (dengan auth check di controller)
 Route::middleware('auth')->get('/preview-surat/{bookingId}', [BookingPdfController::class, 'preview'])->name('booking.pdf.preview');
+
+// Booking Timeline API
+Route::get('/api/bookings/{id}/timeline', [BookingController::class, 'timeline'])->name('api.booking.timeline');

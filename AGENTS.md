@@ -258,7 +258,7 @@ Pusat (root)
 - Review Pengajuan Masuk (inbox approval)
 - Setuju: Lanjut ke pejabat berikutnya (current_step++)
 - Tolak: Wajib input alasan (notes) & status → Revised
-- Upload Lampiran (jika requires_attachment = true)
+- TIDAK wajib upload lampiran (Disposisi sudah diunggah oleh peminjam di awal)
 - Download Surat Izin Final & Surat Disposisi (generated otomatis)
 
 ### User/Peminjam (Mahasiswa/Staf)
@@ -268,7 +268,7 @@ Pusat (root)
 - Ajukan Peminjaman Ruangan
   1. Pilih jadwal → Auto-check bentrok
   2. Soft-Lock (kunci sementara saat isi form)
-  3. Upload dokumen syarat (WorkflowRequirements wajib)
+  3. Upload dokumen syarat (Proposal & **Draft Disposisi** wajib)
   4. Submit
 - Revisi Dokumen (jika Approver tolak)
 - Download surat final
@@ -281,11 +281,11 @@ Admin_Unit menyusun "rantai persetujuan" & dokumen syarat
 Workflow (per unit)
 ├── Step 1: Position X, requires_attachment: false
 ├── Step 2: Position Y, requires_attachment: false
-└── Step 3: Position Z, requires_attachment: true ← Harus upload surat
-WorkflowRequirements
+└── Step 3: Position Z, requires_attachment: false 
+WorkflowRequirements (Kewajiban Peminjam)
 ├── Proposal Acara (is_mandatory: true)
 ├── Surat Resmi dari Unit (is_mandatory: true)
-└── Persetujuan Dosen Pembimbing (is_mandatory: false)
+└── Surat Disposisi Wadir (is_mandatory: true) ← Peminjam upload di awal
 ```
 
 **Aturan Emas:** Admin Organisasi (BEM/HMTI) TIDAK boleh setup workflow untuk ruangan milik Pusat/Jurusan. Sistem auto-apply workflow pemilik ruangan berdasarkan unit_id rooms table.
@@ -297,7 +297,7 @@ User membuat booking dengan validasi ketat
 2. Pilih Jadwal → Query: SELECT * FROM bookings WHERE room_id = ? 
    AND booking_date = ? AND ((start_time <= ? AND end_time > ?) OR (...))
    → Conflict? Jika ya: Reject. Jika tidak: Soft-Lock (buat record temp).
-3. Upload Dokumen Syarat → Validasi vs WorkflowRequirements (wajib) 
+3. Upload Dokumen Syarat → Validasi vs WorkflowRequirements (Proposal & Disposisi Wadir) 
 4. Submit → Status: Pending, current_step: 1, revision_count: 0
 ```
 
@@ -305,7 +305,7 @@ User membuat booking dengan validasi ketat
 Setiap langkah adalah satu pejabat, satu keputusan
 ```
 Approver 1 (Step 1 - Kaprodi):
-- Review dokumen & booking details
+- Review dokumen (Proposal & Disposisi) yang diupload peminjam
 - Approve → INSERT approval (status: Approved) → current_step++, lanjut Step 2
 - Reject → INSERT approval (status: Rejected) → booking status: Rejected, notes wajib
 
@@ -313,9 +313,9 @@ Approver 2 (Step 2 - Ketua Jurusan):
 - [Same logic as Approver 1]
 
 Approver 3 (Step 3 - Wakil Direktur):
-- [Step ini: requires_attachment = true]
-- Tombol "Approve" TERKUNCI sampai upload lampiran (surat disposisi)
-- Upload → Unlock → Approve → Lanjut to validation (lihat Fase 4)
+- Review lampiran akhir
+- Click "Setujui Sekarang" → Booking status: Approved (Hard-Lock)
+- Lanjut to validation (lihat Fase 4)
 ```
 
 ### Fase 4: FINALISASI (Sistem Auto)
@@ -387,7 +387,7 @@ All passwords default: `12345`
 
 Alur pre-built:
 - "Peminjaman JTI": Kaprodi TI → Ketua JTI → Wakil Direktur (3 step)
-- "Peminjaman Auditorium": Ketua JTI → Wakil Direktur (2 step, last require attachment)
+- "Peminjaman Auditorium": Ketua JTI → Wakil Direktur (2 step)
 
 ## PDF Certificate & QR Code System
 
@@ -495,19 +495,5 @@ GET /verify/{booking_code}  → ApprovalController@verify
 ```
 
 Halaman ini **PUBLIK** (tidak perlu login) agar siapa pun bisa verifikasi keaslian dokumen.
-
-### 👤 Jobdesk Implementasi
-- **Febri (PDF Lead):**
-  - Design `resources/views/certificates/surat-izin-pdf.blade.php` (HTML table rapi)
-  - Implementasi QR Code generation di blade
-  - Test DOMPDF rendering dengan berbagai browser
-  - Setup storage folder permissions
-
-- **Julian (Queue Lead):**
-  - Buat `app/Jobs/GenerateApprovalCertificateJob.php`
-  - Konfigurasi queue worker di `.env`
-  - Setup email notification ke peminjam
-  - Buat `ApprovalController@verify()` untuk halaman verifikasi publik
-  - Setup route `GET /verify/{booking_code}`
 
 </laravel-boost-guidelines>

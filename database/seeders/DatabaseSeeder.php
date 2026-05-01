@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use App\Models\Approval;
 use App\Models\Booking;
-use App\Models\BookingAttachment;
 use App\Models\Building;
 use App\Models\Position;
 use App\Models\Role;
@@ -296,15 +295,14 @@ class DatabaseSeeder extends Seeder
             'description' => 'Alur persetujuan peminjaman ruangan Jurusan Teknologi Informasi',
         ]);
 
-        // Step 1: Kaprodi TI approve dulu
+        // Urutan: Kaprodi (Jurusan) -> Kajur (Jurusan) -> Wadir (Pusat)
         WorkflowStep::create([
             'workflow_id' => $wfJTI->id,
             'position_id' => $posKaprodiTI->id,
             'step_order' => 1,
-            'requires_attachment' => false, // Kaprodi tidak wajib upload dokumen
+            'requires_attachment' => false,
         ]);
 
-        // Step 2: Kajur TI approve
         WorkflowStep::create([
             'workflow_id' => $wfJTI->id,
             'position_id' => $posKajurTI->id,
@@ -312,12 +310,23 @@ class DatabaseSeeder extends Seeder
             'requires_attachment' => false,
         ]);
 
-        // Step 3: Wadir approve terakhir (wajib upload Surat Balasan/Syarat Wadir)
         WorkflowStep::create([
             'workflow_id' => $wfJTI->id,
             'position_id' => $posWadir->id,
             'step_order' => 3,
-            'requires_attachment' => true, // Wadir wajib upload surat disposisi
+            'requires_attachment' => false,
+        ]);
+
+        // Tambahkan syarat dokumen untuk Peminjaman JTI (Kewajiban Peminjam)
+        WorkflowRequirement::create([
+            'workflow_id' => $wfJTI->id,
+            'document_name' => 'Proposal Kegiatan',
+            'is_mandatory' => true,
+        ]);
+        WorkflowRequirement::create([
+            'workflow_id' => $wfJTI->id,
+            'document_name' => 'Surat Disposisi Wadir',
+            'is_mandatory' => true,
         ]);
 
         // Workflow untuk peminjaman Auditorium (milik Pusat)
@@ -327,20 +336,31 @@ class DatabaseSeeder extends Seeder
             'description' => 'Alur persetujuan peminjaman Auditorium Utama',
         ]);
 
-        // Step 1: Kajur unit peminjam approve
+        // Urutan: Kajur TI (Jurusan) -> Wadir (Pusat)
         WorkflowStep::create([
             'workflow_id' => $wfAuditorium->id,
-            'position_id' => $posKajurTI->id, // contoh: jika peminjam dari TI
+            'position_id' => $posKajurTI->id,
             'step_order' => 1,
             'requires_attachment' => false,
         ]);
 
-        // Step 2: Wadir approve (level Pusat)
         WorkflowStep::create([
             'workflow_id' => $wfAuditorium->id,
             'position_id' => $posWadir->id,
             'step_order' => 2,
-            'requires_attachment' => true, // wajib upload surat izin Wadir
+            'requires_attachment' => false,
+        ]);
+
+        // Tambahkan syarat dokumen untuk Peminjaman Auditorium
+        WorkflowRequirement::create([
+            'workflow_id' => $wfAuditorium->id,
+            'document_name' => 'Surat Izin Orang Tua/Wali',
+            'is_mandatory' => true,
+        ]);
+        WorkflowRequirement::create([
+            'workflow_id' => $wfAuditorium->id,
+            'document_name' => 'Surat Disposisi Wadir',
+            'is_mandatory' => true,
         ]);
 
         // ═══════════════════════════════════════════════════════
@@ -350,109 +370,104 @@ class DatabaseSeeder extends Seeder
 
         // Get users & rooms untuk factory
         $peminjam = User::where('email', 'user@spacein.test')->first();
+        $approverKaprodi = User::where('email', 'kaprodi.ti@spacein.test')->first();
         $approverKajur = User::where('email', 'kajur.ti@spacein.test')->first();
         $ruangKelas = Room::where('room_name', 'Ruang Kelas TI')->first();
 
-        // Create 5 pending approvals dengan factory
-        for ($i = 0; $i < 5; $i++) {
-            $booking = Booking::factory()->pending()->create([
+        // 1. Create 3 bookings pending di Kaprodi (Step 1)
+        $step1JTI = WorkflowStep::where('workflow_id', $wfJTI->id)->where('step_order', 1)->first();
+        for ($i = 0; $i < 3; $i++) {
+            $booking = Booking::factory()->create([
                 'user_id' => $peminjam->id,
                 'room_id' => $ruangKelas->id,
                 'workflow_id' => $wfJTI->id,
+                'current_step' => 1,
+                'status' => 'Pending',
             ]);
 
-            Approval::factory()
-                ->pending()
-                ->create([
-                    'booking_id' => $booking->id,
-                    'approver_id' => $approverKajur->id,
-                ]);
+            Approval::create([
+                'booking_id' => $booking->id,
+                'approver_id' => $approverKaprodi->id,
+                'step_id' => $step1JTI->id,
+                'approval_status' => 'Pending',
+                'attempt' => 1,
+            ]);
         }
 
-        // Create workflow dengan requirements menggunakan factory
-        $workflowFactory = Workflow::factory()->create([
-            'unit_id' => $jurusanTI->id,
-            'name' => 'Peminjaman dari Factory',
-        ]);
+        // 2. Create 2 bookings pending di Kajur (Step 2)
+        $step2JTI = WorkflowStep::where('workflow_id', $wfJTI->id)->where('step_order', 2)->first();
+        for ($i = 0; $i < 2; $i++) {
+            $booking = Booking::factory()->create([
+                'user_id' => $peminjam->id,
+                'room_id' => $ruangKelas->id,
+                'workflow_id' => $wfJTI->id,
+                'current_step' => 2,
+                'status' => 'Pending',
+            ]);
 
-        // Add requirements ke workflow
-        WorkflowRequirement::factory(2)->mandatory()->create([
-            'workflow_id' => $workflowFactory->id,
-        ]);
-        WorkflowRequirement::factory(1)->optional()->create([
-            'workflow_id' => $workflowFactory->id,
-        ]);
+            // Approved by Kaprodi
+            Approval::create([
+                'booking_id' => $booking->id,
+                'approver_id' => $approverKaprodi->id,
+                'step_id' => $step1JTI->id,
+                'approval_status' => 'Approved',
+                'approved_at' => now()->subDay(),
+                'attempt' => 1,
+            ]);
 
-        // Create booking untuk test attachments
-        $booking = Booking::factory()->create([
+            // Pending at Kajur
+            Approval::create([
+                'booking_id' => $booking->id,
+                'approver_id' => $approverKajur->id,
+                'step_id' => $step2JTI->id,
+                'approval_status' => 'Pending',
+                'attempt' => 1,
+            ]);
+        }
+
+        // 3. Create approved booking (Hard-Lock)
+        $approvedBooking = Booking::factory()->create([
             'user_id' => $peminjam->id,
             'room_id' => $ruangKelas->id,
             'workflow_id' => $wfJTI->id,
-            'status' => 'Pending',
+            'status' => 'Approved',
+            'current_step' => 4, // Step setelah Wadir
         ]);
 
-        // Add 2 PDF attachments ke booking
-        BookingAttachment::factory(2)->pdf()->create([
-            'booking_id' => $booking->id,
-        ]);
+        foreach ($wfJTI->steps as $step) {
+            $approverId = match ($step->step_order) {
+                1 => $approverKaprodi->id,
+                2 => $approverKajur->id,
+                3 => User::where('email', 'wadir@spacein.test')->first()->id,
+            };
 
-        // Create approval untuk booking tersebut
-        Approval::factory()
-            ->pending()
-            ->create([
-                'booking_id' => $booking->id,
-                'approver_id' => $approverKajur->id,
-            ]);
-
-        // Create approved booking untuk dashboard stats
-        $approvedBooking = Booking::factory()
-            ->approved()
-            ->create([
-                'user_id' => $peminjam->id,
-                'room_id' => $ruangKelas->id,
-                'workflow_id' => $wfJTI->id,
-                'status' => 'Approved',
-            ]);
-        Approval::factory()
-            ->approved()
-            ->create([
+            Approval::create([
                 'booking_id' => $approvedBooking->id,
-                'approver_id' => $approverKajur->id,
-                'created_at' => now(),
+                'approver_id' => $approverId,
+                'step_id' => $step->id,
+                'approval_status' => 'Approved',
+                'approved_at' => now()->subDays(4 - $step->step_order),
+                'attempt' => 1,
             ]);
+        }
 
-        // Create rejected booking
-        $rejectedBooking = Booking::factory()
-            ->rejected()
-            ->create([
-                'user_id' => $peminjam->id,
-                'room_id' => $ruangKelas->id,
-                'workflow_id' => $wfJTI->id,
-                'status' => 'Rejected',
-            ]);
-        Approval::factory()
-            ->rejected()
-            ->create([
-                'booking_id' => $rejectedBooking->id,
-                'approver_id' => $approverKajur->id,
-                'created_at' => now(),
-            ]);
-
-        // Create revising booking
+        // 4. Create rejected/revising booking
         $revisingBooking = Booking::factory()->create([
             'user_id' => $peminjam->id,
             'room_id' => $ruangKelas->id,
             'workflow_id' => $wfJTI->id,
             'status' => 'Revising',
+            'current_step' => 1,
             'revision_count' => 1,
         ]);
-        Approval::factory()
-            ->rejected()
-            ->create([
-                'booking_id' => $revisingBooking->id,
-                'approver_id' => $approverKajur->id,
-                'created_at' => now(),
-                'notes' => 'Dokumen perlu dilengkapi kembali',
-            ]);
+
+        Approval::create([
+            'booking_id' => $revisingBooking->id,
+            'approver_id' => $approverKaprodi->id,
+            'step_id' => $step1JTI->id,
+            'approval_status' => 'Rejected',
+            'notes' => 'Dokumen lampiran kurang jelas, mohon upload ulang.',
+            'attempt' => 1,
+        ]);
     }
 }

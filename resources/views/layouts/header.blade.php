@@ -16,30 +16,36 @@
         </button>
         <div class="h-6 w-px bg-slate-200 dark:bg-kinetic-border mx-2"></div>
         <div class="hidden sm:flex sm:items-center sm:ms-6">
-            <x-dropdown align="right" width="48">
-                <x-slot name="trigger">
-                    <button class="flex items-center gap-2 text-xs font-bold tracking-wider text-slate-500 dark:text-gray-400 uppercase hover:text-slate-900 dark:hover:text-white transition">
-                        {{ Auth::user()->role->name }} <i class="ph-fill ph-caret-down text-[10px]"></i>
-                    </button>
-                </x-slot>
+            @auth
+                <x-dropdown align="right" width="48">
+                    <x-slot name="trigger">
+                        <button class="flex items-center gap-2 text-xs font-bold tracking-wider text-slate-500 dark:text-gray-400 uppercase hover:text-slate-900 dark:hover:text-white transition">
+                            {{ Auth::user()->role?->name }} <i class="ph-fill ph-caret-down text-[10px]"></i>
+                        </button>
+                    </x-slot>
 
-                <x-slot name="content">
-                    <x-dropdown-link :href="route('profile.edit')">
-                        {{ __('Profile') }}
-                    </x-dropdown-link>
-
-                    <!-- Authentication -->
-                    <form method="POST" action="{{ route('logout') }}">
-                        @csrf
-
-                        <x-dropdown-link :href="route('logout')"
-                                onclick="event.preventDefault();
-                                            this.closest('form').submit();">
-                            {{ __('Log Out') }}
+                    <x-slot name="content">
+                        <x-dropdown-link :href="route('profile.edit')">
+                            {{ __('Profile') }}
                         </x-dropdown-link>
-                    </form>
-                </x-slot>
-            </x-dropdown>
+
+                        <!-- Authentication -->
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+
+                            <x-dropdown-link :href="route('logout')"
+                                    onclick="event.preventDefault();
+                                                this.closest('form').submit();">
+                                {{ __('Log Out') }}
+                            </x-dropdown-link>
+                        </form>
+                    </x-slot>
+                </x-dropdown>
+            @else
+                <a href="{{ route('login') }}" class="text-sm font-semibold text-[#14B8A6] hover:text-[#10ECE8] transition">
+                    Login
+                </a>
+            @endauth
         </div>
         <!-- Hamburger -->
         <div class="-me-2 flex items-center sm:hidden">
@@ -59,6 +65,7 @@
             </x-responsive-nav-link>
         </div>
 
+        @auth
         <!-- Responsive Settings Options -->
         <div class="pt-4 pb-1 border-t border-gray-200">
             <div class="px-4">
@@ -83,5 +90,6 @@
                 </form>
             </div>
         </div>
+        @endauth
     </div>
 </header>

@@ -9,7 +9,7 @@
             <p class="text-[10px] font-bold tracking-widest text-slate-400 dark:text-gray-500 uppercase mb-4">Enterprise Booking</p>
             <nav class="space-y-1">
                 <!-- Menu untuk User -->
-                @if(Auth::user()->role->name === 'User')
+                @if(Auth::user()?->role?->name === 'User')
                     <a href="{{ route('dashboard') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm transition {{ request()->routeIs('dashboard') ? 'bg-teal-50 text-teal-700 dark:bg-kinetic-primary/10 dark:text-kinetic-secondary border border-teal-100 dark:border-kinetic-primary/20' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-kinetic-surface border border-slate-200 dark:border-kinetic-border' }}">
                         <i class="ph {{ request()->routeIs('dashboard') ? 'ph-fill' : '' }} ph-squares-four text-lg"></i> Dashboard
                     </a>
@@ -25,7 +25,7 @@
                 @endif
 
                 <!-- Menu untuk SuperAdmin/Admin_Unit -->
-                @if(Auth::user()->role->name === 'SuperAdmin')
+                @if(Auth::user()?->role?->name === 'SuperAdmin')
                     <a href="{{ route('dashboard') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm transition {{ request()->routeIs('dashboard') ? 'bg-teal-50 text-teal-700 dark:bg-kinetic-primary/10 dark:text-kinetic-secondary border border-teal-100 dark:border-kinetic-primary/20' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-kinetic-surface border border-slate-200 dark:border-kinetic-border' }}">
                         <i class="ph {{ request()->routeIs('dashboard') ? 'ph-fill' : '' }} ph-squares-four text-lg"></i> Dashboard
                     </a>
@@ -40,7 +40,7 @@
                     </a>
                 @endif
 
-                @if(Auth::user()->role->name === 'Admin_Unit') 
+                @if(Auth::user()?->role?->name === 'Admin_Unit') 
                     <a href="{{ route('dashboard') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm transition {{ request()->routeIs('dashboard') ? 'bg-teal-50 text-teal-700 dark:bg-kinetic-primary/10 dark:text-kinetic-secondary border border-teal-100 dark:border-kinetic-primary/20' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-kinetic-surface border border-slate-200 dark:border-kinetic-border' }}">
                         <i class="ph {{ request()->routeIs('dashboard') ? 'ph-fill' : '' }} ph-squares-four text-lg"></i> Dashboard
                     </a>    
@@ -62,7 +62,7 @@
                 @endif
 
                 <!-- Menu untuk Approver -->
-                @if(Auth::user()->role->name === 'Approver')
+                @if(Auth::user()?->role?->name === 'Approver')
                     <a href="{{ route('dashboard') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm transition {{ request()->routeIs('dashboard') ? 'bg-teal-50 text-teal-700 dark:bg-kinetic-primary/10 dark:text-kinetic-secondary border border-teal-100 dark:border-kinetic-primary/20' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-kinetic-surface border border-slate-200 dark:border-kinetic-border' }}">
                         <i class="ph {{ request()->routeIs('dashboard') ? 'ph-fill' : '' }} ph-squares-four text-lg"></i> Dashboard
                     </a>
@@ -95,10 +95,12 @@
             <div class="w-10 h-10 rounded-full bg-slate-100 dark:bg-kinetic-surface border border-slate-200 dark:border-kinetic-border flex items-center justify-center overflow-hidden">
                 <i class="ph-fill ph-user text-slate-400 dark:text-gray-400"></i>
             </div>
+            @auth
             <div>
                 <p class="text-sm font-heading font-bold text-slate-900 dark:text-white">{{ Auth::user()->name }}</p>
                 <p class="text-[10px] text-slate-500 dark:text-gray-500">INFORMATIKA '26</p>
             </div>
+            @endauth
         </div>
     </div>
 </aside>
