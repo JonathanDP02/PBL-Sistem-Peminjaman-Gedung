@@ -266,7 +266,7 @@ class ApprovalController extends Controller
                 ->first();
                 
             if ($nextApprover && $nextStep) {
-                $booking->update([
+                $booking->update([      
                     'current_step' => $nextStep->step_order,
                     'status'       => 'Pending',
                 ]);
