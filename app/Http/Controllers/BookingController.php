@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Booking;
+use App\Models\BookingAttachment;
 use App\Models\BookingLog;
+use App\Models\WorkflowRequirement;
+use App\Services\LoggerService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use App\Services\LoggerService;
 
 class BookingController extends Controller
 {
@@ -29,102 +31,102 @@ class BookingController extends Controller
     }
 
     public function store(Request $request)
-{
-    $validated = $request->validate([
-        'room_id'           => 'required|exists:rooms,id',
-        'workflow_id'       => 'required|exists:workflows,id',
-        'event_name'        => 'required|string|max:200',
-        'event_description' => 'nullable|string',
-        'booking_date'      => 'required|date|after_or_equal:today',
-        'start_time'        => 'required|date_format:H:i',
-        'end_time'          => 'required|date_format:H:i|after:start_time',
-    ]);
+    {
+        $validated = $request->validate([
+            'room_id' => 'required|exists:rooms,id',
+            'workflow_id' => 'required|exists:workflows,id',
+            'event_name' => 'required|string|max:200',
+            'event_description' => 'nullable|string',
+            'booking_date' => 'required|date|after_or_equal:today',
+            'start_time' => 'required|date_format:H:i',
+            'end_time' => 'required|date_format:H:i|after:start_time',
+        ]);
 
-    // Cek mandatory requirements sebelum transaksi
-    $mandatoryRequirements = \App\Models\WorkflowRequirement::where('workflow_id', $validated['workflow_id'])
-        ->where('is_mandatory', true)
-        ->get();
+        // Cek mandatory requirements sebelum transaksi
+        $mandatoryRequirements = WorkflowRequirement::where('workflow_id', $validated['workflow_id'])
+            ->where('is_mandatory', true)
+            ->get();
 
-    foreach ($mandatoryRequirements as $requirement) {
-        if (!$request->hasFile('requirement_' . $requirement->id)) {
+        foreach ($mandatoryRequirements as $requirement) {
+            if (! $request->hasFile('requirement_'.$requirement->id)) {
+                return response()->json([
+                    'error' => "File wajib '{$requirement->document_name}' tidak ditemukan.",
+                ], 422);
+            }
+        }
+
+        try {
+            $booking = DB::transaction(function () use ($validated, $request, $mandatoryRequirements) {
+
+                $conflict = Booking::where('room_id', $validated['room_id'])
+                    ->where('booking_date', $validated['booking_date'])
+                    ->whereNotIn('status', ['Rejected', 'Cancelled'])
+                    ->where(function ($q) use ($validated) {
+                        $q->where('start_time', '<', $validated['end_time'])
+                            ->where('end_time', '>', $validated['start_time']);
+                    })
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($conflict) {
+                    throw new \Exception(
+                        'Ruangan sudah dibooking pada waktu tersebut. '.
+                        "Konflik dengan booking #{$conflict->id} ".
+                        "({$conflict->start_time} - {$conflict->end_time})."
+                    );
+                }
+
+                $isMaintenance = strtolower(trim($validated['event_name'])) === 'maintenance';
+
+                $booking = Booking::create([
+                    'user_id' => Auth::id(),
+                    'room_id' => $validated['room_id'],
+                    'workflow_id' => $validated['workflow_id'],
+                    'event_name' => $validated['event_name'],
+                    'event_description' => $validated['event_description'] ?? null,
+                    'booking_date' => $validated['booking_date'],
+                    'start_time' => $validated['start_time'],
+                    'end_time' => $validated['end_time'],
+                    'current_step' => $isMaintenance ? 0 : 1,
+                    'status' => $isMaintenance ? 'Approved' : 'Pending',
+                    'revision_count' => 0,
+                ]);
+
+                // Upload mandatory attachments
+                foreach ($mandatoryRequirements as $requirement) {
+                    $file = $request->file('requirement_'.$requirement->id);
+                    $path = $file->store("attachments/{$booking->id}", 'private');
+
+                    BookingAttachment::create([
+                        'booking_id' => $booking->id,
+                        'requirement_id' => $requirement->id,
+                        'uploader_id' => Auth::id(),
+                        'document_type' => $requirement->document_name,
+                        'file_path' => $path,
+                    ]);
+                }
+
+                LoggerService::logAction(
+                    $booking->id,
+                    $isMaintenance ? 'BYPASS_APPROVED' : 'SUBMITTED',
+                    null,
+                    $isMaintenance ? 'Booking Maintenance di-bypass approval dan langsung disetujui.' : 'Booking baru dibuat.'
+                );
+
+                session()->forget(['booking_draft_opened_at', 'booking_draft_id']);
+
+                return $booking;
+            });
+
             return response()->json([
-                'error' => "File wajib '{$requirement->document_name}' tidak ditemukan.",
-            ], 422);
+                'message' => 'Booking berhasil dibuat.',
+                'data' => $booking->load(['room', 'workflow']),
+            ], 201);
+
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 409);
         }
     }
-
-    try {
-        $booking = DB::transaction(function () use ($validated, $request, $mandatoryRequirements) {
-
-            $conflict = Booking::where('room_id', $validated['room_id'])
-                ->where('booking_date', $validated['booking_date'])
-                ->whereNotIn('status', ['Rejected', 'Cancelled'])
-                ->where(function ($q) use ($validated) {
-                    $q->where('start_time', '<', $validated['end_time'])
-                      ->where('end_time', '>', $validated['start_time']);
-                })
-                ->lockForUpdate()
-                ->first();
-
-            if ($conflict) {
-                throw new \Exception(
-                    "Ruangan sudah dibooking pada waktu tersebut. " .
-                    "Konflik dengan booking #{$conflict->id} " .
-                    "({$conflict->start_time} - {$conflict->end_time})."
-                );
-            }
-
-            $isMaintenance = strtolower(trim($validated['event_name'])) === 'maintenance';
-
-            $booking = Booking::create([
-                'user_id'           => Auth::id(),
-                'room_id'           => $validated['room_id'],
-                'workflow_id'       => $validated['workflow_id'],
-                'event_name'        => $validated['event_name'],
-                'event_description' => $validated['event_description'] ?? null,
-                'booking_date'      => $validated['booking_date'],
-                'start_time'        => $validated['start_time'],
-                'end_time'          => $validated['end_time'],
-                'current_step'      => $isMaintenance ? 0 : 1,
-                'status'            => $isMaintenance ? 'Approved' : 'Pending',
-                'revision_count'    => 0,
-            ]);
-
-            // Upload mandatory attachments
-            foreach ($mandatoryRequirements as $requirement) {
-                $file = $request->file('requirement_' . $requirement->id);
-                $path = $file->store("attachments/{$booking->id}", 'private');
-
-                \App\Models\BookingAttachment::create([
-                    'booking_id'    => $booking->id,
-                    'requirement_id' => $requirement->id,
-                    'uploader_id'   => Auth::id(),
-                    'document_type' => $requirement->document_name,
-                    'file_path'     => $path,
-                ]);
-            }
-
-            LoggerService::logAction(
-    $booking->id,
-    $isMaintenance ? 'BYPASS_APPROVED' : 'SUBMITTED',
-    null,
-    $isMaintenance ? 'Booking Maintenance di-bypass approval dan langsung disetujui.' : 'Booking baru dibuat.'
-);
-
-            session()->forget(['booking_draft_opened_at', 'booking_draft_id']);
-
-            return $booking;
-        });
-
-        return response()->json([
-            'message' => 'Booking berhasil dibuat.',
-            'data'    => $booking->load(['room', 'workflow']),
-        ], 201);
-
-    } catch (\Exception $e) {
-        return response()->json(['error' => $e->getMessage()], 409);
-    }
-}
 
     public function show($id)
     {
@@ -145,7 +147,7 @@ class BookingController extends Controller
             ->where('user_id', Auth::id())
             ->firstOrFail();
 
-        if (!in_array($booking->status, ['Pending', 'Draft', 'Revising'])) {
+        if (! in_array($booking->status, ['Pending', 'Draft', 'Revising'])) {
             return response()->json([
                 'error' => "Booking tidak dapat dibatalkan karena statusnya '{$booking->status}'.",
             ], 422);
@@ -158,5 +160,18 @@ class BookingController extends Controller
         });
 
         return response()->json(['message' => 'Booking berhasil dibatalkan.']);
+    }
+
+    public function timeline($id)
+    {
+        $bookingLogs = BookingLog::with(['actor', 'step'])
+            ->where('booking_id', $id)
+            ->orderBy('created_at', 'asc')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $bookingLogs,
+        ]);
     }
 }

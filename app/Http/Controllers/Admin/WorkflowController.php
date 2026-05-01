@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Position;
 use App\Models\Workflow;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Models\Position;
 use Illuminate\Support\Facades\DB;
 
 class WorkflowController extends Controller
@@ -128,6 +128,7 @@ class WorkflowController extends Controller
         // Jika ada filter spesifik unit, bisa ditambahkan di sini.
         // Untuk sekarang, kita ambil semua jabatan aktif.
         $positions = Position::select('id', 'name')->orderBy('name', 'asc')->get();
+
         return response()->json(['data' => $positions]);
     }
 
@@ -143,12 +144,14 @@ class WorkflowController extends Controller
 
         $validated = $request->validate([
             'steps' => 'array',
-            'steps.*.position_id' => 'required_with:steps|integer|exists:positions,id',
+            'steps.*.position_id' => 'required_with:steps|integer|exists:positions,id|distinct',
             'steps.*.step_order' => 'required_with:steps|integer|min:1',
             'steps.*.requires_attachment' => 'nullable|boolean',
             'requirements' => 'array',
             'requirements.*.document_name' => 'required_with:requirements|string|max:150',
             'requirements.*.is_mandatory' => 'nullable|boolean',
+        ], [
+            'steps.*.position_id.distinct' => 'Pejabat/Approver tidak boleh dipilih lebih dari satu kali dalam satu workflow.',
         ]);
 
         try {
@@ -156,12 +159,31 @@ class WorkflowController extends Controller
                 $workflow->steps()->delete();
                 $workflow->requirements()->delete();
 
-                foreach ($validated['steps'] ?? [] as $step) {
-                    $workflow->steps()->create([
-                        'position_id' => $step['position_id'],
-                        'step_order' => $step['step_order'],
-                        'requires_attachment' => (bool) ($step['requires_attachment'] ?? false),
-                    ]);
+                if (! empty($validated['steps'])) {
+                    $positionIds = collect($validated['steps'])->pluck('position_id');
+                    $positions = Position::with('unit')->whereIn('id', $positionIds)->get()->keyBy('id');
+
+                    $levelScore = [
+                        'Organisasi' => 1,
+                        'Jurusan' => 2,
+                        'Pusat' => 3,
+                    ];
+
+                    // Refactoring: Urutkan data workflow mengikuti level terbawah sampai teratas untuk approvernya
+                    $sortedSteps = collect($validated['steps'])->sortBy(function ($step) use ($positions, $levelScore) {
+                        $unitLevel = $positions[$step['position_id']]->unit->level ?? 'Organisasi';
+
+                        return $levelScore[$unitLevel] ?? 1;
+                    })->values();
+
+                    // Reassign step_order
+                    foreach ($sortedSteps as $index => $step) {
+                        $workflow->steps()->create([
+                            'position_id' => $step['position_id'],
+                            'step_order' => $index + 1,
+                            'requires_attachment' => (bool) ($step['requires_attachment'] ?? false),
+                        ]);
+                    }
                 }
 
                 foreach ($validated['requirements'] ?? [] as $requirement) {
@@ -174,15 +196,14 @@ class WorkflowController extends Controller
 
             return response()->json([
                 'message' => 'Konfigurasi Workflow berhasil disimpan.',
-                'workflow' => $workflow->load('steps', 'requirements')
+                'workflow' => $workflow->load('steps', 'requirements'),
             ], 200);
 
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Terjadi kesalahan internal saat menyimpan data.',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
-
 }

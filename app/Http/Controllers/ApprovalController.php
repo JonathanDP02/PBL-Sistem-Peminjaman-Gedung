@@ -1,21 +1,22 @@
 <?php
 
 namespace App\Http\Controllers;
+
+use App\Jobs\GenerateApprovalCertificateJob;
+use App\Mail\ApprovalNeededMail;
+use App\Mail\BookingApprovedMail;
+use App\Mail\BookingRejectedMail;
 use App\Models\Approval;
 use App\Models\Booking;
 use App\Models\BookingAttachment;
-use App\Models\BookingLog;
+use App\Models\User;
 use App\Models\WorkflowStep;
 use App\Services\LoggerService;
-use App\Services\WorkflowService;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Support\Facades\Storage;
-use SimpleSoftwareIO\QrCode\Facades\QrCode;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 
 class ApprovalController extends Controller
 {
@@ -70,6 +71,7 @@ class ApprovalController extends Controller
 
         $previousApprovals = $booking->approvals
             ->where('step_id', '<', $currentStep?->id)
+            ->where('approval_status', 'Approved')
             ->sortBy('created_at')
             ->map(function ($approval) {
                 return [
@@ -77,7 +79,8 @@ class ApprovalController extends Controller
                     'position' => $approval->step->position->name ?? null,
                     'approver_name' => $approval->approver->name,
                     'approval_status' => ucfirst($approval->approval_status),
-                    'approved_at' => $approval->approved_at->toIso8601String(),
+                    'approved_at' => $approval->approved_at?->toIso8601String(),
+                    'approved_at_formatted' => $approval->approved_at?->format('d M Y H:i'),
                     'notes' => $approval->notes,
                 ];
             })
@@ -258,14 +261,25 @@ class ApprovalController extends Controller
                         'current_step' => $nextStep->step_order,
                         'status' => 'Pending',
                     ]);
+
+                    // Kirim email ke pejabat berikutnya
+                    $nextApprovers = User::where('position_id', $nextStep->position_id)->get();
+                    foreach ($nextApprovers as $approverToNotify) {
+                        Mail::to($approverToNotify->email)
+                            ->queue(new ApprovalNeededMail($booking, $approverToNotify));
+                    }
                 } else {
                     // Ini step terakhir - update status dan dispatch job untuk generate PDF
                     $booking->update([
                         'status' => 'Approved',
                     ]);
 
+                    // Kirim email notifikasi Hard-Lock ke peminjam
+                    Mail::to($booking->user->email)
+                        ->queue(new BookingApprovedMail($booking));
+
                     // Dispatch async job untuk generate PDF certificate & email
-                    dispatch(new \App\Jobs\GenerateApprovalCertificateJob($booking->id));
+                    dispatch(new GenerateApprovalCertificateJob($booking->id));
                 }
 
                 $approval = Approval::create([
@@ -279,7 +293,7 @@ class ApprovalController extends Controller
                 LoggerService::logAction($booking->id, 'APPROVED', $currentStep->id, $request->notes);
             });
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'error' => $e->getMessage()], 422);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
         }
 
         /** @var Booking $booking */
@@ -288,7 +302,7 @@ class ApprovalController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => $booking->status === 'Approved' 
+            'message' => $booking->status === 'Approved'
                 ? 'Booking disetujui! Surat izin sedang digenerate dan akan dikirim ke email peminjam dalam beberapa saat.'
                 : 'Booking berhasil dilanjutkan ke pejabat berikutnya.',
             'booking' => [
@@ -361,6 +375,10 @@ class ApprovalController extends Controller
                     'revision_count' => $booking->revision_count + 1,
                 ]);
 
+                // Kirim email penolakan ke peminjam
+                Mail::to($booking->user->email)
+                    ->queue(new BookingRejectedMail($booking, $request->notes));
+
                 $approval = Approval::create([
                     'booking_id' => $booking->id,
                     'approver_id' => $approver->id,
@@ -368,12 +386,12 @@ class ApprovalController extends Controller
                     'approval_status' => 'Rejected',
                     'notes' => $request->notes,
                 ]);
-                
+
                 LoggerService::logAction($booking->id, 'REJECTED', $currentStep->id, $request->notes);
 
             });
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'error' => $e->getMessage()], 422);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
         }
 
         /** @var Booking $booking */
