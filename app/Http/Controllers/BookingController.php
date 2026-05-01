@@ -15,7 +15,13 @@ class BookingController extends Controller
 {
     public function index()
     {
-        $bookings = Booking::with(['room', 'workflow'])
+        $bookings = Booking::with([
+            'room.building',
+                'user',
+                'workflow.steps',
+                'workflow.requirements',
+                'attachments',
+        ])
             ->where('user_id', Auth::id())
             ->orderByDesc('created_at')
             ->get();
@@ -69,11 +75,17 @@ class BookingController extends Controller
                     ->first();
 
                 if ($conflict) {
-                    throw new \Exception(
-                        'Ruangan sudah dibooking pada waktu tersebut. '.
-                        "Konflik dengan booking #{$conflict->id} ".
-                        "({$conflict->start_time} - {$conflict->end_time})."
-                    );
+                    // throw new \Exception(
+                    //     'Ruangan sudah dibooking pada waktu tersebut. '.
+                    //     "Konflik dengan booking #{$conflict->id} ".
+                    //     "({$conflict->start_time} - {$conflict->end_time})."
+                    // );
+                    $isBlocked = $conflict->event_name === 'Libur Nasional';
+                    $message   = $isBlocked
+                        ? "Tanggal {$validated['booking_date']} diblokir sebagai Libur Nasional. Peminjaman tidak dapat dilakukan."
+                        : "Ruangan sudah dibooking pada waktu tersebut. Konflik dengan booking #{$conflict->id} ({$conflict->start_time} - {$conflict->end_time}).";
+
+                    throw new \Exception($message);
                 }
 
                 $isMaintenance = strtolower(trim($validated['event_name'])) === 'maintenance';
@@ -120,7 +132,13 @@ class BookingController extends Controller
 
             return response()->json([
                 'message' => 'Booking berhasil dibuat.',
-                'data' => $booking->load(['room', 'workflow']),
+                'data' => $booking->load([
+                    'room.building',
+                    'user',
+                    'workflow.steps',
+                    'workflow.requirements',
+                    'attachments',
+                ]),
             ], 201);
 
         } catch (\Exception $e) {
@@ -131,7 +149,10 @@ class BookingController extends Controller
     public function show($id)
     {
         $booking = Booking::with([
-            'room',
+            'room.building',
+            'user',
+            'workflow.requirements',
+            // 'room',
             'workflow.steps.position',
             'approvals',
             'logs.actor',
