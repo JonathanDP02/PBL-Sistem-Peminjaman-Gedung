@@ -110,7 +110,7 @@
                                     <div>
                                         <p class="text-sm font-bold text-slate-900 dark:text-white">{{ $prevApproval['position'] }}</p>
                                         <p class="text-xs text-slate-500 dark:text-gray-500">Oleh {{ $prevApproval['approver_name'] }}</p>
-                                        <p class="text-xs text-slate-500 dark:text-gray-500 mt-1">{{ ucfirst($prevApproval['approval_status']) }}</p>
+                                        <p class="text-[10px] text-slate-400 dark:text-gray-500 mt-1">Disetujui pada {{ $prevApproval['approved_at_formatted'] }}</p>
                                         @if($prevApproval['notes'])
                                             <p class="text-xs text-slate-600 dark:text-gray-400 italic mt-1">{{ $prevApproval['notes'] }}</p>
                                         @endif

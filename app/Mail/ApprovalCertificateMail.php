@@ -4,7 +4,6 @@ namespace App\Mail;
 
 use App\Models\Booking;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
@@ -51,7 +50,7 @@ class ApprovalCertificateMail extends Mailable
      */
     public function attachments(): array
     {
-        $pdfDiskPath = Storage::disk('private')->path($this->pdfPath);
+        $pdfDiskPath = Storage::disk('local')->path($this->pdfPath);
 
         return [
             Attachment::fromPath($pdfDiskPath)
