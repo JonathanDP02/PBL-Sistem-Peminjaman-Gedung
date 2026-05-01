@@ -2,8 +2,8 @@
 
 namespace Database\Factories;
 
-use App\Models\WorkflowRequirement;
 use App\Models\Workflow;
+use App\Models\WorkflowRequirement;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -32,6 +32,13 @@ class WorkflowRequirementFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'is_mandatory' => true,
+        ]);
+    }
+
+    public function optional(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'is_mandatory' => false,
         ]);
     }
 }

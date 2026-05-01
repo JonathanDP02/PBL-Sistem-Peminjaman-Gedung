@@ -58,6 +58,13 @@ This project has domain-specific skills available. You MUST activate the relevan
 
 - Be concise in your explanations - focus on what's important rather than explaining obvious details.
 
+## Mandatory Testing & Quality Assurance
+
+- **Test-Driven Mentality**: For every new feature, model, or complex logic, you **MUST** create a corresponding Pest test file in `tests/Feature`.
+- **Run Tests Before Completion**: Before finalizing any task, you **MUST** run the relevant tests (using `php artisan test` or `vendor/bin/pest`) to ensure no regressions and that the new feature works as expected.
+- **Seeder Support**: If a feature requires specific data state, update `database/seeders/TestApprovalDataSeeder.php` or create relevant factories/seeders to support testing and manual verification.
+- **Zero Tolerance for Errors**: Do not submit code that breaks existing tests. If tests fail, you must fix the code or update the tests if the behavior change was intentional.
+
 === boost rules ===
 
 # Laravel Boost
@@ -258,7 +265,7 @@ Pusat (root)
 - Review Pengajuan Masuk (inbox approval)
 - Setuju: Lanjut ke pejabat berikutnya (current_step++)
 - Tolak: Wajib input alasan (notes) & status → Revised
-- Upload Lampiran (jika requires_attachment = true)
+- TIDAK wajib upload lampiran (Disposisi sudah diunggah oleh peminjam di awal)
 - Download Surat Izin Final & Surat Disposisi (generated otomatis)
 
 ### User/Peminjam (Mahasiswa/Staf)
@@ -268,7 +275,7 @@ Pusat (root)
 - Ajukan Peminjaman Ruangan
   1. Pilih jadwal → Auto-check bentrok
   2. Soft-Lock (kunci sementara saat isi form)
-  3. Upload dokumen syarat (WorkflowRequirements wajib)
+  3. Upload dokumen syarat (Proposal & **Draft Disposisi** wajib)
   4. Submit
 - Revisi Dokumen (jika Approver tolak)
 - Download surat final
@@ -281,11 +288,11 @@ Admin_Unit menyusun "rantai persetujuan" & dokumen syarat
 Workflow (per unit)
 ├── Step 1: Position X, requires_attachment: false
 ├── Step 2: Position Y, requires_attachment: false
-└── Step 3: Position Z, requires_attachment: true ← Harus upload surat
-WorkflowRequirements
+└── Step 3: Position Z, requires_attachment: false 
+WorkflowRequirements (Kewajiban Peminjam)
 ├── Proposal Acara (is_mandatory: true)
 ├── Surat Resmi dari Unit (is_mandatory: true)
-└── Persetujuan Dosen Pembimbing (is_mandatory: false)
+└── Surat Disposisi Wadir (is_mandatory: true) ← Peminjam upload di awal
 ```
 
 **Aturan Emas:** Admin Organisasi (BEM/HMTI) TIDAK boleh setup workflow untuk ruangan milik Pusat/Jurusan. Sistem auto-apply workflow pemilik ruangan berdasarkan unit_id rooms table.
@@ -297,7 +304,7 @@ User membuat booking dengan validasi ketat
 2. Pilih Jadwal → Query: SELECT * FROM bookings WHERE room_id = ? 
    AND booking_date = ? AND ((start_time <= ? AND end_time > ?) OR (...))
    → Conflict? Jika ya: Reject. Jika tidak: Soft-Lock (buat record temp).
-3. Upload Dokumen Syarat → Validasi vs WorkflowRequirements (wajib) 
+3. Upload Dokumen Syarat → Validasi vs WorkflowRequirements (Proposal & Disposisi Wadir) 
 4. Submit → Status: Pending, current_step: 1, revision_count: 0
 ```
 
@@ -305,7 +312,7 @@ User membuat booking dengan validasi ketat
 Setiap langkah adalah satu pejabat, satu keputusan
 ```
 Approver 1 (Step 1 - Kaprodi):
-- Review dokumen & booking details
+- Review dokumen (Proposal & Disposisi) yang diupload peminjam
 - Approve → INSERT approval (status: Approved) → current_step++, lanjut Step 2
 - Reject → INSERT approval (status: Rejected) → booking status: Rejected, notes wajib
 
@@ -313,9 +320,9 @@ Approver 2 (Step 2 - Ketua Jurusan):
 - [Same logic as Approver 1]
 
 Approver 3 (Step 3 - Wakil Direktur):
-- [Step ini: requires_attachment = true]
-- Tombol "Approve" TERKUNCI sampai upload lampiran (surat disposisi)
-- Upload → Unlock → Approve → Lanjut to validation (lihat Fase 4)
+- Review lampiran akhir
+- Click "Setujui Sekarang" → Booking status: Approved (Hard-Lock)
+- Lanjut to validation (lihat Fase 4)
 ```
 
 ### Fase 4: FINALISASI (Sistem Auto)
@@ -387,6 +394,113 @@ All passwords default: `12345`
 
 Alur pre-built:
 - "Peminjaman JTI": Kaprodi TI → Ketua JTI → Wakil Direktur (3 step)
-- "Peminjaman Auditorium": Ketua JTI → Wakil Direktur (2 step, last require attachment)
+- "Peminjaman Auditorium": Ketua JTI → Wakil Direktur (2 step)
+
+## PDF Certificate & QR Code System
+
+### 📋 Konsep (Jangan Manipulasi File Mahasiswa!)
+**CRITICAL:** Sistem TIDAK menimpa/memanipulasi lampiran dokumen mahasiswa. Sistem menerbitkan dokumen TERPISAH: "Lembar Disposisi" / "Surat Izin Peminjaman Resmi" yang 100% di-generate oleh sistem (HTML → PDF).
+
+**Arsitektur:**
+- File mahasiswa (proposal, attachment dari upload) = Tetap UTUH di folder media
+- Surat Izin Resmi = Dokumen legal yang di-generate sistem setelah ALL approvers setuju
+- Keamanan: Non-Repudiation (tidak bisa disangkal, tidak bisa di-copy paste di Photoshop)
+
+### 🎯 Flow Timeline
+1. **Tahap Approval Chain**
+   - Approver 1, 2, ..., N memberikan approval satu per satu
+   - Setiap approval tersimpan di tabel `approvals` dengan timestamp
+
+2. **Pejabat Terakhir Setuju** (Trigger Point)
+   - Pejabat terakhir di workflow click "Setujui Sekarang"
+   - Backend check: apakah ini approval terakhir?
+   - Jika YA → Booking status langsung jadi `Approved`
+
+3. **Dispatch Queue Job** (ASYNC, BUKAN SYNC)
+   - Jangan render PDF saat tombol diclick (akan timeout 3-5 detik)
+   - Dispatch `GenerateApprovalCertificateJob` ke Queue
+   - Response langsung kembali ke user: "Surat Izin sedang digenerate..."
+
+4. **Queue Worker Memproses**
+   - Pull data: semua approvers + tanggal approval mereka
+   - Generate HTML table dengan kolom: Posisi | QR Code | Nama Pejabat | NIP | Tanggal
+   - Gacha gambar PNG QR buat setiap pejabat
+   - Render Blade HTML ke PDF via DOMPDF
+   - Save ke: `storage/app/private/certificates/BOOKING-CODE-2026-04-30.pdf`
+   - Email PDF ke peminjam dengan subject: "Surat Izin Peminjaman Ruangan - {booking_code}"
+
+### 🔗 QR Code (BUKAN Tanda Tangan Coretan!)
+**Paradigma Baru:** QR Code ≠ Gambar TTD. QR Code berisi **URL Verifikasi**.
+
+**Pola:**
+```
+QR Content: https://space.in/verify/BOOKING-ABC123DEF456
+
+Saat user scan dengan HP:
+↓ Terbuka halaman publik Space.in:
+
+Halaman /verify/{booking_code}:
+- Header: ✅ DOKUMEN SERTIFIKAT VALID DAN SAH
+- Perihal: Peminjaman Auditorium oleh BEM Teknik
+- Tanggal Event: 12 Nov 2026
+- Durasi: 08:00 - 15:00
+
+Tabel Persetujuan:
+┌─────────────────┬──────────────┬───────────────┐
+│ Jabatan         │ Nama Pejabat │ Tanggal Setuju │
+├─────────────────┼──────────────┼───────────────┤
+│ Ketua Jurusan   │ Dr. Budi S.  │ 24 Okt 2026   │
+│ Wakil Direktor  │ Prof. Andi   │ 25 Okt 2026   │
+│ Rektor          │ Dr. Sri M.   │ 26 Okt 2026   │
+└─────────────────┴──────────────┴───────────────┘
+
+Warning: Jika dokumen tidak terbaca di URL ini, BERARTI PALSU.
+```
+
+**Keuntungan Non-Repudiation:**
+- Tidak bisa disangkal ("Bukan saya yang setuju")
+- Verifikasi real-time online
+- Audit trail lengkap
+- Secure dari manipulasi Photoshop
+
+### 📦 Libraries & Dependencies
+```bash
+composer require simplesoftwareio/simple-qrcode
+composer require barryvdh/laravel-dompdf
+```
+
+**Usage:**
+```php
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
+use Barryvdh\DomPDF\Facade\Pdf;
+
+// Generate QR Code as PNG base64
+$qrCode = base64_encode(QrCode::format('png')->size(100)->generate(
+    route('verify.document', $booking->booking_code)
+));
+
+// Render blade to PDF
+$pdf = Pdf::loadView('certificates.surat-izin-pdf', [
+    'booking' => $booking,
+    'approvals' => $approvals,
+]);
+$pdf->save(storage_path('app/private/certificates/' . $booking->booking_code . '.pdf'));
+```
+
+### 📂 File Structure Hasil Akhir
+```
+storage/app/private/
+├── certificates/
+│   ├── BOOKING-ABC123DEF456-2026-04-30.pdf
+│   ├── BOOKING-XYZ789UVW012-2026-04-30.pdf
+│   └── ...
+```
+
+**Route Publik Verifikasi:**
+```
+GET /verify/{booking_code}  → ApprovalController@verify
+```
+
+Halaman ini **PUBLIK** (tidak perlu login) agar siapa pun bisa verifikasi keaslian dokumen.
 
 </laravel-boost-guidelines>

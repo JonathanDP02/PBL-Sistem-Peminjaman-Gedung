@@ -52,125 +52,57 @@
         <div class="overflow-x-auto custom-scrollbar">
             <table class="w-full text-left border-collapse min-w-[900px]">
                 <thead>
-                    <tr class="border-b border-slate-200 dark:border-[#2A2A2A]">
-                        <th class="px-4 pb-4 text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest">Pemohon</th>
-                        <th class="px-6 pb-4 text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest">Ruangan</th>
-                        <th class="px-6 pb-4 text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest">Jadwal</th>
-                        <th class="px-4 pb-4 text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest text-right">Aksi</th>
-                    </tr>
-                </thead>
-                
-                <tbody class="divide-y divide-slate-100 dark:divide-[#1E1E1E]">
+                        <tr class="border-b border-slate-200 dark:border-[#2A2A2A]">
+                            <th class="px-2 pb-4 text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest">Nama Event</th>
+                            <th class="px-6 pb-4 text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest">Peminjam</th>
+                            <th class="px-6 pb-4 text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest">Ruangan</th>
+                            <th class="px-6 pb-4 text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest">Waktu Digunakan</th>
+                            <th class="px-6 pb-4 text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest text-center">Aksi</th>
+                        </tr>
+                    </thead>
                     
-                    <tr class="hover:bg-slate-50 dark:hover:bg-[#151515] transition-colors rounded-2xl group">
-                        <td class="px-4 py-5">
-                            <div class="flex items-center gap-4">
-                                <img src="https://ui-avatars.com/api/?name=Andika+Pratama&background=475569&color=fff" class="w-10 h-10 rounded-full object-cover">
-                                <div>
-                                    <h4 class="text-sm font-bold text-slate-900 dark:text-white">Andika Pratama</h4>
-                                    <p class="text-xs text-slate-500 dark:text-gray-500 mt-0.5">BEM Universitas</p>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="px-6 py-5">
-                            <div class="flex items-center gap-2">
-                                <span class="w-1.5 h-1.5 rounded-full bg-kinetic-primary shadow-[0_0_5px_rgba(20,184,166,0.5)]"></span>
-                                <span class="text-sm font-bold text-slate-700 dark:text-gray-300">Auditorium Utama</span>
-                            </div>
-                        </td>
-                        <td class="px-6 py-5">
-                            <p class="text-sm font-bold text-slate-900 dark:text-white">15 Okt 2023</p>
-                            <p class="text-xs text-slate-500 dark:text-gray-500 mt-0.5">08:00 - 17:00</p>
-                        </td>
-                        <td class="px-4 py-5 text-right">
-                            <button onclick="openReviewModal()" class="px-5 py-2.5 rounded-xl bg-transparent border border-slate-300 dark:border-[#2A2A2A] hover:bg-slate-100 dark:hover:bg-[#2A2A2A] text-slate-700 dark:text-white text-xs font-bold transition-colors">
-                                Review Pengajuan
-                            </button>
-                        </td>
-                    </tr>
-
-                    <tr class="hover:bg-slate-50 dark:hover:bg-[#151515] transition-colors rounded-2xl group">
-                        <td class="px-4 py-5">
-                            <div class="flex items-center gap-4">
-                                <img src="https://ui-avatars.com/api/?name=Siti+Rahmawati&background=0284c7&color=fff" class="w-10 h-10 rounded-full object-cover">
-                                <div>
-                                    <h4 class="text-sm font-bold text-slate-900 dark:text-white">Siti Rahmawati</h4>
-                                    <p class="text-xs text-slate-500 dark:text-gray-500 mt-0.5">Dosen Informatika</p>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="px-6 py-5">
-                            <div class="flex items-center gap-2">
-                                <span class="w-1.5 h-1.5 rounded-full bg-kinetic-primary shadow-[0_0_5px_rgba(20,184,166,0.5)]"></span>
-                                <span class="text-sm font-bold text-slate-700 dark:text-gray-300">Lab Riset AI</span>
-                            </div>
-                        </td>
-                        <td class="px-6 py-5">
-                            <p class="text-sm font-bold text-slate-900 dark:text-white">16 Okt 2023</p>
-                            <p class="text-xs text-slate-500 dark:text-gray-500 mt-0.5">10:00 - 12:00</p>
-                        </td>
-                        <td class="px-4 py-5 text-right">
-                            <button onclick="openReviewModal()" class="px-5 py-2.5 rounded-xl bg-transparent border border-slate-300 dark:border-[#2A2A2A] hover:bg-slate-100 dark:hover:bg-[#2A2A2A] text-slate-700 dark:text-white text-xs font-bold transition-colors">
-                                Review Pengajuan
-                            </button>
-                        </td>
-                    </tr>
-
-                    <tr class="hover:bg-slate-50 dark:hover:bg-[#151515] transition-colors rounded-2xl group">
-                        <td class="px-4 py-5">
-                            <div class="flex items-center gap-4">
-                                <img src="https://ui-avatars.com/api/?name=Raka+Danuarta&background=0f172a&color=fff" class="w-10 h-10 rounded-full object-cover">
-                                <div>
-                                    <h4 class="text-sm font-bold text-slate-900 dark:text-white">Raka Danuarta</h4>
-                                    <p class="text-xs text-slate-500 dark:text-gray-500 mt-0.5">Hima Manajemen</p>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="px-6 py-5">
-                            <div class="flex items-center gap-2">
-                                <span class="w-1.5 h-1.5 rounded-full bg-red-500 shadow-[0_0_5px_rgba(239,68,68,0.5)]"></span>
-                                <span class="text-sm font-bold text-slate-700 dark:text-gray-300">Ruang Rapat Senat</span>
-                            </div>
-                        </td>
-                        <td class="px-6 py-5">
-                            <p class="text-sm font-bold text-slate-900 dark:text-white">18 Okt 2023</p>
-                            <p class="text-xs text-slate-500 dark:text-gray-500 mt-0.5">13:00 - 15:30</p>
-                        </td>
-                        <td class="px-4 py-5 text-right">
-                            <button onclick="openReviewModal()" class="px-5 py-2.5 rounded-xl bg-transparent border border-slate-300 dark:border-[#2A2A2A] hover:bg-slate-100 dark:hover:bg-[#2A2A2A] text-slate-700 dark:text-white text-xs font-bold transition-colors">
-                                Review Pengajuan
-                            </button>
-                        </td>
-                    </tr>
-
-                    <tr class="hover:bg-slate-50 dark:hover:bg-[#151515] transition-colors rounded-2xl group">
-                        <td class="px-4 py-5">
-                            <div class="flex items-center gap-4">
-                                <img src="https://ui-avatars.com/api/?name=Budi+Santoso&background=94a3b8&color=fff" class="w-10 h-10 rounded-full object-cover">
-                                <div>
-                                    <h4 class="text-sm font-bold text-slate-900 dark:text-white">Budi Santoso</h4>
-                                    <p class="text-xs text-slate-500 dark:text-gray-500 mt-0.5">Admin Fakultas</p>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="px-6 py-5">
-                            <div class="flex items-center gap-2">
-                                <span class="w-1.5 h-1.5 rounded-full bg-kinetic-primary shadow-[0_0_5px_rgba(20,184,166,0.5)]"></span>
-                                <span class="text-sm font-bold text-slate-700 dark:text-gray-300">Amphitheater B</span>
-                            </div>
-                        </td>
-                        <td class="px-6 py-5">
-                            <p class="text-sm font-bold text-slate-900 dark:text-white">20 Okt 2023</p>
-                            <p class="text-xs text-slate-500 dark:text-gray-500 mt-0.5">09:00 - 12:00</p>
-                        </td>
-                        <td class="px-4 py-5 text-right">
-                            <button onclick="openReviewModal()" class="px-5 py-2.5 rounded-xl bg-transparent border border-slate-300 dark:border-[#2A2A2A] hover:bg-slate-100 dark:hover:bg-[#2A2A2A] text-slate-700 dark:text-white text-xs font-bold transition-colors">
-                                Review Pengajuan
-                            </button>
-                        </td>
-                    </tr>
-
-                </tbody>
+                    <tbody class="divide-y divide-slate-100 dark:divide-[#1E1E1E]">
+                        @forelse($approvals as $approval)
+                            <tr class="hover:bg-slate-50 dark:hover:bg-[#1A1A1A] transition-colors group">
+                                <td class="px-2 py-5">
+                                    <h4 class="text-sm font-bold text-slate-900 dark:text-white mb-0.5">{{ $approval['booking']['event_name'] }}</h4>
+                                    <p class="text-[10px] font-bold tracking-widest {{ $approval['priority_indicator'] === 'urgent' ? 'text-red-500' : ($approval['priority_indicator'] === 'high' ? 'text-yellow-500' : 'text-green-500') }} uppercase mt-1">{{ ucfirst($approval['priority_indicator']) }}</p>
+                                </td>
+                                <td class="px-6 py-5">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-8 h-8 rounded-full bg-slate-200 dark:bg-[#2A2A2A] flex items-center justify-center text-[10px] font-bold text-slate-600 dark:text-gray-300">
+                                            {{ substr($approval['peminjam']['name'], 0, 2) }}
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-bold text-slate-700 dark:text-gray-300">{{ $approval['peminjam']['name'] }}</p>
+                                            <p class="text-[10px] text-slate-500 dark:text-gray-500">{{ $approval['time_remaining'] }}</p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-5">
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-1.5 h-1.5 rounded-full {{ $approval['priority_indicator'] === 'urgent' ? 'bg-red-500' : ($approval['priority_indicator'] === 'high' ? 'bg-yellow-500' : 'bg-green-500') }} shadow-[0_0_5px_rgba(20,184,166,0.5)]"></span>
+                                        <span class="text-sm font-bold text-slate-700 dark:text-gray-300">{{ $approval['room']['room_name'] }}</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-5">
+                                    <p class="text-sm font-medium text-slate-700 dark:text-gray-300">{{ $approval['booking']['booking_date'] }}</p>
+                                    <p class="text-[10px] text-slate-500 dark:text-gray-500 mt-0.5">{{ $approval['booking']['start_time'] }} - {{ $approval['booking']['end_time'] }}</p>
+                                </td>
+                                <td class="px-6 py-5 text-center">
+                                    <a href="{{ route('approvals.show', $approval['booking']['id']) }}" class="px-5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1A1A] dark:hover:bg-[#2A2A2A] border border-slate-200 dark:border-[#2A2A2A] text-slate-700 dark:text-white text-xs font-bold transition-colors">
+                                        Review
+                                    </a>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="5" class="px-6 py-8 text-center">
+                                    <p class="text-sm text-slate-500 dark:text-gray-400">Tidak ada permintaan tertunda</p>
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
             </table>
         </div>
 
@@ -203,223 +135,6 @@
 
             <p class="text-[10px] font-bold tracking-widest text-slate-400 dark:text-gray-500 uppercase text-center">83% TARGET TERCAPAI</p>
         </div>
-
-    </div>
-    <div id="reviewModal" class="hidden fixed inset-0 z-[100] bg-[#0F0F0F] flex-col transition-opacity duration-300">
-    
-    <div class="h-20 border-b border-[#2A2A2A] flex items-center justify-between px-6 shrink-0 bg-[#151515]">
-        <div class="flex items-center gap-4">
-            <button onclick="closeReviewModal()" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-[#2A2A2A] text-white transition-colors">
-                <i class="ph-bold ph-arrow-left text-xl"></i>
-            </button>
-            <div>
-                <p class="text-[10px] font-bold tracking-widest text-kinetic-primary uppercase mb-0.5">Detail Permohonan</p>
-                <h3 class="font-heading text-lg font-bold text-white">Seminar AI & Masa Depan Kerja</h3>
-            </div>
-        </div>
-        <div class="flex items-center gap-4">
-            <button class="text-slate-400 hover:text-white transition-colors relative">
-                <i class="ph ph-bell text-xl"></i>
-                <span class="absolute top-0 right-0.5 w-2 h-2 bg-kinetic-primary rounded-full"></span>
-            </button>
-            <button class="text-slate-400 hover:text-white transition-colors">
-                <i class="ph-fill ph-moon text-xl"></i>
-            </button>
-            <img src="https://ui-avatars.com/api/?name=Dr+Aris&background=0f172a&color=fff" class="w-9 h-9 rounded-full object-cover ml-2">
-        </div>
-    </div>
-
-    <div class="flex flex-1 overflow-hidden">
-        
-        <div class="flex-1 p-6 flex flex-col bg-[#0F0F0F]">
-            <div class="bg-[#1A1A1A] border border-[#2A2A2A] rounded-t-2xl p-4 flex justify-between items-center shrink-0">
-                <div class="flex items-center gap-2 text-slate-300 text-sm font-medium">
-                    <i class="ph-fill ph-file-pdf text-kinetic-primary text-xl"></i>
-                    proposal_seminar_ai.pdf
-                </div>
-                <div class="flex items-center gap-4 bg-[#2A2A2A] rounded-lg px-3 py-1.5 text-slate-300 text-sm">
-                    <button class="hover:text-white"><i class="ph-bold ph-minus"></i></button>
-                    <span class="w-10 text-center font-bold text-xs">85%</span>
-                    <button class="hover:text-white"><i class="ph-bold ph-plus"></i></button>
-                    <div class="w-px h-4 bg-slate-600 mx-1"></div>
-                    <button class="hover:text-white"><i class="ph-bold ph-corners-out"></i></button>
-                </div>
-            </div>
-            
-            <div class="bg-white flex-1 overflow-y-auto rounded-b-2xl border-x border-b border-[#2A2A2A] custom-scrollbar p-10 relative">
-                <div class="max-w-3xl mx-auto text-slate-900">
-                    <div class="flex justify-between items-end border-b-2 border-slate-200 pb-4 mb-8">
-                        <div>
-                            <h1 class="font-heading text-2xl font-extrabold text-slate-900">SPACE.IN BOOKING REQUEST</h1>
-                            <p class="text-[10px] font-bold text-slate-400 tracking-widest mt-1">DOC REF: PK-2023-0892</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-[10px] font-bold text-slate-400 tracking-widest uppercase">Date Generated</p>
-                            <p class="text-sm font-bold text-slate-900">24 Okt 2023</p>
-                        </div>
-                    </div>
-
-                    <h2 class="text-3xl font-extrabold font-heading mb-10 leading-tight">Proposal Penggunaan Auditorium Utama untuk Seminar AI 2023</h2>
-
-                    <div class="grid grid-cols-2 gap-8 mb-10">
-                        <div>
-                            <p class="text-[10px] font-bold text-slate-400 tracking-widest uppercase mb-1">Peminjam</p>
-                            <p class="text-sm font-bold">BEM Fakultas Teknik</p>
-                        </div>
-                        <div>
-                            <p class="text-[10px] font-bold text-slate-400 tracking-widest uppercase mb-1">Penanggung Jawab</p>
-                            <p class="text-sm font-bold">Ahmad Subarjo</p>
-                        </div>
-                    </div>
-
-                    <p class="text-sm text-slate-600 leading-relaxed mb-8">
-                        Seminar ini bertujuan untuk memberikan wawasan mendalam kepada mahasiswa mengenai perkembangan Artificial Intelligence dan dampaknya terhadap pasar kerja global di masa depan. Kami mengundang 3 praktisi industri sebagai pembicara utama.
-                    </p>
-
-                    <div class="grid grid-cols-3 gap-4 mb-10">
-                        <div class="h-28 bg-slate-200 rounded-lg bg-cover bg-center" style="background-image: url('https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=500&q=80')"></div>
-                        <div class="h-28 bg-slate-200 rounded-lg bg-cover bg-center" style="background-image: url('https://images.unsplash.com/photo-1591115765373-5207764f72e7?w=500&q=80')"></div>
-                        <div class="h-28 bg-slate-200 rounded-lg bg-cover bg-center" style="background-image: url('https://images.unsplash.com/photo-1573164713988-8665fc963095?w=500&q=80')"></div>
-                    </div>
-
-                    <hr class="border-dashed border-slate-300 mb-8">
-
-                    <p class="text-[10px] font-bold text-slate-400 tracking-widest uppercase mb-4">Verification Stamps</p>
-                    <div class="flex gap-4">
-                        <div class="w-20 h-20 rounded-full border-2 border-kinetic-primary flex items-center justify-center text-center p-2 text-[9px] font-bold text-kinetic-primary uppercase leading-tight rotate-[-15deg]">Verified By System</div>
-                        <div class="w-20 h-20 rounded-full border-2 border-slate-300 flex items-center justify-center text-center p-2 text-[9px] font-bold text-slate-400 uppercase leading-tight">Waiting Signature</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="w-[420px] bg-[#151515] border-l border-[#2A2A2A] flex flex-col shrink-0">
-            
-            <div class="flex-1 overflow-y-auto p-8 custom-scrollbar">
-                
-                <div class="bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-4 flex items-center justify-between mb-8">
-                    <div class="flex items-center gap-3">
-                        <i class="ph-fill ph-monitor-play text-slate-400 text-xl"></i>
-                        <div>
-                            <p class="text-sm font-bold text-white">Simulate Engine: Requires</p>
-                            <p class="text-xs text-slate-500">Attachment</p>
-                        </div>
-                    </div>
-                    <div class="w-10 h-6 bg-[#2A2A2A] rounded-full relative cursor-pointer">
-                        <div class="absolute left-1 top-1 w-4 h-4 bg-slate-400 rounded-full"></div>
-                    </div>
-                </div>
-
-                <div class="flex items-center gap-2 mb-4">
-                    <span class="w-1.5 h-1.5 rounded-full bg-kinetic-primary shadow-[0_0_5px_rgba(20,184,166,0.5)]"></span>
-                    <span class="text-[10px] font-bold text-kinetic-primary uppercase tracking-widest">Aktif Diproses</span>
-                </div>
-
-                <h2 class="font-heading text-3xl font-extrabold text-white mb-2 leading-tight">Seminar AI & Masa Depan Kerja</h2>
-                <p class="text-xs text-slate-400 mb-8">Diajukan oleh <span class="font-bold text-white">BEM Teknik</span> • 2 jam yang lalu</p>
-
-                <div class="grid grid-cols-2 gap-4 mb-10">
-                    <div class="bg-[#1A1A1A] border border-[#2A2A2A] rounded-2xl p-4">
-                        <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Ruangan</p>
-                        <div class="flex items-start gap-2">
-                            <i class="ph-bold ph-map-pin text-kinetic-primary mt-0.5"></i>
-                            <p class="text-sm font-bold text-white">Auditorium Utama</p>
-                        </div>
-                    </div>
-                    <div class="bg-[#1A1A1A] border border-[#2A2A2A] rounded-2xl p-4">
-                        <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Kapasitas</p>
-                        <div class="flex items-start gap-2">
-                            <i class="ph-bold ph-users text-kinetic-primary mt-0.5"></i>
-                            <p class="text-sm font-bold text-white">350 Orang</p>
-                        </div>
-                    </div>
-                    <div class="bg-[#1A1A1A] border border-[#2A2A2A] rounded-2xl p-4">
-                        <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Waktu</p>
-                        <div class="flex items-start gap-2">
-                            <i class="ph-bold ph-calendar-blank text-kinetic-primary mt-0.5"></i>
-                            <p class="text-sm font-bold text-white">12 Nov 2023</p>
-                        </div>
-                    </div>
-                    <div class="bg-[#1A1A1A] border border-[#2A2A2A] rounded-2xl p-4">
-                        <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Durasi</p>
-                        <div class="flex items-start gap-2">
-                            <i class="ph-bold ph-clock text-kinetic-primary mt-0.5"></i>
-                            <p class="text-sm font-bold text-white">08:00 - 15:00</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="flex items-center justify-between mb-6">
-                    <h3 class="font-bold text-white text-sm">Progress Persetujuan</h3>
-                    <span class="px-3 py-1 rounded-full bg-[#1A1A1A] border border-[#2A2A2A] text-kinetic-primary text-[10px] font-bold">Tahap 2 dari 4</span>
-                </div>
-
-                <div class="space-y-6 relative before:absolute before:inset-0 before:ml-[15px] before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-[#2A2A2A]">
-                    
-                    <div class="relative flex items-start gap-4">
-                        <div class="w-8 h-8 rounded-full bg-kinetic-primary flex items-center justify-center shrink-0 z-10 shadow-[0_0_10px_rgba(45,212,191,0.3)]">
-                            <i class="ph-bold ph-check text-[#151515] text-sm"></i>
-                        </div>
-                        <div>
-                            <h4 class="text-sm font-bold text-white">Verifikasi Berkas</h4>
-                            <p class="text-xs text-slate-400 mt-0.5">Oleh Admin Ruangan • Disetujui</p>
-                        </div>
-                    </div>
-
-                    <div class="relative flex items-start gap-4">
-                        <div class="w-8 h-8 rounded-full bg-[#151515] border-2 border-kinetic-primary flex items-center justify-center shrink-0 z-10">
-                            <div class="w-2.5 h-2.5 rounded-full bg-kinetic-primary shadow-[0_0_8px_rgba(45,212,191,0.8)]"></div>
-                        </div>
-                        <div>
-                            <h4 class="text-sm font-bold text-kinetic-primary">Kepala Jurusan</h4>
-                            <p class="text-xs text-slate-400 mt-0.5">Anda sedang meninjau dokumen ini</p>
-                        </div>
-                    </div>
-
-                    <div class="relative flex items-start gap-4 opacity-50">
-                        <div class="w-8 h-8 rounded-full bg-[#151515] border-2 border-[#2A2A2A] flex items-center justify-center shrink-0 z-10"></div>
-                        <div>
-                            <h4 class="text-sm font-bold text-slate-500">Dekanat</h4>
-                            <p class="text-xs text-slate-600 mt-0.5">Menunggu tahap sebelumnya</p>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-
-            <div class="p-6 border-t border-[#2A2A2A] bg-[#151515]">
-                <div class="flex gap-4">
-                    <button class="flex-1 py-3.5 rounded-2xl border border-red-500/20 text-red-500 font-bold text-sm hover:bg-red-500/10 transition-colors">
-                        Tolak/Revisi
-                    </button>
-                    <button class="flex-1 py-3.5 rounded-2xl bg-kinetic-primary text-[#151515] font-bold text-sm hover:bg-[#2dd4bf] transition-colors shadow-[0_0_20px_rgba(45,212,191,0.2)]">
-                        Setujui Sekarang
-                    </button>
-                </div>
-            </div>
-
-        </div>
-
     </div>
 </div>
-
-<script>
-    function openReviewModal() {
-        const modal = document.getElementById('reviewModal');
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-        
-        // Opsional: Matikan scroll pada body saat modal terbuka
-        document.body.style.overflow = 'hidden';
-    }
-
-    function closeReviewModal() {
-        const modal = document.getElementById('reviewModal');
-        modal.classList.remove('flex');
-        modal.classList.add('hidden');
-        
-        // Kembalikan scroll body
-        document.body.style.overflow = 'auto';
-    }
-</script>
 </x-app-layout>

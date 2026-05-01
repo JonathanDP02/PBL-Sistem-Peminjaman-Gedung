@@ -83,8 +83,8 @@
     </style>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="antialiased selection:bg-[#14B8A6] selection:text-white {{ request()->routeIs('login') ? 'overflow-hidden' : '' }}">
-    @if(!request()->routeIs('login'))
+<body class="antialiased selection:bg-[#14B8A6] selection:text-white">
+    @if(!request()->routeIs('login') && !request()->routeIs('password.request'))
         @include('header')
     @endif
     {{ $slot }}

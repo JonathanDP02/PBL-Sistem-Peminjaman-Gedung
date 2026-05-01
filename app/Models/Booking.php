@@ -23,6 +23,7 @@ class Booking extends Model
         'current_step',
         'status',
         'revision_count',
+        'pdf_path',
     ];
 
     protected function casts(): array

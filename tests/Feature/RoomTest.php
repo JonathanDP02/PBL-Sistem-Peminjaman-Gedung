@@ -1,24 +1,30 @@
-use Tests\TestCase;
+<?php
+
 use App\Models\User;
+use App\Models\Building;
+use App\Models\Unit;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
-class RoomTest extends TestCase
-{
-    public function test_room_cannot_be_created_without_unit_id()
-    {
-        $user = User::factory()->create([
-            'unit_id' => null
-        ]);
+uses(RefreshDatabase::class);
 
-        $this->actingAs($user);
+test('room cannot be created without unit_id', function () {
+    // Create a valid unit first since it's mandatory for users and rooms
+    $unit = Unit::factory()->create();
+    
+    $user = User::factory()->create([
+        'unit_id' => $unit->id
+    ]);
 
-        $response = $this->post('/rooms', [
-            'building_id' => 1,
-            'room_name' => 'Test Room',
-            'capacity' => 10
-        ]);
+    $this->actingAs($user);
 
-        $response->assertStatus(422);
+    // Attempt to create a room WITHOUT unit_id in the request
+    $response = $this->postJson('/api/rooms', [
+        'building_id' => Building::factory()->create()->id,
+        'room_name' => 'Test Room',
+        'capacity' => 10,
+        // 'unit_id' is missing here
+    ]);
 
-        $response->assertJsonValidationErrors(['unit_id']);
-    }
-}
+    $response->assertStatus(422);
+    $response->assertJsonValidationErrors(['unit_id']);
+});
