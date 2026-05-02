@@ -32,10 +32,10 @@ class GenerateApprovalCertificateJob implements ShouldQueue
             'approvals.approver',
         ])->findOrFail($this->bookingId);
 
-        // Generate QR Code as PNG Base64 for PDF compatibility
-        $qrCode = base64_encode(QrCode::format('png')
+        // Generate QR Code
+        $qrCode = QrCode::format('svg')
             ->size(120)
-            ->generate(url(route('booking.validate', $booking->id))));
+            ->generate(url(route('booking.validate', $booking->id)));
 
         // Render Blade ke PDF
         $pdf = Pdf::loadView('pdf.surat-izin', [
@@ -44,9 +44,9 @@ class GenerateApprovalCertificateJob implements ShouldQueue
         ])->setPaper('a4', 'portrait');
 
         // Save ke storage private dengan path: certificates/BOOKING-{id}-{date}.pdf
-        $fileName = "BOOKING-{$booking->id}-".now()->format('Y-m-d').'.pdf';
+        $fileName = "BOOKING-{$booking->id}-" . now()->format('Y-m-d') . '.pdf';
         $pdfPath = "certificates/{$fileName}";
-        Storage::disk('local')->put($pdfPath, $pdf->output());
+        Storage::disk('private')->put($pdfPath, $pdf->output());
 
         // Update booking dengan pdf_path
         $booking->update([
