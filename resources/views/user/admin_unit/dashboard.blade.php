@@ -220,4 +220,31 @@
             <p class="text-[9px] font-bold tracking-[0.2em] text-slate-400 dark:text-[#bbb] uppercase transition-colors duration-300">© 2026 SPACE.IN INFRASTRUCTURE ECOSYSTEM • V2.4.0 HIGH-PULSE EDITION</p>
         </footer>
     </div>
+
+    <!-- Script Tambahan untuk Fungsi Modal -->
+    @push('scripts')
+    <script>
+        function openModal() {
+            const modal = document.getElementById('modalTambahRuang');
+            if (modal) {
+                modal.classList.remove('hidden');
+                setTimeout(() => {
+                    modal.classList.remove('opacity-0');
+                    modal.querySelector('div').classList.remove('scale-95');
+                }, 10);
+            }
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('modalTambahRuang');
+            if (modal) {
+                modal.classList.add('opacity-0');
+                modal.querySelector('div').classList.add('scale-95');
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                }, 300);
+            }
+        }
+    </script>
+    @endpush
 </x-app-layout>

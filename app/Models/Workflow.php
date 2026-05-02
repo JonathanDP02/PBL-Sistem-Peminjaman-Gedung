@@ -36,5 +36,5 @@ class Workflow extends Model
     {
         return $this->hasMany(Booking::class);
     }
-}
+
 
