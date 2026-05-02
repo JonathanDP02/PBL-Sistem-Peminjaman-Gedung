@@ -1,5 +1,4 @@
 <div id="modalEditRuang" class="hidden fixed inset-0 z-[99] flex items-center justify-center bg-black/60 backdrop-blur-sm transition-opacity duration-300 opacity-0">
-    
     <div class="bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] rounded-3xl w-full max-w-lg p-8 relative shadow-2xl transform scale-95 transition-transform duration-300">
         
         <button onclick="closeEditModal()" class="absolute top-6 right-6 text-slate-400 hover:text-red-500 transition-colors">
@@ -11,34 +10,46 @@
             <p class="text-xs text-slate-500 dark:text-gray-400">Ubah detail fasilitas dan kapasitas ruangan.</p>
         </div>
 
-        <form action="#" method="POST" class="space-y-5">
+        <!-- Tambahkan ID formEditRuangan -->
+        <form id="formEditRuangan" action="#" method="POST" class="space-y-5">
+            <!-- Tambahkan CSRF dan Method PUT -->
+            @csrf
+            @method('PUT')
+            
+            <input type="hidden" id="editRoomId" name="id" value="">
+            
             <div>
                 <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">Nama Ruangan</label>
-                <input type="text" id="editNamaRuangan" placeholder="Contoh: Lab Komputer B" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-kinetic-primary transition-colors">
+                <!-- Tambahkan name="room_name" -->
+                <input type="text" id="editNamaRuangan" name="room_name" placeholder="Contoh: Lab Komputer B" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-kinetic-primary transition-colors" required>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">Kapasitas</label>
                     <div class="relative">
-                        <input type="number" id="editKapasitas" placeholder="40" min="0" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl pl-4 pr-14 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-kinetic-primary transition-colors">
+                        <!-- Tambahkan name="capacity" -->
+                        <input type="number" id="editKapasitas" name="capacity" placeholder="40" min="0" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl pl-4 pr-14 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-kinetic-primary transition-colors" required>
                         <span class="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-slate-500">Orang</span>
                     </div>
                 </div>
                 <div>
                     <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">Lokasi Gedung</label>
-                    <select id="editLokasiGedung" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-kinetic-primary transition-colors appearance-none">
-                        <option>Gedung Teknik</option>
-                        <option>Gedung Sentral</option>
-                        <option>Auditorium Utama</option>
-                        <option>Gedung Sipil</option>
+                    <!-- Tambahkan name="building_id" -->
+                    <select id="editLokasiGedung" name="building_id" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-kinetic-primary transition-colors appearance-none" required>
+                        <!-- Pastikan Anda mengirim variabel $buildings dari Controller untuk mengisi select ini -->
+                        <option value="">Pilih Gedung</option>
+                        @foreach(App\Models\Building::all() as $building)
+                            <option value="{{ $building->id }}">{{ $building->building_name }}</option>
+                        @endforeach
                     </select>
                 </div>
             </div>
 
             <div>
-                <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">Fasilitas (Pisahkan dengan koma)</label>
-                <input type="text" id="editFasilitas" placeholder="Contoh: Proyektor, AC, Papan Tulis" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-kinetic-primary transition-colors">
+                <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">Deskripsi / Fasilitas</label>
+                <!-- Tambahkan name="description" -->
+                <input type="text" id="editFasilitas" name="description" placeholder="Contoh: Proyektor, AC, Papan Tulis" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-kinetic-primary transition-colors">
             </div>
 
             <div class="flex gap-3 pt-4 border-t border-slate-200 dark:border-[#2A2A2A] mt-6">

@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark">
     <head>
@@ -56,71 +55,43 @@
                 {{ $slot }}
             </main>
         </div>
-    </body>
-    <script>
-        // --- Theme Toggle Logic ---
-        const themeToggleBtn = document.getElementById('themeToggleBtn');
-        const html = document.documentElement;
-        const themeToggleText = document.getElementById('themeToggleText');
-        const themeIconMoon = document.getElementById('themeIconMoon');
-        const themeIconSun = document.getElementById('themeIconSun');
 
-        // Sync UI elements based on dark mode state
-        const syncThemeUI = () => {
-            const isDark = html.classList.contains('dark');
-            if (themeToggleText) themeToggleText.textContent = isDark ? 'Mode Terang' : 'Mode Gelap';
-            if (themeIconMoon) themeIconMoon.classList.toggle('hidden', isDark);
-            if (themeIconSun) themeIconSun.classList.toggle('hidden', !isDark);
-        };
+        <!-- Script Tema Gelap/Terang (Tetap di sini karena dipakai di semua halaman) -->
+        <script>
+            const themeToggleBtn = document.getElementById('themeToggleBtn');
+            const html = document.documentElement;
+            const themeToggleText = document.getElementById('themeToggleText');
+            const themeIconMoon = document.getElementById('themeIconMoon');
+            const themeIconSun = document.getElementById('themeIconSun');
 
-        // On Load: Check localStorage (default to light mode)
-        if (localStorage.theme === 'dark') {
-            html.classList.add('dark');
-        } else {
-            html.classList.remove('dark');
-        }
-        syncThemeUI();
+            const syncThemeUI = () => {
+                const isDark = html.classList.contains('dark');
+                if (themeToggleText) themeToggleText.textContent = isDark ? 'Mode Terang' : 'Mode Gelap';
+                if (themeIconMoon) themeIconMoon.classList.toggle('hidden', isDark);
+                if (themeIconSun) themeIconSun.classList.toggle('hidden', !isDark);
+            };
 
-        // Click Event: Toggle and Save
-        themeToggleBtn.addEventListener('click', () => {
-            html.classList.toggle('dark');
-            
-            if (html.classList.contains('dark')) {
-                localStorage.theme = 'dark';
+            if (localStorage.theme === 'dark') {
+                html.classList.add('dark');
             } else {
-                localStorage.theme = 'light';
+                html.classList.remove('dark');
             }
             syncThemeUI();
-        });
+
+            themeToggleBtn.addEventListener('click', () => {
+                html.classList.toggle('dark');
+                
+                if (html.classList.contains('dark')) {
+                    localStorage.theme = 'dark';
+                } else {
+                    localStorage.theme = 'light';
+                }
+                syncThemeUI();
+            });
         </script>
-    
-    
-        <script>
-    const modal = document.getElementById('modalTambahRuang');
-    const modalBox = modal.querySelector('div'); // Mengambil kotak dalam modal
 
-    function openModal() {
-        // Hapus class hidden dulu agar elemen ada di layar
-        modal.classList.remove('hidden');
+        <!-- KUNCI JAWABANNYA DI SINI: Tempat untuk memunculkan @push('scripts') -->
+        @stack('scripts')
         
-        // Beri jeda sangat kecil agar animasi CSS mendeteksi perubahan state
-        setTimeout(() => {
-            modal.classList.remove('opacity-0');
-            modalBox.classList.remove('scale-95');
-            modalBox.classList.add('scale-100');
-        }, 10);
-    }
-
-    function closeModal() {
-        // Hilangkan opacity dan kembalikan ukuran semula
-        modal.classList.add('opacity-0');
-        modalBox.classList.remove('scale-100');
-        modalBox.classList.add('scale-95');
-
-        // Tunggu animasi CSS selesai (300ms) baru sembunyikan elemen sepenuhnya
-        setTimeout(() => {
-            modal.classList.add('hidden');
-        }, 300);
-    }
-</script>
+    </body>
 </html>

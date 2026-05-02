@@ -12,33 +12,31 @@ use Illuminate\Support\Facades\DB;
 class WorkflowController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Menampilkan daftar workflow sesuai unit admin yang login.
      */
     public function index()
     {
         $user = Auth::user();
 
+        // Konsisten: Selalu filter berdasarkan unit_id untuk Admin_Unit
+        $query = Workflow::query()->with('steps.position', 'requirements')->withCount('steps');
+
         if ($user->role->name === 'Admin_Unit') {
-            return Workflow::where('unit_id', $user->unit_id)
-                ->with('steps.position', 'requirements')
-                ->withCount('steps')
-                ->get();
+            $query->where('unit_id', $user->unit_id);
         }
 
-        return Workflow::with('steps.position', 'requirements')
-            ->withCount('steps')
-            ->get();
+        return response()->json($query->orderBy('updated_at', 'desc')->get());
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Membuat data awal workflow (Nama & Deskripsi).
      */
     public function store(Request $request)
     {
         $user = Auth::user();
 
         if ($user->role->name !== 'Admin_Unit') {
-            abort(403, 'Hanya Admin Unit yang dapat membuat workflow');
+            return response()->json(['message' => 'Hanya Admin Unit yang dapat membuat workflow'], 403);
         }
 
         $validated = $request->validate([
@@ -48,28 +46,28 @@ class WorkflowController extends Controller
 
         $validated['unit_id'] = $user->unit_id;
 
-        return Workflow::create($validated);
+        $workflow = Workflow::create($validated);
+
+        return response()->json($workflow);
     }
 
     /**
-     * Display the specified resource.
+     * Mengambil detail workflow tertentu.
      */
     public function show(string $id)
     {
         $workflow = Workflow::with('steps.position', 'requirements')->findOrFail($id);
-
         $this->authorizeUnit($workflow);
 
-        return $workflow;
+        return response()->json($workflow);
     }
 
     /**
-     * Update the specified resource in storage.
+     * Update Nama dan Deskripsi workflow.
      */
     public function update(Request $request, string $id)
     {
         $workflow = Workflow::findOrFail($id);
-
         $this->authorizeUnit($workflow);
 
         $validated = $request->validate([
@@ -79,16 +77,15 @@ class WorkflowController extends Controller
 
         $workflow->update($validated);
 
-        return $workflow;
+        return response()->json($workflow);
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Menghapus workflow beserta seluruh relasinya.
      */
     public function destroy(string $id)
     {
         $workflow = Workflow::findOrFail($id);
-
         $this->authorizeUnit($workflow);
 
         $workflow->delete();
@@ -97,86 +94,55 @@ class WorkflowController extends Controller
     }
 
     /**
-     * Get workflow requirements (API endpoint untuk AJAX).
-     */
-    public function showRequirements(string $id)
-    {
-        $workflow = Workflow::findOrFail($id);
-
-        $this->authorizeUnit($workflow);
-
-        return response()->json($workflow->requirements);
-    }
-
-    /**
-     * Authorize Admin_Unit untuk mengakses workflow unit mereka.
-     */
-    private function authorizeUnit(Workflow $workflow): void
-    {
-        $user = Auth::user();
-
-        if ($user->role->name === 'Admin_Unit' && $workflow->unit_id !== $user->unit_id) {
-            abort(403, 'Anda tidak memiliki akses ke workflow unit lain');
-        }
-    }
-
-    /**
-     * Mengambil daftar jabatan untuk dropdown di Frontend.
-     */
-    public function getPositions()
-    {
-        // Jika ada filter spesifik unit, bisa ditambahkan di sini.
-        // Untuk sekarang, kita ambil semua jabatan aktif.
-        $positions = Position::select('id', 'name')->orderBy('name', 'asc')->get();
-
-        return response()->json(['data' => $positions]);
-    }
-
-    /**
-     * Menyimpan urutan langkah dan syarat dokumen secara bersamaan (Atomic Transaction).
+     * Sinkronisasi detail Tahapan dan Syarat Dokumen (Atomic Transaction).
      */
     public function syncDetails(Request $request, $id)
     {
         $user = Auth::user();
-        $workflow = Workflow::query()
-            ->when($user->role->name === 'Admin_Unit', fn ($query) => $query->where('unit_id', $user->unit_id))
-            ->findOrFail($id);
+        $workflow = Workflow::where('unit_id', $user->unit_id)->findOrFail($id);
 
         $validated = $request->validate([
             'steps' => 'array',
-            'steps.*.position_id' => 'required_with:steps|integer|exists:positions,id|distinct',
-            'steps.*.step_order' => 'required_with:steps|integer|min:1',
+            'steps.*.position_id' => 'required_with:steps|integer|exists:positions,id',
             'steps.*.requires_attachment' => 'nullable|boolean',
             'requirements' => 'array',
             'requirements.*.document_name' => 'required_with:requirements|string|max:150',
             'requirements.*.is_mandatory' => 'nullable|boolean',
-        ], [
-            'steps.*.position_id.distinct' => 'Pejabat/Approver tidak boleh dipilih lebih dari satu kali dalam satu workflow.',
         ]);
 
         try {
             DB::transaction(function () use ($workflow, $validated) {
+                // 1. Bersihkan data lama
                 $workflow->steps()->delete();
                 $workflow->requirements()->delete();
 
-                if (! empty($validated['steps'])) {
+                // 2. Simpan Syarat Dokumen
+                foreach ($validated['requirements'] ?? [] as $requirement) {
+                    $workflow->requirements()->create([
+                        'document_name' => $requirement['document_name'],
+                        'is_mandatory' => (bool) ($requirement['is_mandatory'] ?? true),
+                    ]);
+                }
+
+                // 3. Simpan Tahapan (Dengan Logika Hierarki Level Anda)
+                if (!empty($validated['steps'])) {
                     $positionIds = collect($validated['steps'])->pluck('position_id');
                     $positions = Position::with('unit')->whereIn('id', $positionIds)->get()->keyBy('id');
 
+                    // Logika skor level Anda: Organisasi paling bawah, Pusat paling atas
                     $levelScore = [
                         'Organisasi' => 1,
                         'Jurusan' => 2,
                         'Pusat' => 3,
                     ];
 
-                    // Refactoring: Urutkan data workflow mengikuti level terbawah sampai teratas untuk approvernya
+                    // Urutkan langkah berdasarkan level unit pejabat
                     $sortedSteps = collect($validated['steps'])->sortBy(function ($step) use ($positions, $levelScore) {
                         $unitLevel = $positions[$step['position_id']]->unit->level ?? 'Organisasi';
-
                         return $levelScore[$unitLevel] ?? 1;
                     })->values();
 
-                    // Reassign step_order
+                    // Masukkan ke database dengan urutan (step_order) yang baru
                     foreach ($sortedSteps as $index => $step) {
                         $workflow->steps()->create([
                             'position_id' => $step['position_id'],
@@ -184,13 +150,6 @@ class WorkflowController extends Controller
                             'requires_attachment' => (bool) ($step['requires_attachment'] ?? false),
                         ]);
                     }
-                }
-
-                foreach ($validated['requirements'] ?? [] as $requirement) {
-                    $workflow->requirements()->create([
-                        'document_name' => $requirement['document_name'],
-                        'is_mandatory' => (bool) ($requirement['is_mandatory'] ?? true),
-                    ]);
                 }
             });
 
@@ -201,9 +160,29 @@ class WorkflowController extends Controller
 
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Terjadi kesalahan internal saat menyimpan data.',
+                'message' => 'Terjadi kesalahan saat sinkronisasi data.',
                 'error' => $e->getMessage(),
             ], 500);
+        }
+    }
+
+    /**
+     * Mengambil Master Data Jabatan untuk dropdown.
+     */
+    public function getPositions()
+    {
+        $positions = Position::select('id', 'name')->orderBy('name', 'asc')->get();
+        return response()->json(['data' => $positions]);
+    }
+
+    /**
+     * Helper Keamanan: Memastikan admin hanya bisa akses workflow milik unitnya.
+     */
+    private function authorizeUnit(Workflow $workflow): void
+    {
+        $user = Auth::user();
+        if ($user->role->name === 'Admin_Unit' && $workflow->unit_id !== $user->unit_id) {
+            abort(403, 'Akses ditolak: Workflow ini bukan milik unit Anda.');
         }
     }
 }

@@ -11,33 +11,43 @@
             <p class="text-xs text-slate-500 dark:text-gray-400">Masukkan detail fasilitas dan kapasitas ruangan.</p>
         </div>
 
-        <form action="#" method="POST" class="space-y-5">
+        <!-- 1. Tambahkan action URL dan method POST -->
+        <form action="/admin_unit/rooms" method="POST" class="space-y-5">
+            
+            <!-- 2. Wajib tambahkan CSRF token untuk keamanan Laravel -->
+            @csrf
+
             <div>
                 <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">Nama Ruangan</label>
-                <input type="text" placeholder="Contoh: Lab Komputer B" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-kinetic-primary transition-colors">
+                <!-- 3. Tambahkan name="room_name" dan required -->
+                <input type="text" name="room_name" placeholder="Contoh: Lab Komputer B" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-kinetic-primary transition-colors" required>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">Kapasitas</label>
                     <div class="relative">
-                        <input type="number" placeholder="40" min="0" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl pl-4 pr-14 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-kinetic-primary transition-colors">
+                        <!-- 4. Tambahkan name="capacity" dan required -->
+                        <input type="number" name="capacity" placeholder="40" min="0" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl pl-4 pr-14 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-kinetic-primary transition-colors" required>
                         <span class="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-slate-500">Orang</span>
                     </div>
                 </div>
                 <div>
                     <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">Lokasi Gedung</label>
-                    <select class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-kinetic-primary transition-colors appearance-none">
-                        <option>Gedung Teknik</option>
-                        <option>Gedung Sentral</option>
-                        <option>Auditorium Utama</option>
+                    <!-- 5. Tambahkan name="building_id" dan loop data gedung dari database -->
+                    <select name="building_id" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-kinetic-primary transition-colors appearance-none" required>
+                        <option value="">Pilih Gedung</option>
+                        @foreach(App\Models\Building::all() as $building)
+                            <option value="{{ $building->id }}">{{ $building->building_name }}</option>
+                        @endforeach
                     </select>
                 </div>
             </div>
 
             <div>
                 <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">Fasilitas (Pisahkan dengan koma)</label>
-                <input type="text" placeholder="Contoh: Proyektor, AC, Papan Tulis" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-kinetic-primary transition-colors">
+                <!-- 6. Tambahkan name="description" -->
+                <input type="text" name="description" placeholder="Contoh: Proyektor, AC, Papan Tulis" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-kinetic-primary transition-colors">
             </div>
 
             <div class="flex gap-3 pt-4 border-t border-slate-200 dark:border-[#2A2A2A] mt-6">
