@@ -16,6 +16,7 @@ use App\Models\Building;
 use App\Models\Room;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Route;
 
 // --- GUEST / PUBLIC ROUTES ---
@@ -23,11 +24,14 @@ Route::get('/', function () {
     $startOfWeek = Carbon::now()->startOfWeek();
     $endOfWeek = Carbon::now()->endOfWeek();
 
-    $bookings = Booking::with('room')
-        ->whereBetween('booking_date', [$startOfWeek, $endOfWeek])
-        ->whereIn('status', ['Approved', 'Pending'])
-        ->orderBy('start_time')
-        ->get();
+    $bookings = collect();
+    if (Schema::hasTable('bookings')) {
+        $bookings = Booking::with('room')
+            ->whereBetween('booking_date', [$startOfWeek, $endOfWeek])
+            ->whereIn('status', ['Approved', 'Pending'])
+            ->orderBy('start_time')
+            ->get();
+    }
 
     $weekDates = collect();
     for ($i = 0; $i < 7; $i++) {
@@ -38,7 +42,11 @@ Route::get('/', function () {
 })->name('welcome');
 
 Route::get('ruangan', function () {
-    $buildings = Building::with('rooms')->get();
+    $buildings = collect();
+    if (Schema::hasTable('buildings')) {
+        $buildings = Building::with('rooms')->get();
+    }
+
     return view('ruangan', compact('buildings'));
 })->name('ruangan');
 

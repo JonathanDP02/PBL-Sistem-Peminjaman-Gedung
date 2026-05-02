@@ -24,7 +24,7 @@ class UserFactory extends Factory
         return [
             'unit_id'     => Unit::inRandomOrder()->first()?->id ?? 1,
             'position_id' => null, // default null; di-override saat seeding approver
-            'role_id'     => Role::where('name', 'User')->first()?->id ?? 3,
+            'role_id'     => Role::where('name', 'User')->first()?->id ?? Role::factory()->create(['name' => 'User'])->id,
             'name'        => $this->faker->name(),
             'email'       => $this->faker->unique()->safeEmail(),
             'password'    => Hash::make(self::$password),

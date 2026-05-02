@@ -26,11 +26,12 @@ class RoomController extends Controller
 
         // Validasi input
         $validated = $request->validate([
-            'building_id' => 'required|exists:buildings,id',
-            'room_name' => 'required|string|max:255',
-            'capacity' => 'required|integer|min:1',
-            'description' => 'nullable|string',
-            'unit_id' => $user->role->name === 'SuperAdmin' ? 'required' : 'nullable',
+            'building_id' => 'required',
+            'room_name' => 'required',
+            'capacity' => 'required|integer',
+            'description' => 'nullable',
+            // unit_id must be provided unless the user is Admin_Unit (we'll auto-assign their unit)
+            'unit_id' => $user->role->name === 'Admin_Unit' ? 'nullable' : 'required',
         ]);
 
         // Atur unit_id sesuai role
