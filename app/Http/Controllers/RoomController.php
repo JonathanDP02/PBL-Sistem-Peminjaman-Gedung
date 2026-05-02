@@ -28,7 +28,8 @@ class RoomController extends Controller
             'room_name' => 'required',
             'capacity' => 'required|integer',
             'description' => 'nullable',
-            'unit_id' => $user->role->name === 'SuperAdmin' ? 'required' : 'nullable',
+            // unit_id must be provided unless the user is Admin_Unit (we'll auto-assign their unit)
+            'unit_id' => $user->role->name === 'Admin_Unit' ? 'nullable' : 'required',
         ]);
 
         if ($user->role->name === 'Admin_Unit') {
