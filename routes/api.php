@@ -43,6 +43,9 @@ Route::middleware('auth')->group(function () {
     Route::put('/users/{id}', [UserController::class, 'update']);
     Route::delete('/users/{id}', [UserController::class, 'destroy']);
 
+    // Rooms (create via API)
+    Route::post('/rooms', [\App\Http\Controllers\RoomController::class, 'store']);
+
     // Roles
     Route::get('/roles', function () {
         return response()->json([
