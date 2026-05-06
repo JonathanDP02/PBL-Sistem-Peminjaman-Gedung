@@ -16,8 +16,8 @@ use App\Models\Building;
 use App\Models\Room;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Schema;
 
 // --- GUEST / PUBLIC ROUTES ---
 Route::get('/', function () {
@@ -50,7 +50,6 @@ Route::get('ruangan', function () {
     return view('ruangan', compact('buildings'));
 })->name('ruangan');
 
-
 // --- AUTHENTICATED ROUTES ---
 Route::middleware('auth')->group(function () {
 
@@ -65,8 +64,8 @@ Route::middleware('auth')->group(function () {
         $view = match ($user->role->name) {
             'SuperAdmin' => 'user.superadmin.dashboard',
             'Admin_Unit' => 'user.admin_unit.dashboard',
-            'User'       => 'user.peminjam.dashboard',
-            default      => 'user.peminjam.dashboard',
+            'User' => 'user.peminjam.dashboard',
+            default => 'user.peminjam.dashboard',
         };
 
         return view($view);
@@ -76,9 +75,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/riwayat', function () {
         $view = match (Auth::user()->role->name) {
             'Approver' => 'user.approver.riwayat',
-            'User'     => 'user.peminjam.riwayat',
-            default    => 'user.peminjam.riwayat',
+            'User' => 'user.peminjam.riwayat',
+            default => 'user.peminjam.riwayat',
         };
+
         return view($view);
     })->name('riwayat');
 
@@ -86,19 +86,18 @@ Route::middleware('auth')->group(function () {
     Route::get('/kelola-user', function () {
         $view = match (Auth::user()->role->name) {
             'SuperAdmin', 'Admin_Unit' => 'user.admin.kelola-user',
-            default                    => 'user.peminjam.kelola-user',
+            default => 'user.peminjam.kelola-user',
         };
+
         return view($view);
     })->name('kelola-user');
 
-
     // --- SUPER ADMIN SECTION ---
     Route::middleware('checkRole:SuperAdmin')->prefix('superadmin')->group(function () {
-        Route::get('/fasilitas', fn() => view('user.superadmin.fasilitas'))->name('fasilitas');
-        Route::get('/unit', fn() => view('user.superadmin.unit'))->name('unit');
+        Route::get('/fasilitas', fn () => view('user.superadmin.fasilitas'))->name('fasilitas');
+        Route::get('/unit', fn () => view('user.superadmin.unit'))->name('unit');
         Route::post('/user', [UserController::class, 'store'])->name('tambah-user.store');
     });
-
 
     // --- SHARED ADMIN API (SuperAdmin & Admin_Unit) ---
     Route::middleware('checkRole:SuperAdmin,Admin_Unit')->prefix('admin/api')->group(function () {
@@ -108,25 +107,25 @@ Route::middleware('auth')->group(function () {
         Route::get('/positions', [UserController::class, 'getPositionsDropdown']);
     });
 
-
     // --- ADMIN UNIT SECTION ---
     Route::middleware('checkRole:Admin_Unit')->prefix('admin_unit')->group(function () {
-        
+
         // Views
-        Route::get('/laporan', fn() => view('user.admin_unit.laporan'))->name('laporan');
-        
+        Route::get('/laporan', fn () => view('user.admin_unit.laporan'))->name('laporan');
+        Route::get('/bookings/bulk-pdf', [BookingPdfController::class, 'bulkDownload'])->name('booking.pdf.bulk');
         Route::get('/manajemen-ruangan', function () {
             $rooms = Room::where('unit_id', Auth::user()->unit_id)->with('building')->get();
+
             return view('user.admin_unit.manajemenRuangan', compact('rooms'));
         })->name('manajemenRuangan');
 
         Route::get('/pemblokiran-ruangan', function () {
             $user = Auth::user();
             $rooms = Room::where('unit_id', $user->unit_id)->with('building')->get();
-            
+
             // Mengambil 5 jadwal maintenance mendatang (event_name logic)
             $activeBlockings = Booking::with('room')
-                ->whereHas('room', fn($q) => $q->where('unit_id', $user->unit_id))
+                ->whereHas('room', fn ($q) => $q->where('unit_id', $user->unit_id))
                 ->where('event_name', 'LIKE', '[MAINTENANCE HARD-LOCK]%')
                 ->whereDate('booking_date', '>=', now())
                 ->orderBy('booking_date', 'asc')
@@ -136,8 +135,8 @@ Route::middleware('auth')->group(function () {
             return view('user.admin_unit.pemblokiranRuangan', compact('rooms', 'activeBlockings'));
         })->name('pemblokiranRuangan');
 
-        Route::get('/workflows-builder', fn() => view('user.admin_unit.workflowsBuilder'))->name('workflowsBuilder');
-        Route::get('/workflows-index', fn() => view('user.admin_unit.workflowsIndex'))->name('workflowsIndex');
+        Route::get('/workflows-builder', fn () => view('user.admin_unit.workflowsBuilder'))->name('workflowsBuilder');
+        Route::get('/workflows-index', fn () => view('user.admin_unit.workflowsIndex'))->name('workflowsIndex');
 
         // Form Standard (Redirect Back)
         Route::post('/rooms', [RoomController::class, 'store'])->name('rooms.store');
@@ -147,7 +146,7 @@ Route::middleware('auth')->group(function () {
         // Admin Unit API (Fetch/Async)
         Route::prefix('api')->group(function () {
             Route::get('/positions', [WorkflowController::class, 'getPositions']);
-            
+
             // Rooms API
             Route::get('/rooms', [RoomController::class, 'index']);
             Route::delete('/rooms/{room}', [RoomController::class, 'destroy']);
@@ -167,7 +166,6 @@ Route::middleware('auth')->group(function () {
         });
     });
 
-
     // --- APPROVER SECTION ---
     Route::middleware('checkRole:Approver')->prefix('approver')->group(function () {
         Route::get('/meja-kerja', [ApprovalController::class, 'mejaKerja'])->name('meja-kerja');
@@ -177,13 +175,12 @@ Route::middleware('auth')->group(function () {
         Route::post('/approvals/{booking_id}/reject', [ApprovalController::class, 'reject'])->name('approval.reject');
     });
 
-
     // --- USER / PEMINJAM SECTION ---
     Route::middleware('checkRole:User')->prefix('user')->group(function () {
-        Route::get('/booking', fn() => view('user.peminjam.booking'))->name('booking');
-        Route::get('/jadwal-saya', fn() => view('user.peminjam.jadwal-saya'))->name('jadwal-saya');
-        Route::get('/peminjaman', fn() => view('user.peminjam.peminjaman'))->name('peminjaman');
-        Route::get('/detail', fn() => view('user.peminjam.detail'))->name('detail');
+        Route::get('/booking', fn () => view('user.peminjam.booking'))->name('booking');
+        Route::get('/jadwal-saya', fn () => view('user.peminjam.jadwal-saya'))->name('jadwal-saya');
+        Route::get('/peminjaman', fn () => view('user.peminjam.peminjaman'))->name('peminjaman');
+        Route::get('/detail', fn () => view('user.peminjam.detail'))->name('detail');
 
         Route::get('/bookings', [BookingController::class, 'index'])->name('booking.index');
         Route::get('/bookings/create', [BookingController::class, 'create'])->name('booking.create');
@@ -192,8 +189,8 @@ Route::middleware('auth')->group(function () {
         Route::patch('/bookings/{id}/cancel', [BookingController::class, 'cancel'])->name('booking.cancel');
         Route::get('/bookings/{id}/attachments/{attachmentId}', [BookingAttachmentController::class, 'show'])->name('booking.attachment.show');
         Route::get('/bookings/{id}/download-pdf', [BookingPdfController::class, 'generate'])->name('booking.pdf');
+        Route::post('/bookings/{id}/revise', [BookingController::class, 'revise'])->name('booking.revise');
     });
-
 
     // --- PROFILE ---
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -201,7 +198,6 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
 });
-
 
 // --- GLOBAL UTILITIES ---
 require __DIR__.'/auth.php';
