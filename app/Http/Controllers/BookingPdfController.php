@@ -19,16 +19,16 @@ class BookingPdfController extends Controller
             'approvals.step.position',
             'approvals.approver',
         ])->where('id', $bookingId)
-          ->where('user_id', Auth::id())
-          ->firstOrFail();
+            ->where('user_id', Auth::id())
+            ->firstOrFail();
 
         $qrCode = QrCode::format('svg')
             ->size(120)
-            ->generate(url('/validate/' . $booking->id));
+            ->generate(url('/validate/'.$booking->id));
 
         $pdf = Pdf::loadView('pdf.surat-izin', [
             'booking' => $booking,
-            'qrCode'  => $qrCode,
+            'qrCode' => $qrCode,
         ])->setPaper('a4', 'portrait');
 
         return $pdf->download("surat-izin-booking-{$booking->id}.pdf");
@@ -52,8 +52,8 @@ class BookingPdfController extends Controller
             $isOwner = $user->id === $booking->user_id;
             $isApprover = $user->role->name === 'Approver';
             $isSuperAdmin = $user->role->name === 'SuperAdmin';
-            
-            if (!$isOwner && !$isApprover && !$isSuperAdmin) {
+
+            if (! $isOwner && ! $isApprover && ! $isSuperAdmin) {
                 abort(403, 'Anda tidak memiliki akses ke resource ini');
             }
         } else {
@@ -62,11 +62,56 @@ class BookingPdfController extends Controller
 
         $qrCode = QrCode::format('svg')
             ->size(120)
-            ->generate(url('/validate/' . $booking->id));
+            ->generate(url('/validate/'.$booking->id));
 
         return view('pdf.surat-izin', [
             'booking' => $booking,
-            'qrCode'  => $qrCode,
+            'qrCode' => $qrCode,
         ]);
+    }
+
+    public function bulkDownload(): mixed
+    {
+        // Hanya Admin_Unit yang boleh akses
+        $user = Auth::user();
+
+        $bookings = Booking::with([
+            'room',
+            'user',
+            'approvals.step.position',
+            'approvals.approver',
+        ])->where('status', 'Approved')
+            ->whereHas('room', fn ($q) => $q->where('unit_id', $user->unit_id))
+            ->whereNotNull('pdf_path')
+            ->get();
+
+        if ($bookings->isEmpty()) {
+            return response()->json(['error' => 'Tidak ada surat izin yang tersedia.'], 404);
+        }
+
+        $zip = new \ZipArchive;
+        $zipFileName = 'surat-izin-bulk-'.now()->format('Ymd-His').'.zip';
+        $zipPath = storage_path("app/private/permits/{$zipFileName}");
+
+        // Ensure directory exists
+        if (! is_dir(dirname($zipPath))) {
+            mkdir(dirname($zipPath), 0755, true);
+        }
+
+        if ($zip->open($zipPath, \ZipArchive::CREATE) !== true) {
+            return response()->json(['error' => 'Gagal membuat file ZIP.'], 500);
+        }
+
+        foreach ($bookings as $booking) {
+            // Use Storage facade to support faking in tests
+            if (Storage::disk('private')->exists($booking->pdf_path)) {
+                $fileContent = Storage::disk('private')->get($booking->pdf_path);
+                $zip->addFromString("booking-{$booking->id}.pdf", $fileContent);
+            }
+        }
+
+        $zip->close();
+
+        return response()->download($zipPath, $zipFileName)->deleteFileAfterSend(true);
     }
 }

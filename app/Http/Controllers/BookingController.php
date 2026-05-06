@@ -2,14 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\ApprovalNeededMail;
 use App\Models\Booking;
 use App\Models\BookingAttachment;
 use App\Models\BookingLog;
+use App\Models\User;
 use App\Models\WorkflowRequirement;
+use App\Models\WorkflowStep;
 use App\Services\LoggerService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 
 class BookingController extends Controller
 {
@@ -17,10 +21,10 @@ class BookingController extends Controller
     {
         $bookings = Booking::with([
             'room.building',
-                'user',
-                'workflow.steps',
-                'workflow.requirements',
-                'attachments',
+            'user',
+            'workflow.steps',
+            'workflow.requirements',
+            'attachments',
         ])
             ->where('user_id', Auth::id())
             ->orderByDesc('created_at')
@@ -81,7 +85,7 @@ class BookingController extends Controller
                     //     "({$conflict->start_time} - {$conflict->end_time})."
                     // );
                     $isBlocked = $conflict->event_name === 'Libur Nasional';
-                    $message   = $isBlocked
+                    $message = $isBlocked
                         ? "Tanggal {$validated['booking_date']} diblokir sebagai Libur Nasional. Peminjaman tidak dapat dilakukan."
                         : "Ruangan sudah dibooking pada waktu tersebut. Konflik dengan booking #{$conflict->id} ({$conflict->start_time} - {$conflict->end_time}).";
 
@@ -181,6 +185,71 @@ class BookingController extends Controller
         });
 
         return response()->json(['message' => 'Booking berhasil dibatalkan.']);
+    }
+
+    public function revise(Request $request, int $id): mixed
+    {
+        $booking = Booking::where('id', $id)
+            ->where('user_id', Auth::id())
+            ->firstOrFail();
+
+        if ($booking->status !== 'Revising') {
+            return response()->json([
+                'error' => "Booking tidak dapat direvisi karena statusnya '{$booking->status}'.",
+            ], 422);
+        }
+
+        $mandatoryRequirements = WorkflowRequirement::where('workflow_id', $booking->workflow_id)
+            ->where('is_mandatory', true)
+            ->get();
+
+        foreach ($mandatoryRequirements as $requirement) {
+            if (! $request->hasFile('requirement_'.$requirement->id)) {
+                return response()->json([
+                    'error' => "File wajib '{$requirement->document_name}' tidak ditemukan.",
+                ], 422);
+            }
+        }
+
+        DB::transaction(function () use ($request, $booking, $mandatoryRequirements) {
+            // Hapus attachment lama milik user ini
+            BookingAttachment::where('booking_id', $booking->id)
+                ->where('uploader_id', Auth::id())
+                ->delete();
+
+            // Upload attachment baru
+            foreach ($mandatoryRequirements as $requirement) {
+                $file = $request->file('requirement_'.$requirement->id);
+                $path = $file->store("attachments/{$booking->id}", 'private');
+
+                BookingAttachment::create([
+                    'booking_id' => $booking->id,
+                    'requirement_id' => $requirement->id,
+                    'uploader_id' => Auth::id(),
+                    'document_type' => $requirement->document_name,
+                    'file_path' => $path,
+                ]);
+            }
+
+            $booking->update(['status' => 'Pending']);
+
+            LoggerService::logAction($booking->id, 'REVISED', null, 'Dokumen direvisi dan diajukan ulang oleh peminjam.');
+
+            // Kirim email notifikasi ke approver di step saat ini
+            $currentStep = WorkflowStep::where('workflow_id', $booking->workflow_id)
+                ->where('step_order', $booking->current_step)
+                ->first();
+
+            if ($currentStep) {
+                $approvers = User::where('position_id', $currentStep->position_id)->get();
+
+                foreach ($approvers as $approver) {
+                    Mail::to($approver->email)->queue(new ApprovalNeededMail($booking, $approver));
+                }
+            }
+        });
+
+        return response()->json(['message' => 'Revisi berhasil dikirim. Booking dikembalikan ke status Pending.']);
     }
 
     public function timeline($id)
