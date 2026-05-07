@@ -350,19 +350,36 @@
                 method: 'POST',
                 body: formData,
                 headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
                 }
             });
 
-            const data = await response.json();
+            let data = {};
+            try {
+                data = await response.json();
+            } catch (e) {
+                console.error('Failed to parse JSON response', e);
+            }
 
             if (response.ok) {
                 alert('Berhasil! Booking Anda telah diajukan.');
                 window.location.href = "{{ route('riwayat') }}";
             } else {
-                alert(data.error || 'Terjadi kesalahan, pastikan semua form dan dokumen terisi.');
+                if (response.status === 419) {
+                    alert('Sesi Anda telah berakhir. Silakan segarkan halaman (Refresh) dan coba lagi.');
+                    return;
+                }
+                
+                if (data.errors) {
+                    const errorMessages = Object.values(data.errors).flat().join('\n');
+                    alert('Gagal: \n' + errorMessages);
+                } else {
+                    alert(data.error || data.message || 'Terjadi kesalahan, pastikan semua form dan dokumen terisi.');
+                }
             }
         } catch (error) {
+            console.error('Fetch error:', error);
             alert('Gagal terhubung ke server. Silakan coba lagi.');
         } finally {
             submitBtn.disabled = false;

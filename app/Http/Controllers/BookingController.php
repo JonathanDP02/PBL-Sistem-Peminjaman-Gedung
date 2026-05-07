@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Mail\ApprovalNeededMail;
+use App\Mail\BookingSubmittedMail;
 use App\Models\Booking;
 use App\Models\BookingAttachment;
 use App\Models\BookingLog;
@@ -144,6 +145,30 @@ class BookingController extends Controller
                 return $booking;
             });
 
+            // Dispatch Notifications outside transaction
+            try {
+                $currentStep = WorkflowStep::where('workflow_id', $booking->workflow_id)
+                    ->where('step_order', $booking->current_step)
+                    ->first();
+
+                if ($currentStep) {
+                    $approvers = User::where('position_id', $currentStep->position_id)->get();
+                    \Log::info('Attempting to send email to ' . $approvers->count() . ' approvers for booking #' . $booking->id);
+                    foreach ($approvers as $approver) {
+                        Mail::to($approver->email)->send(new ApprovalNeededMail($booking, $approver));
+                        \Log::info('Email sent to approver: ' . $approver->email);
+                    }
+                }
+
+                \Log::info('Attempting to send confirmation email to borrower: ' . Auth::user()->email);
+                Mail::to(Auth::user()->email)->send(new BookingSubmittedMail($booking));
+                \Log::info('Confirmation email sent to borrower.');
+            } catch (\Exception $e) {
+                // Log mail error but don't fail the request
+                \Log::error('Mail Error (Booking #' . $booking->id . '): ' . $e->getMessage());
+                \Log::error($e->getTraceAsString());
+            }
+
             return response()->json([
                 'message' => 'Booking berhasil dibuat.',
                 'data' => $booking->load([
@@ -155,8 +180,10 @@ class BookingController extends Controller
                 ]),
             ], 201);
 
-        } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 409);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'error' => 'Gagal membuat booking: ' . $e->getMessage()
+            ], 409);
         }
     }
 
@@ -220,43 +247,61 @@ class BookingController extends Controller
             }
         }
 
-        DB::transaction(function () use ($request, $booking, $mandatoryRequirements) {
-            // Hapus attachment lama milik user ini
-            BookingAttachment::where('booking_id', $booking->id)
-                ->where('uploader_id', Auth::id())
-                ->delete();
+        try {
+            DB::transaction(function () use ($request, $booking, $mandatoryRequirements) {
+                // Hapus attachment lama milik user ini
+                BookingAttachment::where('booking_id', $booking->id)
+                    ->where('uploader_id', Auth::id())
+                    ->delete();
 
-            // Upload attachment baru
-            foreach ($mandatoryRequirements as $requirement) {
-                $file = $request->file('requirement_'.$requirement->id);
-                $path = $file->store("attachments/{$booking->id}", 'private');
+                // Upload attachment baru
+                foreach ($mandatoryRequirements as $requirement) {
+                    $file = $request->file('requirement_'.$requirement->id);
+                    $path = $file->store("attachments/{$booking->id}", 'private');
 
-                BookingAttachment::create([
-                    'booking_id' => $booking->id,
-                    'requirement_id' => $requirement->id,
-                    'uploader_id' => Auth::id(),
-                    'document_type' => $requirement->document_name,
-                    'file_path' => $path,
-                ]);
-            }
-
-            $booking->update(['status' => 'Pending']);
-
-            LoggerService::logAction($booking->id, 'REVISED', null, 'Dokumen direvisi dan diajukan ulang oleh peminjam.');
-
-            // Kirim email notifikasi ke approver di step saat ini
-            $currentStep = WorkflowStep::where('workflow_id', $booking->workflow_id)
-                ->where('step_order', $booking->current_step)
-                ->first();
-
-            if ($currentStep) {
-                $approvers = User::where('position_id', $currentStep->position_id)->get();
-
-                foreach ($approvers as $approver) {
-                    Mail::to($approver->email)->queue(new ApprovalNeededMail($booking, $approver));
+                    BookingAttachment::create([
+                        'booking_id' => $booking->id,
+                        'requirement_id' => $requirement->id,
+                        'uploader_id' => Auth::id(),
+                        'document_type' => $requirement->document_name,
+                        'file_path' => $path,
+                    ]);
                 }
+
+                $booking->update([
+                    'status' => 'Pending',
+                    'revision_count' => ($booking->revision_count ?? 0) + 1,
+                    'event_name' => $request->input('event_name', $booking->event_name),
+                    'event_description' => $request->input('event_description', $booking->event_description),
+                ]);
+
+                LoggerService::logAction($booking->id, 'REVISED', null, 'Dokumen direvisi dan diajukan ulang oleh peminjam.');
+            });
+
+            // Kirim email notifikasi ke approver di step saat ini (outside transaction)
+            try {
+                $currentStep = WorkflowStep::where('workflow_id', $booking->workflow_id)
+                    ->where('step_order', $booking->current_step)
+                    ->first();
+
+                if ($currentStep) {
+                    $approvers = User::where('position_id', $currentStep->position_id)->get();
+                    \Log::info('Attempting to send revision email to ' . $approvers->count() . ' approvers for booking #' . $booking->id);
+                    foreach ($approvers as $approver) {
+                        Mail::to($approver->email)->send(new ApprovalNeededMail($booking, $approver));
+                        \Log::info('Revision email sent to approver: ' . $approver->email);
+                    }
+                }
+            } catch (\Exception $e) {
+                // Log mail error but don't fail the request
+                \Log::error('Mail Error (Revision #' . $booking->id . '): ' . $e->getMessage());
+                \Log::error($e->getTraceAsString());
             }
-        });
+        } catch (\Throwable $e) {
+            return response()->json([
+                'error' => 'Gagal mengirim revisi: ' . $e->getMessage()
+            ], 409);
+        }
 
         return response()->json(['message' => 'Revisi berhasil dikirim. Booking dikembalikan ke status Pending.']);
     }
@@ -322,5 +367,22 @@ class BookingController extends Controller
             'success' => true,
             'data' => $bookingLogs,
         ]);
+    }
+
+    public function detail($id)
+    {
+        $booking = Booking::with([
+            'room.building',
+            'user',
+            'workflow.requirements',
+            'workflow.steps.position',
+            'approvals',
+            'logs.actor',
+            'attachments',
+        ])
+            ->where('user_id', Auth::id())
+            ->findOrFail($id);
+
+        return view('user.peminjam.detail', compact('booking'));
     }
 }
