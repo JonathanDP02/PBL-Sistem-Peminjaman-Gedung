@@ -21,7 +21,19 @@
                         <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-400 tracking-widest uppercase mb-3">Pilih Ruangan</label>
                         <div class="relative">
                             <i class="ph ph-buildings absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-gray-500 text-lg"></i>
-                            <input type="text" placeholder="Cari nama ruangan atau nomor gedung..." class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl pl-12 pr-4 py-3.5 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-600 focus:outline-none focus:border-kinetic-primary transition-colors">
+                            <select id="roomSelect" 
+                                    class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl pl-12 pr-4 py-3.5 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-600 focus:outline-none focus:border-kinetic-primary transition-colors">
+                                <option value="">-- Pilih Ruangan --</option>
+                                @foreach($buildings as $building)
+                                    <optgroup label="{{ $building->building_name }}">
+                                        @foreach($building->rooms as $room)
+                                            <option value="{{ $room->id }}" data-unit-id="{{ $room->unit_id }}" data-capacity="{{ $room->capacity }}">
+                                                {{ $room->room_name }} (Kapasitas: {{ $room->capacity }} orang)
+                                            </option>
+                                        @endforeach
+                                    </optgroup>
+                                @endforeach
+                            </select>
                         </div>
                     </div>
 
@@ -30,30 +42,22 @@
                             <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-400 tracking-widest uppercase mb-3">Tanggal Penggunaan</label>
                             <div class="relative">
                                 <i class="ph ph-calendar-blank absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-gray-500 text-lg"></i>
-                                <input type="date" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl pl-12 pr-4 py-3.5 text-sm text-slate-900 dark:text-gray-400 focus:outline-none focus:border-kinetic-primary transition-colors [color-scheme:light] dark:[color-scheme:dark]">
+                                <input type="date" id="bookingDate" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl pl-12 pr-4 py-3.5 text-sm text-slate-900 dark:text-gray-400 focus:outline-none focus:border-kinetic-primary transition-colors [color-scheme:light] dark:[color-scheme:dark]">
                             </div>
                         </div>
                         <div>
                             <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-400 tracking-widest uppercase mb-3">Waktu Pelaksanaan</label>
                             <div class="relative">
                                 <i class="ph ph-clock absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-gray-500 text-lg"></i>
-                                <input type="time" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl pl-12 pr-4 py-3.5 text-sm text-slate-900 dark:text-gray-400 focus:outline-none focus:border-kinetic-primary transition-colors [color-scheme:light] dark:[color-scheme:dark]">
+                                <input type="time" id="startTime" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl pl-12 pr-4 py-3.5 text-sm text-slate-900 dark:text-gray-400 focus:outline-none focus:border-kinetic-primary transition-colors [color-scheme:light] dark:[color-scheme:dark]">
                             </div>
                         </div>
                     </div>
 
                     <div>
                         <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-400 tracking-widest uppercase mb-3">Alur Prosedur (SOP)</label>
-                        <div class="grid grid-cols-2 gap-4">
-                            <button class="bg-teal-50 dark:bg-[#1A1A1A] border border-kinetic-primary rounded-xl p-5 text-left relative group transition-colors">
-                                <i class="ph-fill ph-check-circle absolute top-4 right-4 text-kinetic-primary text-xl"></i>
-                                <p class="font-bold text-slate-900 dark:text-white text-sm mb-1">SOP A</p>
-                                <p class="text-[10px] text-slate-500 dark:text-gray-500">Kegiatan Internal Fakultas & Lab</p>
-                            </button>
-                            <button class="bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] hover:border-slate-400 dark:hover:border-gray-500 rounded-xl p-5 text-left transition-colors">
-                                <p class="font-bold text-slate-600 dark:text-gray-300 text-sm mb-1">SOP B</p>
-                                <p class="text-[10px] text-slate-500 dark:text-gray-500">Kegiatan Organisasi & Eksternal</p>
-                            </button>
+                        <div id="workflowContainer" class="grid grid-cols-2 gap-4">
+                            <p class="col-span-2 text-sm text-slate-500 dark:text-gray-400">Pilih ruangan terlebih dahulu untuk melihat alur persetujuan</p>
                         </div>
                     </div>
                 </div>
@@ -61,43 +65,8 @@
                 <div class="flex flex-col h-full justify-between">
                     <div>
                         <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-400 tracking-widest uppercase mb-3">Lampiran Dokumen</label>
-                        <div class="space-y-3">
-                            <div class="bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl p-4 flex items-center justify-between group hover:border-kinetic-primary/50 transition-colors cursor-pointer">
-                                <div class="flex items-center gap-4">
-                                    <div class="w-10 h-10 rounded-lg bg-white dark:bg-[#222] border border-slate-200 dark:border-[#333] flex items-center justify-center text-slate-400 dark:text-gray-400">
-                                        <i class="ph ph-file-text text-xl"></i>
-                                    </div>
-                                    <div>
-                                        <p class="text-sm font-bold text-slate-900 dark:text-white mb-0.5">Izin Dekanat</p>
-                                        <p class="text-[10px] text-slate-500 dark:text-gray-500">Format PDF, Maks 5MB</p>
-                                    </div>
-                                </div>
-                                <i class="ph ph-cloud-arrow-up text-xl text-slate-400 dark:text-gray-500 group-hover:text-kinetic-primary transition-colors"></i>
-                            </div>
-                            <div class="bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl p-4 flex items-center justify-between group hover:border-kinetic-primary/50 transition-colors cursor-pointer">
-                                <div class="flex items-center gap-4">
-                                    <div class="w-10 h-10 rounded-lg bg-white dark:bg-[#222] border border-slate-200 dark:border-[#333] flex items-center justify-center text-slate-400 dark:text-gray-400">
-                                        <i class="ph ph-clipboard-text text-xl"></i>
-                                    </div>
-                                    <div>
-                                        <p class="text-sm font-bold text-slate-900 dark:text-white mb-0.5">Proposal Kegiatan</p>
-                                        <p class="text-[10px] text-slate-500 dark:text-gray-500">Wajib untuk SOP B</p>
-                                    </div>
-                                </div>
-                                <i class="ph ph-cloud-arrow-up text-xl text-slate-400 dark:text-gray-500 group-hover:text-kinetic-primary transition-colors"></i>
-                            </div>
-                            <div class="bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl p-4 flex items-center justify-between group hover:border-kinetic-primary/50 transition-colors cursor-pointer">
-                                <div class="flex items-center gap-4">
-                                    <div class="w-10 h-10 rounded-lg bg-white dark:bg-[#222] border border-slate-200 dark:border-[#333] flex items-center justify-center text-slate-400 dark:text-gray-400">
-                                        <i class="ph ph-identification-card text-xl"></i>
-                                    </div>
-                                    <div>
-                                        <p class="text-sm font-bold text-slate-900 dark:text-white mb-0.5">KTM Ketua Pelaksana</p>
-                                        <p class="text-[10px] text-slate-500 dark:text-gray-500">Scan berwarna (JPG/PNG)</p>
-                                    </div>
-                                </div>
-                                <i class="ph ph-cloud-arrow-up text-xl text-slate-400 dark:text-gray-500 group-hover:text-kinetic-primary transition-colors"></i>
-                            </div>
+                        <div id="documentsContainer" class="space-y-3">
+                            <p class="text-sm text-slate-500 dark:text-gray-400">Pilih ruangan dan workflow untuk melihat dokumen yang diperlukan</p>
                         </div>
                     </div>
 
@@ -152,3 +121,148 @@
 
     </div>
 </x-app-layout>
+
+<script>
+    // Data workflows dari server (Laravel)
+    const workflowsData = @json($workflows);
+    const buildingsData = @json($buildings);
+
+    const roomSelect = document.getElementById('roomSelect');
+    const workflowContainer = document.getElementById('workflowContainer');
+    const documentsContainer = document.getElementById('documentsContainer');
+
+    // Handle room selection
+    roomSelect.addEventListener('change', function() {
+        const selectedRoomId = this.value;
+        
+        if (!selectedRoomId) {
+            workflowContainer.innerHTML = '<p class="col-span-2 text-sm text-slate-500 dark:text-gray-400">Pilih ruangan terlebih dahulu untuk melihat alur persetujuan</p>';
+            documentsContainer.innerHTML = '<p class="text-sm text-slate-500 dark:text-gray-400">Pilih ruangan dan workflow untuk melihat dokumen yang diperlukan</p>';
+            return;
+        }
+
+        // Find the selected room and its unit
+        let selectedRoom = null;
+        buildingsData.forEach(building => {
+            const room = building.rooms.find(r => r.id == selectedRoomId);
+            if (room) selectedRoom = room;
+        });
+
+        if (!selectedRoom) return;
+
+        // Get workflows for this room's unit
+        const applicableWorkflows = workflowsData.filter(w => w.unit_id == selectedRoom.unit_id);
+
+        if (applicableWorkflows.length === 0) {
+            workflowContainer.innerHTML = '<p class="col-span-2 text-sm text-slate-500 dark:text-gray-400">Tidak ada alur persetujuan untuk ruangan ini</p>';
+            documentsContainer.innerHTML = '';
+            return;
+        }
+
+        // Display workflows as buttons
+        let workflowHTML = '';
+        applicableWorkflows.forEach((workflow, index) => {
+            const isSelected = index === 0;
+            workflowHTML += `
+                <button type="button" 
+                        class="workflow-btn bg-slate-50 dark:bg-[#1A1A1A] border rounded-xl p-5 text-left transition-colors ${isSelected ? 'border-kinetic-primary bg-teal-50 dark:bg-kinetic-primary/10' : 'border-slate-200 dark:border-[#2A2A2A] hover:border-slate-400 dark:hover:border-gray-500'}"
+                        data-workflow-id="${workflow.id}"
+                        onclick="selectWorkflow(${workflow.id})">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <p class="font-bold ${isSelected ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-gray-300'} text-sm mb-1">${workflow.name}</p>
+                            <p class="text-[10px] text-slate-500 dark:text-gray-500">${workflow.description || 'Tidak ada deskripsi'}</p>
+                        </div>
+                        ${isSelected ? '<i class="ph-fill ph-check-circle text-kinetic-primary text-xl"></i>' : ''}
+                    </div>
+                </button>
+            `;
+        });
+        workflowContainer.innerHTML = workflowHTML;
+
+        // Display documents for the first workflow
+        if (applicableWorkflows.length > 0) {
+            displayDocuments(applicableWorkflows[0].id);
+        }
+    });
+
+    function selectWorkflow(workflowId) {
+        // Update button styles
+        document.querySelectorAll('.workflow-btn').forEach(btn => {
+            if (btn.dataset.workflowId == workflowId) {
+                btn.classList.remove('border-slate-200', 'dark:border-[#2A2A2A]');
+                btn.classList.add('border-kinetic-primary', 'bg-teal-50', 'dark:bg-kinetic-primary/10');
+                btn.innerHTML = btn.innerHTML.replace('</button>', '<i class="ph-fill ph-check-circle text-kinetic-primary text-xl absolute top-4 right-4"></i></button>');
+            } else {
+                btn.classList.remove('border-kinetic-primary', 'bg-teal-50', 'dark:bg-kinetic-primary/10');
+                btn.classList.add('border-slate-200', 'dark:border-[#2A2A2A]');
+                btn.innerHTML = btn.innerHTML.replace(/<i class="ph-fill ph-check-circle.*?<\/i>/g, '');
+            }
+        });
+
+        // Display documents for selected workflow
+        displayDocuments(workflowId);
+    }
+
+    function displayDocuments(workflowId) {
+        const workflow = workflowsData.find(w => w.id == workflowId);
+        if (!workflow || !workflow.requirements) {
+            documentsContainer.innerHTML = '<p class="text-sm text-slate-500 dark:text-gray-400">Tidak ada dokumen yang diperlukan</p>';
+            return;
+        }
+
+        let documentsHTML = '';
+        if (workflow.requirements.length === 0) {
+            documentsHTML = '<p class="text-sm text-slate-500 dark:text-gray-400">Tidak ada dokumen yang diperlukan untuk alur ini</p>';
+        } else {
+            workflow.requirements.forEach(req => {
+                const mandatoryText = req.is_mandatory ? '(Wajib)' : '(Opsional)';
+                documentsHTML += `
+                    <div class="bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl p-4 flex items-center justify-between group hover:border-kinetic-primary/50 transition-colors cursor-pointer">
+                        <div class="flex items-center gap-4 flex-1">
+                            <div class="w-10 h-10 rounded-lg bg-white dark:bg-[#222] border border-slate-200 dark:border-[#333] flex items-center justify-center text-slate-400 dark:text-gray-400">
+                                <i class="ph ph-file-text text-xl"></i>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-sm font-bold text-slate-900 dark:text-white mb-0.5">${req.document_name}</p>
+                                <p class="text-[10px] text-slate-500 dark:text-gray-500">${req.description || 'Silakan upload file'} ${mandatoryText}</p>
+                            </div>
+                        </div>
+                        <i class="ph ph-cloud-arrow-up text-xl text-slate-400 dark:text-gray-500 group-hover:text-kinetic-primary transition-colors"></i>
+                    </div>
+                `;
+            });
+        }
+        documentsContainer.innerHTML = documentsHTML;
+    }
+
+    // Auto-fill form berdasarkan Parameter URL (Dari Rekomendasi Jadwal)
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomId = urlParams.get('room_id');
+        const date = urlParams.get('date');
+        const startTime = urlParams.get('start_time');
+
+        // Isi otomatis Ruangan
+        if (roomId) {
+            const roomSelect = document.getElementById('roomSelect');
+            if(roomSelect) {
+                roomSelect.value = roomId;
+                // Penting: Panggil event 'change' manual agar workflow SOP otomatis muncul
+                roomSelect.dispatchEvent(new Event('change'));
+            }
+        }
+        
+        // Isi otomatis Tanggal
+        if (date) {
+            const dateInput = document.getElementById('bookingDate');
+            if(dateInput) dateInput.value = date;
+        }
+        
+        // Isi otomatis Waktu Pelaksanaan
+        if (startTime) {
+            const timeInput = document.getElementById('startTime');
+            if(timeInput) timeInput.value = startTime;
+        }
+    });
+</script>

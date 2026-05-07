@@ -6,10 +6,12 @@ use App\Mail\ApprovalNeededMail;
 use App\Models\Booking;
 use App\Models\BookingAttachment;
 use App\Models\BookingLog;
-use App\Models\User;
+use App\Models\Building;
+use App\Models\Workflow;
 use App\Models\WorkflowRequirement;
 use App\Models\WorkflowStep;
 use App\Services\LoggerService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -31,6 +33,17 @@ class BookingController extends Controller
             ->get();
 
         return response()->json($bookings);
+    }
+
+    public function showBookingForm()
+    {
+        // Fetch all buildings with their rooms
+        $buildings = Building::with('rooms.unit')->get();
+
+        // Fetch all workflows with their steps and requirements
+        $workflows = Workflow::with(['steps.position', 'requirements'])->get();
+
+        return view('user.peminjam.booking', compact('buildings', 'workflows'));
     }
 
     public function create()

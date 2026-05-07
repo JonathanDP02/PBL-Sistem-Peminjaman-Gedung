@@ -61,6 +61,32 @@ Route::middleware('auth')->group(function () {
             return app(ApprovalController::class)->dashboard(request());
         }
 
+        $stats = ['approved' => 0, 'pending' => 0, 'rejected' => 0];
+        $recentBookings = collect();
+        $notifications = collect();
+        
+        if ($user->role->name === 'User') {
+            // Statistik
+            $stats['approved'] = \App\Models\Booking::where('user_id', $user->id)->where('status', 'Approved')->count();
+            $stats['pending']  = \App\Models\Booking::where('user_id', $user->id)->where('status', 'Pending')->count();
+            $stats['rejected'] = \App\Models\Booking::where('user_id', $user->id)->where('status', 'Rejected')->count();
+
+            // Ambil 5 booking terbaru
+            $recentBookings = \App\Models\Booking::with('room')
+                ->where('user_id', $user->id)
+                ->orderBy('created_at', 'desc')
+                ->take(5)
+                ->get();
+
+            // Ambil 5 notifikasi terbaru (dari log booking milik user)
+            $notifications = \App\Models\BookingLog::whereHas('booking', function($query) use ($user) {
+                    $query->where('user_id', $user->id);
+                })
+                ->orderBy('created_at', 'desc')
+                ->take(5)
+                ->get();
+        }
+
         $view = match ($user->role->name) {
             'SuperAdmin' => 'user.superadmin.dashboard',
             'Admin_Unit' => 'user.admin_unit.dashboard',
@@ -68,18 +94,31 @@ Route::middleware('auth')->group(function () {
             default => 'user.peminjam.dashboard',
         };
 
-        return view($view);
+        return view($view, compact('stats', 'recentBookings', 'notifications'));
     })->name('dashboard');
 
     // Riwayat (Shared between Approver & User)
     Route::get('/riwayat', function () {
-        $view = match (Auth::user()->role->name) {
-            'Approver' => 'user.approver.riwayat',
-            'User' => 'user.peminjam.riwayat',
-            default => 'user.peminjam.riwayat',
-        };
+        $user = Auth::user();
 
-        return view($view);
+        if ($user->role->name === 'Approver') {
+            return view('user.approver.riwayat');
+        }
+
+        // Ambil data dari database untuk User (Peminjam)
+        $bookings = \App\Models\Booking::with(['room.building'])
+            ->where('user_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Hitung statistik untuk sidebar
+        $statusCounts = [
+            'Approved' => $bookings->where('status', 'Approved')->count(),
+            'Pending'  => $bookings->where('status', 'Pending')->count(),
+            'Rejected' => $bookings->whereIn('status', ['Rejected', 'Cancelled'])->count(),
+        ];
+
+        return view('user.peminjam.riwayat', compact('bookings', 'statusCounts'));
     })->name('riwayat');
 
     // Kelola User (Shared between SuperAdmin & Admin_Unit)
