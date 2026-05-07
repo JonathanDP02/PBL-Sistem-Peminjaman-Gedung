@@ -42,14 +42,14 @@
                             <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-400 tracking-widest uppercase mb-3">Tanggal Penggunaan</label>
                             <div class="relative">
                                 <i class="ph ph-calendar-blank absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-gray-500 text-lg"></i>
-                                <input type="date" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl pl-12 pr-4 py-3.5 text-sm text-slate-900 dark:text-gray-400 focus:outline-none focus:border-kinetic-primary transition-colors [color-scheme:light] dark:[color-scheme:dark]">
+                                <input type="date" id="bookingDate" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl pl-12 pr-4 py-3.5 text-sm text-slate-900 dark:text-gray-400 focus:outline-none focus:border-kinetic-primary transition-colors [color-scheme:light] dark:[color-scheme:dark]">
                             </div>
                         </div>
                         <div>
                             <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-400 tracking-widest uppercase mb-3">Waktu Pelaksanaan</label>
                             <div class="relative">
                                 <i class="ph ph-clock absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-gray-500 text-lg"></i>
-                                <input type="time" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl pl-12 pr-4 py-3.5 text-sm text-slate-900 dark:text-gray-400 focus:outline-none focus:border-kinetic-primary transition-colors [color-scheme:light] dark:[color-scheme:dark]">
+                                <input type="time" id="startTime" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl pl-12 pr-4 py-3.5 text-sm text-slate-900 dark:text-gray-400 focus:outline-none focus:border-kinetic-primary transition-colors [color-scheme:light] dark:[color-scheme:dark]">
                             </div>
                         </div>
                     </div>
@@ -235,4 +235,34 @@
         }
         documentsContainer.innerHTML = documentsHTML;
     }
+
+    // Auto-fill form berdasarkan Parameter URL (Dari Rekomendasi Jadwal)
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomId = urlParams.get('room_id');
+        const date = urlParams.get('date');
+        const startTime = urlParams.get('start_time');
+
+        // Isi otomatis Ruangan
+        if (roomId) {
+            const roomSelect = document.getElementById('roomSelect');
+            if(roomSelect) {
+                roomSelect.value = roomId;
+                // Penting: Panggil event 'change' manual agar workflow SOP otomatis muncul
+                roomSelect.dispatchEvent(new Event('change'));
+            }
+        }
+        
+        // Isi otomatis Tanggal
+        if (date) {
+            const dateInput = document.getElementById('bookingDate');
+            if(dateInput) dateInput.value = date;
+        }
+        
+        // Isi otomatis Waktu Pelaksanaan
+        if (startTime) {
+            const timeInput = document.getElementById('startTime');
+            if(timeInput) timeInput.value = startTime;
+        }
+    });
 </script>
