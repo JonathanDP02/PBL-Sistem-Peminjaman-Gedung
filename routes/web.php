@@ -12,6 +12,7 @@ use App\Http\Controllers\BookingValidationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoomController;
 use App\Models\Booking;
+use App\Models\BookingLog;
 use App\Models\Building;
 use App\Models\Room;
 use Carbon\Carbon;
@@ -64,24 +65,24 @@ Route::middleware('auth')->group(function () {
         $stats = ['approved' => 0, 'pending' => 0, 'rejected' => 0];
         $recentBookings = collect();
         $notifications = collect();
-        
+
         if ($user->role->name === 'User') {
             // Statistik
-            $stats['approved'] = \App\Models\Booking::where('user_id', $user->id)->where('status', 'Approved')->count();
-            $stats['pending']  = \App\Models\Booking::where('user_id', $user->id)->where('status', 'Pending')->count();
-            $stats['rejected'] = \App\Models\Booking::where('user_id', $user->id)->where('status', 'Rejected')->count();
+            $stats['approved'] = Booking::where('user_id', $user->id)->where('status', 'Approved')->count();
+            $stats['pending'] = Booking::where('user_id', $user->id)->where('status', 'Pending')->count();
+            $stats['rejected'] = Booking::where('user_id', $user->id)->where('status', 'Rejected')->count();
 
             // Ambil 5 booking terbaru
-            $recentBookings = \App\Models\Booking::with('room')
+            $recentBookings = Booking::with('room')
                 ->where('user_id', $user->id)
                 ->orderBy('created_at', 'desc')
                 ->take(5)
                 ->get();
 
             // Ambil 5 notifikasi terbaru (dari log booking milik user)
-            $notifications = \App\Models\BookingLog::whereHas('booking', function($query) use ($user) {
-                    $query->where('user_id', $user->id);
-                })
+            $notifications = BookingLog::whereHas('booking', function ($query) use ($user) {
+                $query->where('user_id', $user->id);
+            })
                 ->orderBy('created_at', 'desc')
                 ->take(5)
                 ->get();
@@ -106,7 +107,7 @@ Route::middleware('auth')->group(function () {
         }
 
         // Ambil data dari database untuk User (Peminjam)
-        $bookings = \App\Models\Booking::with(['room.building'])
+        $bookings = Booking::with(['room.building'])
             ->where('user_id', $user->id)
             ->orderBy('created_at', 'desc')
             ->get();
@@ -114,7 +115,7 @@ Route::middleware('auth')->group(function () {
         // Hitung statistik untuk sidebar
         $statusCounts = [
             'Approved' => $bookings->where('status', 'Approved')->count(),
-            'Pending'  => $bookings->where('status', 'Pending')->count(),
+            'Pending' => $bookings->where('status', 'Pending')->count(),
             'Rejected' => $bookings->whereIn('status', ['Rejected', 'Cancelled'])->count(),
         ];
 
@@ -216,10 +217,8 @@ Route::middleware('auth')->group(function () {
 
     // --- USER / PEMINJAM SECTION ---
     Route::middleware('checkRole:User')->prefix('user')->group(function () {
-        // Panggil melalui BookingController agar data database terkirim
         Route::get('/booking', [BookingController::class, 'showBookingForm'])->name('booking');
-        Route::get('/jadwal-saya', [BookingController::class, 'showJadwalSaya'])->name('jadwal-saya');
-        
+        Route::get('/jadwal-saya', fn () => view('user.peminjam.jadwal-saya'))->name('jadwal-saya');
         Route::get('/peminjaman', fn () => view('user.peminjam.peminjaman'))->name('peminjaman');
         Route::get('/detail', fn () => view('user.peminjam.detail'))->name('detail');
 

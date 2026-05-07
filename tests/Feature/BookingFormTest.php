@@ -22,7 +22,7 @@ it('displays booking form with buildings and workflows for authenticated user', 
 
     $response = $this->actingAs($user)->get(route('booking'));
 
-    $response->assertOk();
+    $response->assertStatus(200);
     $response->assertViewHas('buildings');
     $response->assertViewHas('workflows');
 
@@ -39,5 +39,3 @@ it('requires authentication to access booking form', function () {
 
     $response->assertRedirect(route('login'));
 });
-
-
