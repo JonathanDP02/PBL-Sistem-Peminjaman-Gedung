@@ -10,6 +10,7 @@ use App\Models\Building;
 use App\Models\Workflow;
 use App\Models\WorkflowRequirement;
 use App\Models\WorkflowStep;
+use App\Models\User;
 use App\Services\LoggerService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -37,12 +38,13 @@ class BookingController extends Controller
 
     public function showBookingForm()
     {
-        // Fetch all buildings with their rooms
-        $buildings = Building::with('rooms.unit')->get();
+        // Mengambil data gedung beserta relasi ruangannya
+        $buildings = \App\Models\Building::with('rooms.unit')->get();
 
-        // Fetch all workflows with their steps and requirements
-        $workflows = Workflow::with(['steps.position', 'requirements'])->get();
+        // Mengambil data alur (workflow) beserta langkah dan syaratnya
+        $workflows = \App\Models\Workflow::with(['steps.position', 'requirements'])->get();
 
+        // Mengirimkan variabel $buildings dan $workflows ke halaman view
         return view('user.peminjam.booking', compact('buildings', 'workflows'));
     }
 
@@ -92,11 +94,6 @@ class BookingController extends Controller
                     ->first();
 
                 if ($conflict) {
-                    // throw new \Exception(
-                    //     'Ruangan sudah dibooking pada waktu tersebut. '.
-                    //     "Konflik dengan booking #{$conflict->id} ".
-                    //     "({$conflict->start_time} - {$conflict->end_time})."
-                    // );
                     $isBlocked = $conflict->event_name === 'Libur Nasional';
                     $message = $isBlocked
                         ? "Tanggal {$validated['booking_date']} diblokir sebagai Libur Nasional. Peminjaman tidak dapat dilakukan."
@@ -169,7 +166,6 @@ class BookingController extends Controller
             'room.building',
             'user',
             'workflow.requirements',
-            // 'room',
             'workflow.steps.position',
             'approvals',
             'logs.actor',
@@ -263,6 +259,56 @@ class BookingController extends Controller
         });
 
         return response()->json(['message' => 'Revisi berhasil dikirim. Booking dikembalikan ke status Pending.']);
+    }
+
+    // INI ADALAH FUNGSI YANG SEBELUMNYA HILANG
+    public function showJadwalSaya()
+    {
+        $month = request('month', now()->month);
+        $year = request('year', now()->year);
+
+        $startOfMonth = \Carbon\Carbon::createFromDate($year, $month, 1)->startOfDay();
+        $endOfMonth = $startOfMonth->clone()->endOfMonth()->endOfDay();
+
+        // Ambil semua booking di bulan tersebut (untuk kalender umum)
+        $allBookings = \App\Models\Booking::with(['room', 'user'])
+            ->whereBetween('booking_date', [$startOfMonth, $endOfMonth])
+            ->whereIn('status', ['Approved', 'Pending'])
+            ->get();
+
+        // Ambil booking khusus milik user yang sedang login (untuk statistik)
+        $userBookings = \App\Models\Booking::with('room')
+            ->where('user_id', \Illuminate\Support\Facades\Auth::id())
+            ->whereBetween('booking_date', [$startOfMonth, $endOfMonth])
+            ->whereIn('status', ['Approved', 'Pending'])
+            ->get();
+
+        // Hitung statistik user
+        $hoursUsed = 0;
+        $complianceScore = 4.8; // Nilai default
+
+        foreach ($userBookings as $booking) {
+            $start = \Carbon\Carbon::parse($booking->start_time);
+            $end = \Carbon\Carbon::parse($booking->end_time);
+            $hours = $end->diffInHours($start);
+            $hoursUsed += $hours;
+        }
+
+        // Kelompokkan booking berdasarkan ruangan dan tanggal untuk mempermudah render di kalender
+        $bookingsByRoomAndDate = $allBookings->groupBy(function ($booking) {
+            return $booking->room_id . '_' . $booking->booking_date;
+        });
+
+        return view('user.peminjam.jadwal-saya', [
+            'allBookings' => $allBookings,
+            'userBookings' => $userBookings,
+            'bookingsByRoomAndDate' => $bookingsByRoomAndDate,
+            'hoursUsed' => $hoursUsed,
+            'complianceScore' => $complianceScore,
+            'month' => $month,
+            'year' => $year,
+            'monthName' => $startOfMonth->translatedFormat('F'),
+        ]);
     }
 
     public function timeline($id)

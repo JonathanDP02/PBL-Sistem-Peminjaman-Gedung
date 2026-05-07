@@ -216,8 +216,10 @@ Route::middleware('auth')->group(function () {
 
     // --- USER / PEMINJAM SECTION ---
     Route::middleware('checkRole:User')->prefix('user')->group(function () {
-        Route::get('/booking', fn () => view('user.peminjam.booking'))->name('booking');
-        Route::get('/jadwal-saya', fn () => view('user.peminjam.jadwal-saya'))->name('jadwal-saya');
+        // Panggil melalui BookingController agar data database terkirim
+        Route::get('/booking', [BookingController::class, 'showBookingForm'])->name('booking');
+        Route::get('/jadwal-saya', [BookingController::class, 'showJadwalSaya'])->name('jadwal-saya');
+        
         Route::get('/peminjaman', fn () => view('user.peminjam.peminjaman'))->name('peminjaman');
         Route::get('/detail', fn () => view('user.peminjam.detail'))->name('detail');
 

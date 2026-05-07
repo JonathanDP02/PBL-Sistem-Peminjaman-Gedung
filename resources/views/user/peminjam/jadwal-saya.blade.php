@@ -44,7 +44,6 @@
                 </div>
             </div>
             <div class="flex gap-3 w-full md:w-auto">
-                {{-- Tombol Filter dengan ID untuk JS --}}
                 <button id="filterBtn" type="button" class="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-100 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl text-sm font-bold text-slate-700 dark:text-white hover:bg-slate-200 dark:hover:bg-[#222] transition-colors">
                     <i class="ph ph-faders text-lg"></i> Filter
                 </button>
@@ -101,20 +100,25 @@
                             @php
                                 $currentDateStr = \Carbon\Carbon::create($year, $month, $day)->format('Y-m-d');
                                 
-                                // LOGIKA FILTER DITERAPKAN DI SINI
+                                // LOGIKA FILTER DIPERBAIKI DI SINI
                                 $currentSlotBookings = $allBookings->filter(function($booking) use ($currentDateStr, $hour, $statusFilters) {
-                                    if ($booking->booking_date !== $currentDateStr) return false;
+                                    // Parse tanggal dari database agar pasti cocok formatnya Y-m-d
+                                    $bookingDate = \Carbon\Carbon::parse($booking->booking_date)->format('Y-m-d');
+                                    
+                                    if ($bookingDate !== $currentDateStr) return false;
                                     
                                     $startH = (int) date('H', strtotime($booking->start_time));
                                     $endH = (int) date('H', strtotime($booking->end_time));
                                     if ($hour < $startH || $hour >= $endH) return false;
 
-                                    $isLocked = str_contains(strtoupper($booking->event_name), '[MAINTENANCE HARD-LOCK]');
+                                    $isLocked = str_contains(strtoupper($booking->event_name ?? ''), '[MAINTENANCE HARD-LOCK]');
                                     
-                                    // Saring berdasarkan Status yang dicentang di Modal
+                                    // Saring berdasarkan Status yang dicentang di Modal (strtolower agar kebal huruf besar/kecil)
+                                    $statusLower = strtolower($booking->status);
+
                                     if ($isLocked && !in_array('terkunci', $statusFilters)) return false;
-                                    if (!$isLocked && $booking->status === 'Approved' && !in_array('tersedia', $statusFilters)) return false;
-                                    if (!$isLocked && $booking->status === 'Pending' && !in_array('tertunda', $statusFilters)) return false;
+                                    if (!$isLocked && $statusLower === 'approved' && !in_array('tersedia', $statusFilters)) return false;
+                                    if (!$isLocked && $statusLower === 'pending' && !in_array('tertunda', $statusFilters)) return false;
 
                                     return true;
                                 });
@@ -124,20 +128,20 @@
                                 
                                 @if($currentSlotBookings->isNotEmpty())
                                     @foreach($currentSlotBookings as $b)
-                                        @if(str_contains(strtoupper($b->event_name), '[MAINTENANCE HARD-LOCK]'))
+                                        @if(str_contains(strtoupper($b->event_name ?? ''), '[MAINTENANCE HARD-LOCK]'))
                                             {{-- Tampilan Terkunci --}}
                                             <div class="h-full bg-red-50 dark:bg-[#2A1515] border border-red-200 dark:border-red-900/50 rounded-xl p-3 shadow-sm cursor-not-allowed">
                                                 <span class="text-[9px] font-bold text-red-600 dark:text-red-400 uppercase tracking-wider block mb-1">Locked by IT</span>
                                                 <h4 class="text-xs font-bold text-slate-900 dark:text-white leading-tight">{{ $b->room->room_name ?? 'Ruangan' }}</h4>
                                             </div>
-                                        @elseif($b->status === 'Approved')
+                                        @elseif(strtolower($b->status) === 'approved')
                                             {{-- Tampilan Dikonfirmasi --}}
                                             <div class="h-full bg-teal-50 dark:bg-[#102A24] border border-teal-200 dark:border-teal-900/50 rounded-xl p-3 shadow-sm relative cursor-pointer">
                                                 <i class="ph-fill ph-check-circle text-kinetic-primary absolute top-3 right-3 text-sm"></i>
                                                 <span class="text-[9px] font-bold text-teal-700 dark:text-kinetic-primary uppercase tracking-wider block mb-1">Confirmed</span>
                                                 <h4 class="text-xs font-bold text-slate-900 dark:text-white leading-tight">{{ $b->room->room_name ?? 'Ruangan' }}</h4>
                                             </div>
-                                        @elseif($b->status === 'Pending')
+                                        @elseif(strtolower($b->status) === 'pending')
                                             {{-- Tampilan Menunggu Persetujuan --}}
                                             <div class="h-full bg-blue-50 dark:bg-[#101E28] border border-blue-200 dark:border-blue-900/50 rounded-xl p-3 shadow-sm cursor-pointer">
                                                 <span class="text-[9px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider block mb-1">Pending Approval</span>
