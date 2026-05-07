@@ -6,7 +6,7 @@
                 <h2 class="font-heading text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white mb-2 transition-colors">Jadwal Saya</h2>
                 <div class="flex items-center gap-2 text-sm text-slate-500 dark:text-gray-400 transition-colors">
                     <i class="ph ph-calendar-blank"></i>
-                    <span>Oktober 2026 • Minggu ke-3</span>
+                    <span>{{ $monthName }} {{ $year }} • Minggu ke-{{ now()->weekOfMonth }}</span>
                 </div>
             </div>
             <div class="flex flex-wrap gap-4">

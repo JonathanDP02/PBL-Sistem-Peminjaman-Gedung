@@ -5,8 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\Booking;
 use App\Models\BookingAttachment;
 use App\Models\BookingLog;
+use App\Models\Building;
+use App\Models\Workflow;
 use App\Models\WorkflowRequirement;
 use App\Services\LoggerService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -17,16 +20,27 @@ class BookingController extends Controller
     {
         $bookings = Booking::with([
             'room.building',
-                'user',
-                'workflow.steps',
-                'workflow.requirements',
-                'attachments',
+            'user',
+            'workflow.steps',
+            'workflow.requirements',
+            'attachments',
         ])
             ->where('user_id', Auth::id())
             ->orderByDesc('created_at')
             ->get();
 
         return response()->json($bookings);
+    }
+
+    public function showBookingForm()
+    {
+        // Fetch all buildings with their rooms
+        $buildings = Building::with('rooms.unit')->get();
+
+        // Fetch all workflows with their steps and requirements
+        $workflows = Workflow::with(['steps.position', 'requirements'])->get();
+
+        return view('user.peminjam.booking', compact('buildings', 'workflows'));
     }
 
     public function create()
@@ -81,7 +95,7 @@ class BookingController extends Controller
                     //     "({$conflict->start_time} - {$conflict->end_time})."
                     // );
                     $isBlocked = $conflict->event_name === 'Libur Nasional';
-                    $message   = $isBlocked
+                    $message = $isBlocked
                         ? "Tanggal {$validated['booking_date']} diblokir sebagai Libur Nasional. Peminjaman tidak dapat dilakukan."
                         : "Ruangan sudah dibooking pada waktu tersebut. Konflik dengan booking #{$conflict->id} ({$conflict->start_time} - {$conflict->end_time}).";
 
@@ -181,6 +195,55 @@ class BookingController extends Controller
         });
 
         return response()->json(['message' => 'Booking berhasil dibatalkan.']);
+    }
+
+    public function showJadwalSaya()
+    {
+        $month = request('month', now()->month);
+        $year = request('year', now()->year);
+
+        $startOfMonth = Carbon::createFromDate($year, $month, 1)->startOfDay();
+        $endOfMonth = $startOfMonth->clone()->endOfMonth()->endOfDay();
+
+        // Fetch all bookings for the month (not just current user, so we can show all rooms)
+        $allBookings = Booking::with(['room', 'user'])
+            ->whereBetween('booking_date', [$startOfMonth, $endOfMonth])
+            ->whereIn('status', ['Approved', 'Pending'])
+            ->get();
+
+        // User's personal bookings for statistics
+        $userBookings = Booking::with('room')
+            ->where('user_id', Auth::id())
+            ->whereBetween('booking_date', [$startOfMonth, $endOfMonth])
+            ->whereIn('status', ['Approved', 'Pending'])
+            ->get();
+
+        // Calculate user stats
+        $hoursUsed = 0;
+        $complianceScore = 4.8; // Default compliance score
+
+        foreach ($userBookings as $booking) {
+            $start = \Carbon\Carbon::parse($booking->start_time);
+            $end = \Carbon\Carbon::parse($booking->end_time);
+            $hours = $end->diffInHours($start);
+            $hoursUsed += $hours;
+        }
+
+        // Format bookings for calendar (grouped by room_id and date)
+        $bookingsByRoomAndDate = $allBookings->groupBy(function ($booking) {
+            return $booking->room_id.'_'.$booking->booking_date;
+        });
+
+        return view('user.peminjam.jadwal-saya', [
+            'allBookings' => $allBookings,
+            'userBookings' => $userBookings,
+            'bookingsByRoomAndDate' => $bookingsByRoomAndDate,
+            'hoursUsed' => $hoursUsed,
+            'complianceScore' => $complianceScore,
+            'month' => $month,
+            'year' => $year,
+            'monthName' => $startOfMonth->format('F'),
+        ]);
     }
 
     public function timeline($id)
