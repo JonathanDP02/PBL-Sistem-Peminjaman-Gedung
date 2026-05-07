@@ -64,4 +64,26 @@ class Booking extends Model
     {
         return $this->hasMany(BookingLog::class);
     }
+
+    public function getProgressPercentageAttribute(): int
+    {
+        if ($this->status === 'Approved') {
+            return 100;
+        }
+
+        if ($this->status === 'Rejected' || $this->status === 'Cancelled') {
+            return 0;
+        }
+
+        $totalSteps = $this->workflow->steps->count();
+        if ($totalSteps === 0) {
+            return 0;
+        }
+
+        // current_step starts at 1. If it's at step 1, 0% is done.
+        // If it's at step 2, (2-1)/totalSteps is done.
+        $completedSteps = $this->current_step - 1;
+        
+        return (int) round(($completedSteps / $totalSteps) * 100);
+    }
 }

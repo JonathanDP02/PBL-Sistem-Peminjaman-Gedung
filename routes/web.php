@@ -132,6 +132,10 @@ Route::middleware('auth')->group(function () {
         return view($view);
     })->name('kelola-user');
 
+    // --- SHARED FILE ACCESS (All Auth Roles with Internal Auth Logic) ---
+    Route::get('/user/bookings/{id}/attachments/{attachmentId}', [BookingAttachmentController::class, 'show'])->name('booking.attachment.show');
+    Route::get('/user/bookings/{id}/download-pdf', [BookingPdfController::class, 'generate'])->name('booking.pdf');
+
     // --- SUPER ADMIN SECTION ---
     Route::middleware('checkRole:SuperAdmin')->prefix('superadmin')->group(function () {
         Route::get('/fasilitas', fn () => view('user.superadmin.fasilitas'))->name('fasilitas');
@@ -213,22 +217,21 @@ Route::middleware('auth')->group(function () {
         Route::get('/approvals', [ApprovalController::class, 'index'])->name('approval.index');
         Route::post('/approvals/{booking_id}/approve', [ApprovalController::class, 'approve'])->name('approval.approve');
         Route::post('/approvals/{booking_id}/reject', [ApprovalController::class, 'reject'])->name('approval.reject');
+        Route::get('/riwayat', [ApprovalController::class, 'history'])->name('approver.riwayat');
     });
 
     // --- USER / PEMINJAM SECTION ---
     Route::middleware('checkRole:User')->prefix('user')->group(function () {
         Route::get('/booking', [BookingController::class, 'showBookingForm'])->name('booking');
-        Route::get('/jadwal-saya', fn () => view('user.peminjam.jadwal-saya'))->name('jadwal-saya');
+        Route::get('/jadwal-saya', [BookingController::class, 'showJadwalSaya'])->name('jadwal-saya');
         Route::get('/peminjaman', fn () => view('user.peminjam.peminjaman'))->name('peminjaman');
-        Route::get('/detail', fn () => view('user.peminjam.detail'))->name('detail');
+        Route::get('/detail/{id}', [BookingController::class, 'detail'])->name('detail');
 
         Route::get('/bookings', [BookingController::class, 'index'])->name('booking.index');
         Route::get('/bookings/create', [BookingController::class, 'create'])->name('booking.create');
         Route::post('/bookings', [BookingController::class, 'store'])->name('booking.store');
         Route::get('/bookings/{id}', [BookingController::class, 'show'])->name('booking.show');
         Route::patch('/bookings/{id}/cancel', [BookingController::class, 'cancel'])->name('booking.cancel');
-        Route::get('/bookings/{id}/attachments/{attachmentId}', [BookingAttachmentController::class, 'show'])->name('booking.attachment.show');
-        Route::get('/bookings/{id}/download-pdf', [BookingPdfController::class, 'generate'])->name('booking.pdf');
         Route::post('/bookings/{id}/revise', [BookingController::class, 'revise'])->name('booking.revise');
     });
 

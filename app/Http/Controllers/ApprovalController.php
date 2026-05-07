@@ -37,7 +37,7 @@ class ApprovalController extends Controller
             'approvals.approver.position',
             'approvals.step',
         ])
-            ->whereIn('status', ['Pending', 'Revising'])
+            ->where('status', 'Pending')
             ->whereHas('workflow.steps', function ($q) use ($positionId) {
                 $q->where('position_id', $positionId)
                     ->whereColumn('step_order', 'bookings.current_step');
@@ -68,17 +68,18 @@ class ApprovalController extends Controller
             ->where('position_id', $positionId)
             ->first();
 
-        $previousApprovals = $booking->approvals
-            ->where('step_id', '<', $currentStep?->id)
+        $approvalHistory = $booking->approvals
             ->sortBy('created_at')
             ->map(function ($approval) {
                 return [
-                    'step_order' => $approval->step->step_order,
-                    'position' => $approval->step->position->name ?? null,
-                    'approver_name' => $approval->approver->name,
+                    'step_order' => $approval->step->step_order ?? null,
+                    'position' => $approval->step->position->name ?? 'System',
+                    'approver_name' => $approval->approver->name ?? 'System',
                     'approval_status' => ucfirst($approval->approval_status),
-                    'approved_at' => $approval->approved_at->toIso8601String(),
+                    'approved_at' => $approval->created_at->toIso8601String(),
+                    'approved_at_formatted' => $approval->created_at->format('d M Y, H:i'),
                     'notes' => $approval->notes,
+                    'attempt' => $approval->attempt ?? 1,
                 ];
             })
             ->values();
@@ -88,7 +89,7 @@ class ApprovalController extends Controller
                 'id' => $attachment->id,
                 'document_name' => $attachment->document_name,
                 'document_type' => $attachment->document_type,
-                'file_path' => $attachment->file_path,
+                'file_path' => route('booking.attachment.show', ['id' => $booking->id, 'attachmentId' => $attachment->id]),
                 'file_size' => $this->formatFileSize($attachment->file_size ?? 0),
                 'uploaded_at' => $attachment->created_at->toIso8601String(),
                 'uploaded_by' => $booking->user->name,
@@ -144,7 +145,7 @@ class ApprovalController extends Controller
                 'requires_attachment' => (bool) $currentStep?->requires_attachment,
                 'attachment_type' => $currentStep?->attachment_type ?? null,
             ],
-            'previous_approvals' => $previousApprovals,
+            'approval_history' => $approvalHistory,
             'documents_uploaded' => $documentsUploaded,
             'priority_indicator' => $this->calculatePriority($booking),
             'time_remaining' => $this->calculateTimeRemaining($booking),
@@ -419,7 +420,7 @@ class ApprovalController extends Controller
             'approvals.approver.position',
             'approvals.step',
         ])
-            ->whereIn('status', ['Pending', 'Revising'])
+            ->where('status', 'Pending')
             ->whereHas('workflow.steps', function ($q) use ($positionId) {
                 $q->where('position_id', $positionId)
                     ->whereColumn('step_order', 'bookings.current_step');
@@ -479,7 +480,7 @@ class ApprovalController extends Controller
             'approvals.approver.position',
             'approvals.step',
         ])
-            ->whereIn('status', ['Pending', 'Revising'])
+            ->where('status', 'Pending')
             ->whereHas('workflow.steps', function ($q) use ($positionId) {
                 $q->where('position_id', $positionId)
                     ->whereColumn('step_order', 'bookings.current_step');
@@ -537,10 +538,35 @@ class ApprovalController extends Controller
         // Format approval response
         $approval = $this->formatApprovalResponse($booking, $positionId);
 
+        if (request()->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'data' => $approval
+            ]);
+        }
+
         return view('user.approver.detail', [
             'approval' => $approval,
             'booking' => $booking,
             'approver' => $approver,
+        ]);
+    }
+
+    /**
+     * GET /approver/history
+     * Show history of approvals/rejections by this approver
+     */
+    public function history(Request $request)
+    {
+        $approver = Auth::user();
+        
+        $approvals = Approval::with(['booking.room.building', 'booking.user', 'step.position'])
+            ->where('approver_id', $approver->id)
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+
+        return view('user.approver.riwayat', [
+            'approvals' => $approvals
         ]);
     }
 }

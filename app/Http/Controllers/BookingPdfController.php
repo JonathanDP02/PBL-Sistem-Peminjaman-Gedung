@@ -18,9 +18,21 @@ class BookingPdfController extends Controller
             'workflow',
             'approvals.step.position',
             'approvals.approver',
-        ])->where('id', $bookingId)
-            ->where('user_id', Auth::id())
-            ->firstOrFail();
+        ])->findOrFail($bookingId);
+
+        $user = Auth::user();
+        $isOwner = $user->id === $booking->user_id;
+        $isApprover = $user->role->name === 'Approver';
+        $isAdminUnit = $user->role->name === 'Admin_Unit' && $booking->room->unit_id === $user->unit_id;
+        $isSuperAdmin = $user->role->name === 'SuperAdmin';
+
+        if (!$isOwner && !$isApprover && !$isAdminUnit && !$isSuperAdmin) {
+            abort(403, 'Anda tidak memiliki akses ke resource ini.');
+        }
+
+        if ($booking->status !== 'Approved') {
+            abort(403, 'PDF belum tersedia karena pengajuan belum disetujui sepenuhnya.');
+        }
 
         $qrCode = QrCode::format('svg')
             ->size(120)

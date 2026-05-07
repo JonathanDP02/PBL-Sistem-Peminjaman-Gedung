@@ -69,8 +69,8 @@
                     <a href="{{ route('meja-kerja') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm transition {{ request()->routeIs('meja-kerja') ? 'bg-teal-50 text-teal-700 dark:bg-kinetic-primary/10 dark:text-kinetic-secondary border border-teal-100 dark:border-kinetic-primary/20' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-kinetic-surface border border-slate-200 dark:border-kinetic-border' }}">
                         <i class="ph {{ request()->routeIs('meja-kerja') ? 'ph-fill' : '' }} ph-desk text-lg"></i> Meja Kerja
                     </a>
-                    <a href="{{ route('riwayat') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm transition {{ request()->routeIs('riwayat') ? 'bg-teal-50 text-teal-700 dark:bg-kinetic-primary/10 dark:text-kinetic-secondary border border-teal-100 dark:border-kinetic-primary/20' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-kinetic-surface border border-slate-200 dark:border-kinetic-border' }}">
-                        <i class="ph {{ request()->routeIs('riwayat') ? 'ph-fill' : '' }} ph-clock-counter-clockwise text-lg"></i> Riwayat
+                    <a href="{{ route('approver.riwayat') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm transition {{ request()->routeIs('approver.riwayat') ? 'bg-teal-50 text-teal-700 dark:bg-kinetic-primary/10 dark:text-kinetic-secondary border border-teal-100 dark:border-kinetic-primary/20' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-kinetic-surface border border-slate-200 dark:border-kinetic-border' }}">
+                        <i class="ph {{ request()->routeIs('approver.riwayat') ? 'ph-fill' : '' }} ph-clock-counter-clockwise text-lg"></i> Riwayat
                     </a>
                 @endif
             </nav>
