@@ -112,7 +112,7 @@ Route::middleware('auth')->group(function () {
 
         // Views
         Route::get('/laporan', fn () => view('user.admin_unit.laporan'))->name('laporan');
-
+        Route::get('/bookings/bulk-pdf', [BookingPdfController::class, 'bulkDownload'])->name('booking.pdf.bulk');
         Route::get('/manajemen-ruangan', function () {
             $rooms = Room::where('unit_id', Auth::user()->unit_id)->with('building')->get();
 
@@ -177,8 +177,8 @@ Route::middleware('auth')->group(function () {
 
     // --- USER / PEMINJAM SECTION ---
     Route::middleware('checkRole:User')->prefix('user')->group(function () {
-        Route::get('/booking', [BookingController::class, 'showBookingForm'])->name('booking');
-        Route::get('/jadwal-saya', [BookingController::class, 'showJadwalSaya'])->name('jadwal-saya');
+        Route::get('/booking', fn () => view('user.peminjam.booking'))->name('booking');
+        Route::get('/jadwal-saya', fn () => view('user.peminjam.jadwal-saya'))->name('jadwal-saya');
         Route::get('/peminjaman', fn () => view('user.peminjam.peminjaman'))->name('peminjaman');
         Route::get('/detail', fn () => view('user.peminjam.detail'))->name('detail');
 
@@ -189,6 +189,7 @@ Route::middleware('auth')->group(function () {
         Route::patch('/bookings/{id}/cancel', [BookingController::class, 'cancel'])->name('booking.cancel');
         Route::get('/bookings/{id}/attachments/{attachmentId}', [BookingAttachmentController::class, 'show'])->name('booking.attachment.show');
         Route::get('/bookings/{id}/download-pdf', [BookingPdfController::class, 'generate'])->name('booking.pdf');
+        Route::post('/bookings/{id}/revise', [BookingController::class, 'revise'])->name('booking.revise');
     });
 
     // --- PROFILE ---
