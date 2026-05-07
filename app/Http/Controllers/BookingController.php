@@ -2,17 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\ApprovalNeededMail;
 use App\Models\Booking;
 use App\Models\BookingAttachment;
 use App\Models\BookingLog;
 use App\Models\Building;
 use App\Models\Workflow;
 use App\Models\WorkflowRequirement;
+use App\Models\WorkflowStep;
 use App\Services\LoggerService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 
 class BookingController extends Controller
 {
@@ -197,53 +200,69 @@ class BookingController extends Controller
         return response()->json(['message' => 'Booking berhasil dibatalkan.']);
     }
 
-    public function showJadwalSaya()
+    public function revise(Request $request, int $id): mixed
     {
-        $month = request('month', now()->month);
-        $year = request('year', now()->year);
-
-        $startOfMonth = Carbon::createFromDate($year, $month, 1)->startOfDay();
-        $endOfMonth = $startOfMonth->clone()->endOfMonth()->endOfDay();
-
-        // Fetch all bookings for the month (not just current user, so we can show all rooms)
-        $allBookings = Booking::with(['room', 'user'])
-            ->whereBetween('booking_date', [$startOfMonth, $endOfMonth])
-            ->whereIn('status', ['Approved', 'Pending'])
-            ->get();
-
-        // User's personal bookings for statistics
-        $userBookings = Booking::with('room')
+        $booking = Booking::where('id', $id)
             ->where('user_id', Auth::id())
-            ->whereBetween('booking_date', [$startOfMonth, $endOfMonth])
-            ->whereIn('status', ['Approved', 'Pending'])
-            ->get();
+            ->firstOrFail();
 
-        // Calculate user stats
-        $hoursUsed = 0;
-        $complianceScore = 4.8; // Default compliance score
-
-        foreach ($userBookings as $booking) {
-            $start = \Carbon\Carbon::parse($booking->start_time);
-            $end = \Carbon\Carbon::parse($booking->end_time);
-            $hours = $end->diffInHours($start);
-            $hoursUsed += $hours;
+        if ($booking->status !== 'Revising') {
+            return response()->json([
+                'error' => "Booking tidak dapat direvisi karena statusnya '{$booking->status}'.",
+            ], 422);
         }
 
-        // Format bookings for calendar (grouped by room_id and date)
-        $bookingsByRoomAndDate = $allBookings->groupBy(function ($booking) {
-            return $booking->room_id.'_'.$booking->booking_date;
+        $mandatoryRequirements = WorkflowRequirement::where('workflow_id', $booking->workflow_id)
+            ->where('is_mandatory', true)
+            ->get();
+
+        foreach ($mandatoryRequirements as $requirement) {
+            if (! $request->hasFile('requirement_'.$requirement->id)) {
+                return response()->json([
+                    'error' => "File wajib '{$requirement->document_name}' tidak ditemukan.",
+                ], 422);
+            }
+        }
+
+        DB::transaction(function () use ($request, $booking, $mandatoryRequirements) {
+            // Hapus attachment lama milik user ini
+            BookingAttachment::where('booking_id', $booking->id)
+                ->where('uploader_id', Auth::id())
+                ->delete();
+
+            // Upload attachment baru
+            foreach ($mandatoryRequirements as $requirement) {
+                $file = $request->file('requirement_'.$requirement->id);
+                $path = $file->store("attachments/{$booking->id}", 'private');
+
+                BookingAttachment::create([
+                    'booking_id' => $booking->id,
+                    'requirement_id' => $requirement->id,
+                    'uploader_id' => Auth::id(),
+                    'document_type' => $requirement->document_name,
+                    'file_path' => $path,
+                ]);
+            }
+
+            $booking->update(['status' => 'Pending']);
+
+            LoggerService::logAction($booking->id, 'REVISED', null, 'Dokumen direvisi dan diajukan ulang oleh peminjam.');
+
+            // Kirim email notifikasi ke approver di step saat ini
+            $currentStep = WorkflowStep::where('workflow_id', $booking->workflow_id)
+                ->where('step_order', $booking->current_step)
+                ->first();
+
+            if ($currentStep) {
+                $approvers = User::where('position_id', $currentStep->position_id)->get();
+
+                foreach ($approvers as $approver) {
+                    Mail::to($approver->email)->queue(new ApprovalNeededMail($booking, $approver));
+                }
+            }
         });
 
-        return view('user.peminjam.jadwal-saya', [
-            'allBookings' => $allBookings,
-            'userBookings' => $userBookings,
-            'bookingsByRoomAndDate' => $bookingsByRoomAndDate,
-            'hoursUsed' => $hoursUsed,
-            'complianceScore' => $complianceScore,
-            'month' => $month,
-            'year' => $year,
-            'monthName' => $startOfMonth->format('F'),
-        ]);
+        return response()->json(['message' => 'Revisi berhasil dikirim. Booking dikembalikan ke status Pending.']);
     }
 
     public function timeline($id)
