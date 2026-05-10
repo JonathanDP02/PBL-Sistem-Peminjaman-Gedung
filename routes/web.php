@@ -103,7 +103,7 @@ Route::middleware('auth')->group(function () {
         $user = Auth::user();
 
         if ($user->role->name === 'Approver') {
-            return view('user.approver.riwayat');
+            return app(ApprovalController::class)->history(request());
         }
 
         // Ambil data dari database untuk User (Peminjam)
@@ -211,8 +211,10 @@ Route::middleware('auth')->group(function () {
     });
 
     // --- APPROVER SECTION ---
+// --- APPROVER SECTION ---
     Route::middleware('checkRole:Approver')->prefix('approver')->group(function () {
-        Route::get('/meja-kerja', [ApprovalController::class, 'mejaKerja'])->name('meja-kerja');
+
+        Route::get('/meja-kerja', [ApprovalController::class, 'mejaKerja'])->name('approver.meja-kerja');
         Route::get('/approvals/{id}', [ApprovalController::class, 'show'])->name('approvals.show');
         Route::get('/approvals', [ApprovalController::class, 'index'])->name('approval.index');
         Route::post('/approvals/{booking_id}/approve', [ApprovalController::class, 'approve'])->name('approval.approve');

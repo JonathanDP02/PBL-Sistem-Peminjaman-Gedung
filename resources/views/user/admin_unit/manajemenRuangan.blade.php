@@ -53,7 +53,15 @@
                             <button type="button" data-room-id="{{ $room->id }}" data-room-name="{{ $room->room_name }}" class="delete-btn inline-flex items-center justify-center rounded-full border border-red-500/20 bg-red-500/10 px-4 py-2 text-sm font-semibold text-red-300 transition hover:bg-red-500/20">
                                 <i class="ph-bold ph-trash text-lg"></i>
                             </button>
-                            <button type="button" data-room-id="{{ $room->id }}" data-room-name="{{ $room->room_name }}" data-room-capacity="{{ $room->capacity }}" data-room-building="{{ $room->building->building_name }}" class="edit-btn inline-flex items-center justify-center rounded-full border border-teal-500/20 bg-teal-500/10 px-4 py-2 text-sm font-semibold text-teal-200 transition hover:bg-teal-500/20">Edit</button>
+                            <button type="button" 
+                                data-room-id="{{ $room->id }}" 
+                                data-room-name="{{ $room->room_name }}" 
+                                data-room-capacity="{{ $room->capacity }}" 
+                                data-room-building="{{ $room->building->building_name }}" 
+                                data-room-description="{{ $room->description }}" 
+                                class="edit-btn inline-flex items-center justify-center rounded-full border border-teal-500/20 bg-teal-500/10 px-4 py-2 text-sm font-semibold text-teal-200 transition hover:bg-teal-500/20">
+                                Edit
+                            </button>
                         </div>
                     </div>
                 </article>
@@ -77,37 +85,28 @@
         let roomToDelete = null;
         let roomNameToDelete = null;
 
-        // Initialize event listeners
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM loaded, initializing room management buttons...');
-
-            // Delete button listeners
             const deleteButtons = document.querySelectorAll('.delete-btn');
-            console.log('Found delete buttons:', deleteButtons.length);
 
             deleteButtons.forEach(btn => {
                 btn.addEventListener('click', function() {
-                    console.log('Delete button clicked');
                     const roomId = this.getAttribute('data-room-id');
                     const roomName = this.getAttribute('data-room-name');
-                    console.log('Room ID:', roomId, 'Room Name:', roomName);
                     confirmDelete(roomId, roomName);
                 });
             });
 
-            // Edit button listeners
             const editButtons = document.querySelectorAll('.edit-btn');
-            console.log('Found edit buttons:', editButtons.length);
 
             editButtons.forEach(btn => {
                 btn.addEventListener('click', function() {
-                    console.log('Edit button clicked');
                     const roomId = this.getAttribute('data-room-id');
                     const roomName = this.getAttribute('data-room-name');
                     const capacity = this.getAttribute('data-room-capacity');
                     const building = this.getAttribute('data-room-building');
-                    console.log('Edit data:', {roomId, roomName, capacity, building});
-                    openEditModal(roomId, roomName, capacity, building);
+                    const description = this.getAttribute('data-room-description'); // PERBAIKAN: Tangkap deskripsi
+                    
+                    openEditModal(roomId, roomName, capacity, building, description);
                 });
             });
         });
@@ -130,27 +129,28 @@
             }, 300);
         }
 
-        function openEditModal(roomId, roomName, capacity, building) {
+        // PERBAIKAN: Tambahkan parameter description
+        function openEditModal(roomId, roomName, capacity, building, description) {
             const modal = document.getElementById('modalEditRuang');
             
-            // Mengubah URL action form agar mengarah ke endpoint update yang benar
             const formEdit = document.getElementById('formEditRuangan');
             if (formEdit) {
-                // Sesuaikan URL ini dengan route yang Anda buat di web.php
                 formEdit.action = `/admin_unit/rooms/${roomId}`;
             }
 
-            // Store room ID for update
             document.getElementById('editRoomId').value = roomId;
-            
-            // Populate form fields
             document.getElementById('editNamaRuangan').value = roomName;
             document.getElementById('editKapasitas').value = capacity;
+            
+            // PERBAIKAN: Masukkan nilai deskripsi ke input id="editFasilitas"
+            const editFasilitas = document.getElementById('editFasilitas');
+            if(editFasilitas) {
+                editFasilitas.value = description || '';
+            }
             
             const gedungSelect = document.getElementById('editLokasiGedung');
             if(gedungSelect) {
                 for(let i = 0; i < gedungSelect.options.length; i++) {
-                    // Pastikan teks atau value cocok dengan data dari tombol
                     if(gedungSelect.options[i].text === building) {
                         gedungSelect.selectedIndex = i;
                         break;
@@ -158,7 +158,6 @@
                 }
             }
 
-            // Show modal
             modal.classList.remove('hidden');
             setTimeout(() => {
                 modal.classList.remove('opacity-0');
@@ -199,19 +198,11 @@
         }
 
         async function deleteRoom() {
-            if (!roomToDelete) {
-                console.error('No room to delete');
-                return;
-            }
-
-            console.log('Deleting room:', roomToDelete);
+            if (!roomToDelete) return;
 
             try {
-                // Mengambil CSRF token dari meta tag
                 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
-                console.log('CSRF Token:', csrfToken ? 'Found' : 'Not found');
 
-                // Pastikan URL fetch sesuai dengan route delete Anda di web.php
                 const response = await fetch(`/admin_unit/api/rooms/${roomToDelete}`, {
                     method: 'DELETE',
                     headers: {
@@ -221,24 +212,17 @@
                     }
                 });
 
-                console.log('Response status:', response.status);
                 const data = await response.json();
-                console.log('Response data:', data);
 
                 if (response.ok) {
-                    // Success - reload page
-                    console.log('Delete successful, reloading page...');
                     closeDeleteModal();
                     setTimeout(() => {
                         window.location.reload();
                     }, 300);
                 } else {
-                    // Error response
                     alert(data.message || 'Gagal menghapus ruangan');
-                    console.error('Delete error:', data);
                 }
             } catch (error) {
-                console.error('Error:', error);
                 alert('Terjadi kesalahan: ' + error.message);
             }
         }
