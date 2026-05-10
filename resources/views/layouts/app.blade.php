@@ -92,10 +92,15 @@
             notificationsOpen: false, 
             detailModalOpen: false, 
             selectedNotification: null,
+            userRole: '{{ Auth::user()->role?->name ?? '' }}',
             openDetail(notif) {
-                // Jika ada booking_id, langsung arahkan ke halaman detail booking
+                // Jika ada booking_id, langsung arahkan ke halaman detail booking sesuai role
                 if (notif.booking_id) {
-                    window.location.href = `/user/detail/${notif.booking_id}`;
+                    if (this.userRole === 'Approver') {
+                        window.location.href = `/approver/approvals/${notif.booking_id}`;
+                    } else {
+                        window.location.href = `/user/detail/${notif.booking_id}`;
+                    }
                     return;
                 }
                 
