@@ -167,14 +167,27 @@ Route::middleware('auth')->group(function () {
             $user = Auth::user();
             $rooms = Room::where('unit_id', $user->unit_id)->with('building')->get();
 
-            // Mengambil 5 jadwal maintenance mendatang (event_name logic)
-            $activeBlockings = Booking::with('room')
+            // Mengambil jadwal maintenance mendatang dan mengelompokkannya
+            $rawBlockings = Booking::with('room')
                 ->whereHas('room', fn ($q) => $q->where('unit_id', $user->unit_id))
                 ->where('event_name', 'LIKE', '[MAINTENANCE HARD-LOCK]%')
                 ->whereDate('booking_date', '>=', now())
                 ->orderBy('booking_date', 'asc')
-                ->take(5)
                 ->get();
+
+            $activeBlockings = $rawBlockings->groupBy('event_name')->map(function ($group) {
+                $first = $group->first();
+                return (object) [
+                    'id' => $first->id,
+                    'event_name' => $first->event_name,
+                    'room' => $first->room,
+                    'event_description' => $first->event_description,
+                    'start_date' => $group->min('booking_date'),
+                    'end_date' => $group->max('booking_date'),
+                    'is_range' => $group->count() > 1,
+                    'count' => $group->count()
+                ];
+            })->take(5);
 
             return view('user.admin_unit.pemblokiranRuangan', compact('rooms', 'activeBlockings'));
         })->name('pemblokiranRuangan');
@@ -186,6 +199,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/rooms', [RoomController::class, 'store'])->name('rooms.store');
         Route::put('/rooms/{id}', [RoomController::class, 'update'])->name('rooms.update');
         Route::post('/pemblokiran-ruangan', [RoomController::class, 'blockRoom'])->name('pemblokiran.store');
+        Route::delete('/pemblokiran-ruangan/{eventName}', [RoomController::class, 'unblockRoom'])->name('pemblokiran.destroy');
 
         // Admin Unit API (Fetch/Async)
         Route::prefix('api')->group(function () {
@@ -214,12 +228,11 @@ Route::middleware('auth')->group(function () {
 // --- APPROVER SECTION ---
     Route::middleware('checkRole:Approver')->prefix('approver')->group(function () {
 
-        Route::get('/meja-kerja', [ApprovalController::class, 'mejaKerja'])->name('approver.meja-kerja');
+        Route::get('/meja-kerja', [ApprovalController::class, 'mejaKerja'])->name('meja-kerja');
         Route::get('/approvals/{id}', [ApprovalController::class, 'show'])->name('approvals.show');
         Route::get('/approvals', [ApprovalController::class, 'index'])->name('approval.index');
         Route::post('/approvals/{booking_id}/approve', [ApprovalController::class, 'approve'])->name('approval.approve');
         Route::post('/approvals/{booking_id}/reject', [ApprovalController::class, 'reject'])->name('approval.reject');
-        Route::get('/riwayat', [ApprovalController::class, 'history'])->name('approver.riwayat');
     });
 
     // --- USER / PEMINJAM SECTION ---

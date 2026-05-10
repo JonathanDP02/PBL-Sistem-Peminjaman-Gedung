@@ -11,7 +11,9 @@
             --fc-button-hover-bg-color: #f8fafc;
             --fc-button-active-bg-color: transparent;
             --fc-today-bg-color: rgba(20, 184, 166, 0.05);
+            --fc-list-event-hover-bg-color: transparent;
             font-family: inherit;
+            font-size: 0.7rem; /* Mengecilkan seluruh kalender */
         }
 
         .dark .fc {
@@ -23,23 +25,33 @@
 
         /* Styling spesifik widget kalender */
         .fc .fc-toolbar-title {
-            font-size: 1rem;
+            font-size: 0.85rem;
             font-weight: 800;
             color: #0f172a;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
         .dark .fc .fc-toolbar-title { color: #ffffff; }
         
+        .fc .fc-button {
+            padding: 2px !important;
+        }
+        
         .fc .fc-button:focus { box-shadow: none !important; }
-        .fc .fc-col-header-cell-cushion { font-size: 0.75rem; text-transform: uppercase; padding: 4px; }
-        .fc .fc-daygrid-day-number { font-size: 0.75rem; font-weight: 600; }
+        .fc .fc-col-header-cell-cushion { font-size: 0.65rem; text-transform: uppercase; padding: 2px; }
+        .fc .fc-daygrid-day-number { font-size: 0.7rem; font-weight: 600; padding: 4px !important; }
+        
+        /* Hilangkan bullet point event untuk menghemat ruang di dashboard */
+        .fc-daygrid-event-dot { display: none !important; }
         
         .fc-event {
             cursor: pointer;
             border: none !important;
-            border-radius: 4px;
-            padding: 1px 3px;
-            font-size: 0.65rem;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            border-radius: 3px;
+            padding: 0px 2px;
+            font-size: 0.6rem;
+            line-height: 1.2;
+            margin-bottom: 1px !important;
         }
     </style>
 
@@ -151,38 +163,18 @@
                 </div>
 
                 <div class="space-y-6">
-                    <div class="bg-white dark:bg-kinetic-card shadow-sm dark:shadow-none border border-slate-200 dark:border-kinetic-border rounded-2xl p-5 transition-colors duration-300">
-                        <div id="dashboardCalendar" class="text-slate-800 dark:text-slate-200"></div>
+                    <div class="flex justify-between items-end">
+                        <h3 class="font-heading text-lg font-bold text-slate-900 dark:text-white">Kalender Saya</h3>
+                        <a href="{{ route('jadwal-saya') }}" class="text-xs font-medium text-teal-600 dark:text-kinetic-primary hover:text-teal-700 dark:hover:text-kinetic-secondary transition">Detail</a>
                     </div>
-
-                    <div class="bg-white dark:bg-kinetic-card shadow-sm dark:shadow-none border border-slate-200 dark:border-kinetic-border rounded-2xl p-6 transition-colors duration-300">
-                        <h3 class="font-heading font-bold mb-6 text-slate-900 dark:text-white">Notifikasi</h3>
-                        <div class="space-y-5">
-                            @forelse($notifications as $log)
-                                <div class="flex gap-4 group">
-                                    @php
-                                        $isApproved = str_contains(strtolower($log->message), 'setujui') || str_contains(strtolower($log->message), 'approved');
-                                        $isRejected = str_contains(strtolower($log->message), 'tolak') || str_contains(strtolower($log->message), 'rejected');
-                                    @endphp
-
-                                    <div class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 border transition-colors {{ $isApproved ? 'bg-teal-50 dark:bg-kinetic-primary/10 text-teal-600 dark:text-kinetic-primary border-teal-100 dark:border-kinetic-primary/20' : ($isRejected ? 'bg-red-50 dark:bg-red-500/10 text-red-500 border-red-100 dark:border-red-500/20' : 'bg-blue-50 dark:bg-blue-500/10 text-blue-500 border-blue-100 dark:border-blue-500/20') }}">
-                                        <i class="ph-bold {{ $isApproved ? 'ph-check' : ($isRejected ? 'ph-x' : 'ph-info') }}"></i>
-                                    </div>
-                                    <div>
-                                        <p class="text-sm font-semibold text-slate-900 dark:text-white mb-0.5">
-                                            {{ $isApproved ? 'Booking Disetujui' : ($isRejected ? 'Booking Ditolak' : 'Update Status') }}
-                                        </p>
-                                        <p class="text-xs text-slate-500 dark:text-gray-400 line-clamp-2">{{ $log->message }}</p>
-                                        <p class="text-[10px] text-slate-400 dark:text-gray-500 mt-1 transition-colors group-hover:text-kinetic-primary">
-                                            {{ $log->created_at->diffForHumans() }}
-                                        </p>
-                                    </div>
-                                </div>
-                            @empty
-                                <p class="text-xs text-slate-500 dark:text-gray-400 text-center py-4">Belum ada notifikasi baru.</p>
-                            @endforelse
+                    
+                    <a class="block group relative transition-transform">
+                        <div class="bg-white dark:bg-kinetic-card shadow-sm dark:shadow-none border border-slate-200 dark:border-kinetic-border rounded-2xl p-4 transition-all group-hover:border-teal-400 dark:group-hover:border-kinetic-primary group-hover:shadow-md dark:group-hover:shadow-[0_0_20px_rgba(20,184,166,0.1)]">
+                            <div id="dashboardCalendar" class="text-slate-800 dark:text-slate-200"></div>
                         </div>
-                    </div>
+                    </a>
+
+
 
                 </div>
             </div>
@@ -230,9 +222,17 @@
             fixedWeekCount: false, // Menghilangkan baris kosong di akhir bulan
             events: calendarEvents,
             
-            // Arahkan ke halaman Jadwal Saya saat kalender di klik
+            // Tangani klik pada hari (cell)
+            dateClick: function(info) {
+                // Arahkan ke Jadwal Saya dengan parameter tanggal
+                window.location.href = "{{ route('jadwal-saya') }}?date=" + info.dateStr;
+            },
+            
+            // Arahkan ke halaman Jadwal Saya saat event di klik
             eventClick: function(info) {
-                window.location.href = "{{ route('jadwal-saya') }}";
+                // Ambil tanggal event
+                const eventDate = info.event.startStr;
+                window.location.href = "{{ route('jadwal-saya') }}?date=" + eventDate;
             }
         });
         

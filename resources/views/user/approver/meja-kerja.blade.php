@@ -10,7 +10,7 @@
             </div>
             
             <div class="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
-                <form action="{{ route('approver.meja-kerja') }}" method="GET" class="flex flex-col md:flex-row gap-3 w-full">
+                <form action="{{ route('meja-kerja') }}" method="GET" class="flex flex-col md:flex-row gap-3 w-full">
                     
                     <div class="relative w-full md:w-48">
                         <select name="unit_id" onchange="this.form.submit()" 
@@ -33,7 +33,7 @@
                     </div>
 
                     @if(request('search') || request('unit_id'))
-                        <a href="{{ route('approver.meja-kerja') }}" class="flex items-center justify-center px-4 py-2.5 text-xs font-bold text-red-500 hover:text-red-600 transition-colors">
+                        <a href="{{ route('meja-kerja') }}" class="flex items-center justify-center px-4 py-2.5 text-xs font-bold text-red-500 hover:text-red-600 transition-colors">
                             Reset
                         </a>
                     @endif

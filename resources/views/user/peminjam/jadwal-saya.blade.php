@@ -1,49 +1,93 @@
 <x-app-layout title="Jadwal Saya">
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js'></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
         /* Kustomisasi Tema FullCalendar agar menyatu dengan desain UI kita (termasuk Dark Mode) */
         .fc {
             --fc-border-color: #e2e8f0;
-            --fc-button-text-color: #1e293b;
-            --fc-button-bg-color: #f1f5f9;
-            --fc-button-border-color: #cbd5e1;
-            --fc-button-hover-bg-color: #e2e8f0;
+            --fc-button-text-color: #475569;
+            --fc-button-bg-color: #ffffff;
+            --fc-button-border-color: #e2e8f0;
+            --fc-button-hover-bg-color: #f8fafc;
             --fc-button-hover-border-color: #cbd5e1;
-            --fc-button-active-bg-color: #14b8a6; /* Teal / Kinetic Primary */
+            --fc-button-active-bg-color: #14b8a6;
             --fc-button-active-border-color: #14b8a6;
             --fc-button-active-text-color: #ffffff;
             --fc-today-bg-color: rgba(20, 184, 166, 0.05);
+            --fc-list-event-hover-bg-color: #f1f5f9;
             font-family: inherit;
         }
 
         .dark .fc {
             --fc-border-color: #2A2A2A;
-            --fc-button-text-color: #e2e8f0;
+            --fc-button-text-color: #94a3b8;
             --fc-button-bg-color: #1A1A1A;
-            --fc-button-border-color: #333;
+            --fc-button-border-color: #2A2A2A;
             --fc-button-hover-bg-color: #222;
-            --fc-button-hover-border-color: #444;
+            --fc-button-hover-border-color: #333;
             --fc-page-bg-color: transparent;
+            --fc-list-event-hover-bg-color: #1e1e1e;
+        }
+
+        /* Modernize Toolbar Buttons */
+        .fc .fc-button {
+            padding: 8px 16px;
+            font-weight: 700;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+            border-radius: 12px !important;
+            transition: all 0.2s;
+            margin-right: 4px !important;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .fc .fc-button-primary:not(:disabled):active, 
+        .fc .fc-button-primary:not(:disabled).fc-button-active {
+            box-shadow: 0 4px 12px rgba(20, 184, 166, 0.3);
         }
 
         .fc .fc-toolbar-title {
             font-size: 1.25rem;
             font-weight: 800;
+            color: #1e293b;
+            letter-spacing: -0.025em;
+        }
+
+        .dark .fc .fc-toolbar-title {
+            color: #f8fafc;
         }
 
         .fc-event {
             cursor: pointer;
             border: none !important;
-            border-radius: 6px;
-            padding: 2px 4px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            transition: transform 0.2s;
+            border-radius: 8px;
+            padding: 4px 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
         .fc-event:hover {
-            transform: scale(1.02);
-            filter: brightness(1.1);
+            transform: translateY(-1px);
+            filter: brightness(1.05);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        /* List View Overrides */
+        .fc-list {
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid var(--fc-border-color) !important;
+        }
+
+        .fc-list-day-cushion {
+            background-color: #f8fafc !important;
+            padding: 12px 20px !important;
+        }
+
+        .dark .fc-list-day-cushion {
+            background-color: #1A1A1A !important;
         }
     </style>
 
@@ -167,8 +211,8 @@
             
         </div>
 
-    </div>
-</x-app-layout>
+
+
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -221,9 +265,8 @@
             buttonText: {
                 today: 'Hari Ini',
                 month: 'Bulan',
-                week: 'Minggu',
-                day: 'Hari',
-                list: 'Agenda'
+                listWeek: 'Agenda Mingguan',
+                listDay: 'Agenda Harian'
             },
             
             // -- KONFIGURASI FORMAT 24 JAM --
@@ -238,17 +281,21 @@
                 hour12: false
             },
 
-            initialView: 'timeGridWeek',
+            // -- TANGANI INITIAL DATE DARI URL --
+            initialDate: (function() {
+                const urlParams = new URLSearchParams(window.location.search);
+                return urlParams.get('date') || new Date();
+            })(),
+
+            initialView: 'dayGridMonth',
             headerToolbar: {
                 left: 'prev,next today',
                 center: 'title',
-                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                right: 'dayGridMonth,listWeek,listDay'
             },
-            slotMinTime: '07:00:00',
-            slotMaxTime: '22:00:00',
-            allDaySlot: false,
-            expandRows: true,
-            height: 700,
+            height: 'auto',
+            contentHeight: 'auto',
+            fixedWeekCount: false,
             
             events: function(info, successCallback, failureCallback) {
                 const filteredEvents = calendarEvents.filter(e => activeFilters[e.extendedProps.statusCategory]);
@@ -257,7 +304,54 @@
             
             eventClick: function(info) {
                 const props = info.event.extendedProps;
-                alert(`Detail Jadwal:\n\nRuangan: ${props.roomName}\nKegiatan: ${info.event.title.split(' - ')[1]}\nStatus: ${props.originalStatus}\nWaktu: ${info.event.start.toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'})} - ${info.event.end.toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'})}`);
+                const timeStr = `${info.event.start.toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'})} - ${info.event.end.toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'})}`;
+                const dateStr = info.event.start.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                
+                const isDark = document.documentElement.classList.contains('dark');
+                
+                Swal.fire({
+                    title: `<span class="${isDark ? 'text-white' : 'text-slate-900'} font-bold">${info.event.title.split(' - ')[1] || info.event.title}</span>`,
+                    html: `
+                        <div class="text-left space-y-3 mt-4">
+                            <div class="flex items-center gap-3 p-3 rounded-xl border ${isDark ? 'border-[#2A2A2A] bg-[#1A1A1A]' : 'border-slate-100 bg-slate-50'}">
+                                <div class="w-10 h-10 rounded-lg bg-teal-500/10 flex items-center justify-center text-teal-600">
+                                    <i class="ph-bold ph-door text-xl"></i>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ruangan</p>
+                                    <p class="text-sm font-bold ${isDark ? 'text-slate-200' : 'text-slate-700'}">${props.roomName}</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3 p-3 rounded-xl border ${isDark ? 'border-[#2A2A2A] bg-[#1A1A1A]' : 'border-slate-100 bg-slate-50'}">
+                                <div class="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-600">
+                                    <i class="ph-bold ph-calendar text-xl"></i>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Waktu</p>
+                                    <p class="text-sm font-bold ${isDark ? 'text-slate-200' : 'text-slate-700'}">${dateStr}<br>${timeStr} WIB</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3 p-3 rounded-xl border ${isDark ? 'border-[#2A2A2A] bg-[#1A1A1A]' : 'border-slate-100 bg-slate-50'}">
+                                <div class="w-10 h-10 rounded-lg bg-orange-500/10 flex items-center justify-center text-orange-600">
+                                    <i class="ph-bold ph-info text-xl"></i>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status</p>
+                                    <p class="text-sm font-bold ${isDark ? 'text-slate-200' : 'text-slate-700'}">${props.originalStatus}</p>
+                                </div>
+                            </div>
+                        </div>
+                    `,
+                    icon: 'info',
+                    iconColor: '#14b8a6',
+                    background: isDark ? '#151515' : '#ffffff',
+                    confirmButtonColor: '#14b8a6',
+                    confirmButtonText: 'Tutup',
+                    customClass: {
+                        popup: 'rounded-[2rem] border border-slate-200 dark:border-[#2A2A2A] shadow-2xl',
+                        confirmButton: 'rounded-xl px-8 py-3 font-bold text-sm transition transform hover:scale-105 shadow-lg shadow-teal-500/20'
+                    }
+                });
             }
         });
         
@@ -280,3 +374,5 @@
         });
     });
 </script>
+
+</x-app-layout>
