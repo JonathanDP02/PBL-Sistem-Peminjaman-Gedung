@@ -1,4 +1,57 @@
 <x-app-layout title="Dashboard">
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js'></script>
+
+    <style>
+        /* Kustomisasi Tema FullCalendar Mini untuk Dashboard */
+        .fc {
+            --fc-border-color: #f1f5f9;
+            --fc-button-text-color: #64748b;
+            --fc-button-bg-color: transparent;
+            --fc-button-border-color: transparent;
+            --fc-button-hover-bg-color: #f8fafc;
+            --fc-button-active-bg-color: transparent;
+            --fc-today-bg-color: rgba(20, 184, 166, 0.05);
+            font-family: inherit;
+        }
+
+        .dark .fc {
+            --fc-border-color: #2A2A2A;
+            --fc-button-text-color: #94a3b8;
+            --fc-button-hover-bg-color: #222;
+            --fc-page-bg-color: transparent;
+        }
+
+        /* Styling spesifik widget kalender */
+        .fc .fc-toolbar-title {
+            font-size: 1rem;
+            font-weight: 800;
+            color: #0f172a;
+        }
+        .dark .fc .fc-toolbar-title { color: #ffffff; }
+        
+        .fc .fc-button:focus { box-shadow: none !important; }
+        .fc .fc-col-header-cell-cushion { font-size: 0.75rem; text-transform: uppercase; padding: 4px; }
+        .fc .fc-daygrid-day-number { font-size: 0.75rem; font-weight: 600; }
+        
+        .fc-event {
+            cursor: pointer;
+            border: none !important;
+            border-radius: 4px;
+            padding: 1px 3px;
+            font-size: 0.65rem;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+    </style>
+
+    @php
+        // Mengambil semua jadwal user yang aktif untuk dipetakan ke Kalender Dashboard
+        // (Agar tidak perlu mengubah route di web.php)
+        $calendarBookings = \App\Models\Booking::with('room')
+            ->where('user_id', auth()->id())
+            ->whereIn('status', ['Approved', 'Pending'])
+            ->get();
+    @endphp
+
     <div class="relative px-8 pt-4 pb-8 space-y-8 z-10 flex flex-col min-h-full">
         <div class="absolute top-0 right-0 w-96 h-96 bg-teal-100/50 dark:bg-kinetic-primary/5 rounded-full blur-[100px] pointer-events-none transition-colors duration-300"></div>
             
@@ -98,35 +151,8 @@
                 </div>
 
                 <div class="space-y-6">
-                    <div class="bg-white dark:bg-kinetic-card shadow-sm dark:shadow-none border border-slate-200 dark:border-kinetic-border rounded-2xl p-6 transition-colors duration-300">
-                        <div class="flex justify-between items-center mb-6">
-                            <h3 class="font-heading font-bold text-slate-900 dark:text-white">{{ now()->translatedFormat('F Y') }}</h3>
-                            <div class="flex gap-2">
-                                <button class="text-slate-400 dark:text-gray-500 hover:text-slate-900 dark:hover:text-white transition"><i class="ph-bold ph-caret-left"></i></button>
-                                <button class="text-slate-400 dark:text-gray-500 hover:text-slate-900 dark:hover:text-white transition"><i class="ph-bold ph-caret-right"></i></button>
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-7 gap-1 text-center text-xs">
-                            @foreach(['M','S','S','R','K','J','S'] as $day)
-                                <div class="text-slate-500 dark:text-gray-500 font-medium mb-2">{{ $day }}</div>
-                            @endforeach
-                            
-                            {{-- Tampilan Kalender Sederhana --}}
-                            @php
-                                $startDay = now()->startOfMonth()->dayOfWeek;
-                                $daysInMonth = now()->daysInMonth;
-                                $today = now()->day;
-                            @endphp
-                            
-                            @for($i = 1; $i <= $daysInMonth; $i++)
-                                <div class="py-2 {{ $i == $today ? 'bg-teal-50 dark:bg-kinetic-primary/20 text-teal-700 dark:text-kinetic-primary font-bold rounded-lg border border-teal-200 dark:border-kinetic-primary/30 relative' : 'text-slate-600 dark:text-gray-400' }}">
-                                    {{ $i }}
-                                    @if($i == $today)
-                                        <span class="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-teal-600 dark:bg-kinetic-primary rounded-full"></span>
-                                    @endif
-                                </div>
-                            @endfor
-                        </div>
+                    <div class="bg-white dark:bg-kinetic-card shadow-sm dark:shadow-none border border-slate-200 dark:border-kinetic-border rounded-2xl p-5 transition-colors duration-300">
+                        <div id="dashboardCalendar" class="text-slate-800 dark:text-slate-200"></div>
                     </div>
 
                     <div class="bg-white dark:bg-kinetic-card shadow-sm dark:shadow-none border border-slate-200 dark:border-kinetic-border rounded-2xl p-6 transition-colors duration-300">
@@ -135,7 +161,6 @@
                             @forelse($notifications as $log)
                                 <div class="flex gap-4 group">
                                     @php
-                                        // Tentukan warna dan ikon berdasarkan aksi log
                                         $isApproved = str_contains(strtolower($log->message), 'setujui') || str_contains(strtolower($log->message), 'approved');
                                         $isRejected = str_contains(strtolower($log->message), 'tolak') || str_contains(strtolower($log->message), 'rejected');
                                     @endphp
@@ -167,3 +192,50 @@
         </footer>
     </div>
 </x-app-layout>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Data dari PHP
+        const rawBookings = @json($calendarBookings);
+
+        const calendarEvents = rawBookings.map(b => {
+            const statusLower = b.status ? b.status.toLowerCase() : '';
+            let bgColor = statusLower === 'approved' ? '#14b8a6' : '#3b82f6'; // Teal untuk Approved, Biru untuk Pending
+            
+            // Format split agar mendukung YYYY-MM-DD
+            const datePart = b.booking_date.split('T')[0].split(' ')[0];
+
+            return {
+                id: b.id,
+                title: b.room ? b.room.room_name : 'Ruangan',
+                start: datePart, // Hanya tanggal agar dirender full-day style di kalender mini
+                backgroundColor: bgColor,
+                borderColor: bgColor,
+                textColor: '#ffffff'
+            };
+        });
+
+        // Inisialisasi FullCalendar untuk Widget Dashboard
+        const calendarEl = document.getElementById('dashboardCalendar');
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+            locale: 'id',
+            initialView: 'dayGridMonth',
+            headerToolbar: {
+                left: 'prev',
+                center: 'title',
+                right: 'next'
+            },
+            height: 'auto',
+            contentHeight: 'auto',
+            fixedWeekCount: false, // Menghilangkan baris kosong di akhir bulan
+            events: calendarEvents,
+            
+            // Arahkan ke halaman Jadwal Saya saat kalender di klik
+            eventClick: function(info) {
+                window.location.href = "{{ route('jadwal-saya') }}";
+            }
+        });
+        
+        calendar.render();
+    });
+</script>

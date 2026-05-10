@@ -117,7 +117,7 @@ class RoomController extends Controller
         return response()->json($room);
     }
 
-    public function blockRoom(Request $request)
+public function blockRoom(Request $request)
     {
         $request->validate([
             'room_id' => 'required|exists:rooms,id',
@@ -131,20 +131,62 @@ class RoomController extends Controller
         // Pastikan ruangan benar-benar milik unit admin ini (Keamanan)
         $room = Room::where('id', $request->room_id)->where('unit_id', $user->unit_id)->firstOrFail();
 
-        // Simpan sebagai booking khusus dengan awalan [MAINTENANCE]
-        // Sesuaikan nama kolom ini dengan tabel 'bookings' Anda
-        // Di dalam RoomController.php fungsi blockRoom
-        Booking::create([
-            'room_id' => $room->id,
-            'user_id' => $user->id,
-            'booking_date' => date('Y-m-d', strtotime($request->mulai_dari)),
-            'start_time' => date('H:i', strtotime($request->mulai_dari)),
-            'end_time' => date('H:i', strtotime($request->hingga)),
-            'event_name' => '[MAINTENANCE HARD-LOCK]', // Masuk ke event_name
-            'event_description' => $request->alasan,    // Masuk ke event_description
-            'status' => 'Approved',
-        ]);
+        // 1. Parsing Tanggal dan Waktu menggunakan Carbon
+        $startDateTime = \Carbon\Carbon::parse($request->mulai_dari);
+        $endDateTime = \Carbon\Carbon::parse($request->hingga);
 
-        return redirect()->back()->with('success', 'Jadwal ruangan berhasil diblokir!');
+        // Pisahkan Jam Mulai dan Jam Selesai
+        $startTime = $startDateTime->format('H:i');
+        $endTime = $endDateTime->format('H:i');
+
+        // Jika jam end_time sama dengan jam start_time atau lebih kecil (karena melewati hari), kita set full day
+        // Namun jika mereka memblokir di hari yang sama, gunakan jam yang spesifik
+        $isSameDay = $startDateTime->isSameDay($endDateTime);
+
+        // Mulai Looping dari Hari Pertama sampai Hari Terakhir
+        $currentDate = $startDateTime->copy()->startOfDay();
+        $lastDate = $endDateTime->copy()->startOfDay();
+
+        while ($currentDate->lte($lastDate)) {
+            
+            // Logika Penentuan Jam per Harinya
+            $dayStartTime = '00:00';
+            $dayEndTime = '23:59';
+
+            if ($isSameDay) {
+                // Jika hanya 1 hari, patuhi jam awal dan akhir
+                $dayStartTime = $startTime;
+                $dayEndTime = $endTime;
+            } else {
+                // Jika multi-hari
+                if ($currentDate->isSameDay($startDateTime)) {
+                    // Hari pertama, mulai dari jam yang ditentukan sampai akhir hari
+                    $dayStartTime = $startTime;
+                } elseif ($currentDate->isSameDay($endDateTime)) {
+                    // Hari terakhir, mulai dari awal hari sampai jam yang ditentukan
+                    $dayEndTime = $endTime;
+                }
+                // Jika hari di tengah-tengah, biarkan full day (00:00 - 23:59)
+            }
+
+            // Simpan ke Database
+            Booking::create([
+                'room_id' => $room->id,
+                'user_id' => $user->id,
+                'booking_date' => $currentDate->format('Y-m-d'), // Simpan format Y-m-d
+                'start_time' => $dayStartTime,
+                'end_time' => $dayEndTime,
+                // Tambahkan workflow_id dummy (biarkan null/0 jika database mengizinkan, atau ambil workflow pertama)
+                'workflow_id' => \App\Models\Workflow::where('unit_id', $room->unit_id)->value('id') ?? 1, 
+                'event_name' => '[MAINTENANCE HARD-LOCK]',
+                'event_description' => $request->alasan,
+                'status' => 'Approved', // Otomatis disetujui agar langsung memblokir kalender
+            ]);
+
+            // Lanjut ke hari berikutnya
+            $currentDate->addDay();
+        }
+
+        return redirect()->back()->with('success', 'Jadwal ruangan berhasil diblokir secara Hard-Lock!');
     }
 }

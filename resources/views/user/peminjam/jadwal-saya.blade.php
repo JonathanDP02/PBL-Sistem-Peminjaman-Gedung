@@ -1,4 +1,52 @@
 <x-app-layout title="Jadwal Saya">
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js'></script>
+
+    <style>
+        /* Kustomisasi Tema FullCalendar agar menyatu dengan desain UI kita (termasuk Dark Mode) */
+        .fc {
+            --fc-border-color: #e2e8f0;
+            --fc-button-text-color: #1e293b;
+            --fc-button-bg-color: #f1f5f9;
+            --fc-button-border-color: #cbd5e1;
+            --fc-button-hover-bg-color: #e2e8f0;
+            --fc-button-hover-border-color: #cbd5e1;
+            --fc-button-active-bg-color: #14b8a6; /* Teal / Kinetic Primary */
+            --fc-button-active-border-color: #14b8a6;
+            --fc-button-active-text-color: #ffffff;
+            --fc-today-bg-color: rgba(20, 184, 166, 0.05);
+            font-family: inherit;
+        }
+
+        .dark .fc {
+            --fc-border-color: #2A2A2A;
+            --fc-button-text-color: #e2e8f0;
+            --fc-button-bg-color: #1A1A1A;
+            --fc-button-border-color: #333;
+            --fc-button-hover-bg-color: #222;
+            --fc-button-hover-border-color: #444;
+            --fc-page-bg-color: transparent;
+        }
+
+        .fc .fc-toolbar-title {
+            font-size: 1.25rem;
+            font-weight: 800;
+        }
+
+        .fc-event {
+            cursor: pointer;
+            border: none !important;
+            border-radius: 6px;
+            padding: 2px 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        
+        .fc-event:hover {
+            transform: scale(1.02);
+            filter: brightness(1.1);
+        }
+    </style>
+
     <div class="relative px-8 pt-4 pb-8 space-y-8 z-10 flex flex-col min-h-full transition-colors duration-300">
         
         <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
@@ -6,7 +54,7 @@
                 <h2 class="font-heading text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white mb-2 transition-colors">Jadwal Saya</h2>
                 <div class="flex items-center gap-2 text-sm text-slate-500 dark:text-gray-400 transition-colors">
                     <i class="ph ph-calendar-blank"></i>
-                    <span>{{ $monthName }} {{ $year }} • Minggu ke-{{ now()->weekOfMonth }}</span>
+                    <span>Sistem Kalender Terpadu FullCalendar</span>
                 </div>
             </div>
             <div class="flex flex-wrap gap-4">
@@ -32,137 +80,37 @@
         </div>
 
         <div class="flex flex-col md:flex-row justify-between items-center bg-white dark:bg-[#151515] p-4 rounded-2xl border border-slate-200 dark:border-kinetic-border shadow-sm dark:shadow-none gap-4 transition-colors">
-            <div class="flex flex-wrap items-center gap-6 px-2">
-                <div class="flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-gray-300">
-                    <span class="w-2.5 h-2.5 rounded-full bg-kinetic-primary"></span> Tersedia / Dikonfirmasi
+            
+            <div class="flex flex-wrap items-center gap-3">
+                <span class="text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-widest mr-2">Filter:</span>
+                
+                <div class="flex items-center gap-2 px-3 py-1.5 rounded-full border border-slate-200 dark:border-[#2A2A2A] bg-slate-50 dark:bg-[#1A1A1A] text-xs font-bold text-slate-600 dark:text-gray-400">
+                    <span class="w-2.5 h-2.5 rounded-full border border-dashed border-slate-400"></span> 
+                    Kosong = Tersedia
                 </div>
-                <div class="flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-gray-300">
-                    <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span> Tertunda
-                </div>
-                <div class="flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-gray-300">
-                    <span class="w-2.5 h-2.5 rounded-full bg-red-500"></span> Terkunci
-                </div>
-            </div>
-            <div class="flex gap-3 w-full md:w-auto">
-                <button id="filterBtn" type="button" class="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-100 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl text-sm font-bold text-slate-700 dark:text-white hover:bg-slate-200 dark:hover:bg-[#222] transition-colors">
-                    <i class="ph ph-faders text-lg"></i> Filter
+
+                <button type="button" class="filter-toggle active flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all text-xs font-bold border-teal-200 bg-teal-50 text-teal-700 dark:border-teal-900/50 dark:bg-[#102A24] dark:text-teal-400" data-status="booked">
+                    <span class="w-2.5 h-2.5 rounded-full bg-[#14b8a6]"></span> Dipesan (Booked)
                 </button>
+
+                <button type="button" class="filter-toggle active flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all text-xs font-bold border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900/50 dark:bg-[#101E28] dark:text-blue-400" data-status="pending">
+                    <span class="w-2.5 h-2.5 rounded-full bg-[#3b82f6]"></span> Tertunda (Pending)
+                </button>
+
+                <button type="button" class="filter-toggle active flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all text-xs font-bold border-red-200 bg-red-50 text-red-700 dark:border-red-900/50 dark:bg-[#2A1515] dark:text-red-400" data-status="locked">
+                    <span class="w-2.5 h-2.5 rounded-full bg-[#ef4444]"></span> Terkunci
+                </button>
+            </div>
+
+            <div class="flex gap-3 w-full md:w-auto">
                 <a href="{{ route('booking') }}" class="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-kinetic-primary hover:bg-teal-600 dark:hover:bg-kinetic-secondary text-white dark:text-slate-900 rounded-xl text-sm font-bold shadow-[0_0_15px_rgba(20,184,166,0.3)] transition transform hover:-translate-y-0.5">
                     <i class="ph-bold ph-plus text-lg"></i> Booking Baru
                 </a>
             </div>
         </div>
 
-        <div class="bg-white dark:bg-[#151515] rounded-3xl border border-slate-200 dark:border-kinetic-border shadow-sm dark:shadow-none overflow-hidden transition-colors">
-            <div class="overflow-x-auto custom-scrollbar">
-                <div class="w-max">
-                    
-                    @php
-                        // Menentukan jumlah hari sesuai bulan dan tahun
-                        $daysInMonth = \Carbon\Carbon::create($year, $month)->daysInMonth;
-                        
-                        // Menangkap query filter status (default: centang semua)
-                        $statusFilters = request('status_filters', ['tersedia', 'tertunda', 'terkunci']);
-                        if (!is_array($statusFilters)) $statusFilters = [$statusFilters];
-                    @endphp
-
-                    {{-- HEADER HARI / TANGGAL --}}
-                    <div class="grid border-b border-slate-100 dark:border-[#1E1E1E]" style="grid-template-columns: 100px repeat({{ $daysInMonth }}, 180px);">
-                        <div class="p-4 border-r border-slate-100 dark:border-[#1E1E1E] flex items-center justify-center bg-slate-50 dark:bg-[#111]">
-                            <span class="text-[10px] font-bold text-slate-400 tracking-widest uppercase">Waktu</span>
-                        </div>
-                        @for ($i = 1; $i <= $daysInMonth; $i++)
-                        @php 
-                            $isToday = ($i == now()->day && $month == now()->month && $year == now()->year);
-                        @endphp
-                        <div class="p-4 border-r border-slate-100 dark:border-[#1E1E1E] text-center transition-colors {{ $isToday ? 'bg-teal-50/50 dark:bg-[#1A1A1A]' : '' }}">
-                            <p class="text-[10px] font-bold {{ $isToday ? 'text-kinetic-primary' : 'text-slate-400' }} tracking-widest uppercase mb-1">{{ substr($monthName, 0, 3) }}</p>
-                            <p class="text-xl font-heading font-bold {{ $isToday ? 'text-kinetic-primary' : 'text-slate-900 dark:text-white' }}">{{ $i }}</p>
-                        </div>
-                        @endfor
-                    </div>
-
-                    {{-- BODY JADWAL BERDASARKAN JAM --}}
-                    <div class="max-h-[480px] overflow-y-auto custom-scrollbar">
-                        @php
-                            $startHour = 7;
-                            $endHour = 22;
-                        @endphp
-
-                        @for ($hour = $startHour; $hour <= $endHour; $hour++)
-                        <div class="grid border-b border-slate-100 dark:border-[#1E1E1E] group" style="grid-template-columns: 100px repeat({{ $daysInMonth }}, 180px);">
-                            
-                            <div class="p-4 border-r border-slate-100 dark:border-[#1E1E1E] flex items-start justify-center bg-slate-50 dark:bg-[#111] sticky left-0 z-10">
-                                <span class="text-xs font-bold text-slate-500 dark:text-gray-500">{{ sprintf('%02d:00', $hour) }}</span>
-                            </div>
-
-                            @for ($day = 1; $day <= $daysInMonth; $day++)
-                            @php
-                                $currentDateStr = \Carbon\Carbon::create($year, $month, $day)->format('Y-m-d');
-                                
-                                // LOGIKA FILTER DIPERBAIKI DI SINI
-                                $currentSlotBookings = $allBookings->filter(function($booking) use ($currentDateStr, $hour, $statusFilters) {
-                                    // Parse tanggal dari database agar pasti cocok formatnya Y-m-d
-                                    $bookingDate = \Carbon\Carbon::parse($booking->booking_date)->format('Y-m-d');
-                                    
-                                    if ($bookingDate !== $currentDateStr) return false;
-                                    
-                                    $startH = (int) date('H', strtotime($booking->start_time));
-                                    $endH = (int) date('H', strtotime($booking->end_time));
-                                    if ($hour < $startH || $hour >= $endH) return false;
-
-                                    $isLocked = str_contains(strtoupper($booking->event_name ?? ''), '[MAINTENANCE HARD-LOCK]');
-                                    
-                                    // Saring berdasarkan Status yang dicentang di Modal (strtolower agar kebal huruf besar/kecil)
-                                    $statusLower = strtolower($booking->status);
-
-                                    if ($isLocked && !in_array('terkunci', $statusFilters)) return false;
-                                    if (!$isLocked && $statusLower === 'approved' && !in_array('tersedia', $statusFilters)) return false;
-                                    if (!$isLocked && $statusLower === 'pending' && !in_array('tertunda', $statusFilters)) return false;
-
-                                    return true;
-                                });
-                            @endphp
-
-                            <div class="p-2 border-r border-slate-100 dark:border-[#1E1E1E] min-h-[120px] transition-colors hover:bg-slate-50/50 dark:hover:bg-white/5 flex flex-col gap-2">
-                                
-                                @if($currentSlotBookings->isNotEmpty())
-                                    @foreach($currentSlotBookings as $b)
-                                        @if(str_contains(strtoupper($b->event_name ?? ''), '[MAINTENANCE HARD-LOCK]'))
-                                            {{-- Tampilan Terkunci --}}
-                                            <div class="h-full bg-red-50 dark:bg-[#2A1515] border border-red-200 dark:border-red-900/50 rounded-xl p-3 shadow-sm cursor-not-allowed">
-                                                <span class="text-[9px] font-bold text-red-600 dark:text-red-400 uppercase tracking-wider block mb-1">Locked by IT</span>
-                                                <h4 class="text-xs font-bold text-slate-900 dark:text-white leading-tight">{{ $b->room->room_name ?? 'Ruangan' }}</h4>
-                                            </div>
-                                        @elseif(strtolower($b->status) === 'approved')
-                                            {{-- Tampilan Dikonfirmasi --}}
-                                            <div class="h-full bg-teal-50 dark:bg-[#102A24] border border-teal-200 dark:border-teal-900/50 rounded-xl p-3 shadow-sm relative cursor-pointer">
-                                                <i class="ph-fill ph-check-circle text-kinetic-primary absolute top-3 right-3 text-sm"></i>
-                                                <span class="text-[9px] font-bold text-teal-700 dark:text-kinetic-primary uppercase tracking-wider block mb-1">Confirmed</span>
-                                                <h4 class="text-xs font-bold text-slate-900 dark:text-white leading-tight">{{ $b->room->room_name ?? 'Ruangan' }}</h4>
-                                            </div>
-                                        @elseif(strtolower($b->status) === 'pending')
-                                            {{-- Tampilan Menunggu Persetujuan --}}
-                                            <div class="h-full bg-blue-50 dark:bg-[#101E28] border border-blue-200 dark:border-blue-900/50 rounded-xl p-3 shadow-sm cursor-pointer">
-                                                <span class="text-[9px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider block mb-1">Pending Approval</span>
-                                                <h4 class="text-xs font-bold text-slate-900 dark:text-white leading-tight">{{ $b->room->room_name ?? 'Ruangan' }}</h4>
-                                            </div>
-                                        @endif
-                                    @endforeach
-                                @else
-                                    {{-- Tampilan Kosong / Benar-benar Tersedia --}}
-                                    <div class="h-full w-full border border-dashed border-slate-200 dark:border-white/10 rounded-xl flex items-center justify-center group/btn cursor-pointer hover:border-kinetic-primary/50 hover:bg-teal-50 dark:hover:bg-kinetic-primary/5 transition-all">
-                                        <i class="ph ph-plus text-slate-300 dark:text-white/10 group-hover/btn:text-kinetic-primary text-xl"></i>
-                                    </div>
-                                @endif
-
-                            </div>
-                            @endfor
-                        </div>
-                        @endfor
-                    </div> 
-                </div> 
-            </div> 
+        <div class="bg-white dark:bg-[#151515] rounded-3xl p-6 border border-slate-200 dark:border-kinetic-border shadow-sm dark:shadow-none transition-colors">
+            <div id="calendar" class="text-slate-800 dark:text-slate-200"></div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 pb-4">
@@ -198,6 +146,7 @@
                 </div>
             </div>
 
+            {{-- KAPASITAS MINGGUAN --}}
             <div class="bg-white dark:bg-[#151515] rounded-3xl p-6 md:p-8 border border-slate-200 dark:border-kinetic-border shadow-sm dark:shadow-none flex flex-col justify-center relative overflow-hidden transition-colors">
                 <div class="absolute -right-10 -bottom-10 opacity-5 dark:opacity-10 pointer-events-none">
                     <i class="ph-fill ph-chart-bar text-9xl text-slate-900 dark:text-white"></i>
@@ -219,91 +168,115 @@
         </div>
 
     </div>
-
-    {{-- MODAL FILTER JADWAL BERDASARKAN STATUS --}}
-    <div id="filterModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center transition-all duration-300 opacity-0">
-        <div id="filterModalContent" class="bg-white dark:bg-[#151515] rounded-3xl border border-slate-200 dark:border-kinetic-border p-6 md:p-8 w-full max-w-sm shadow-2xl transform scale-95 transition-all duration-300">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-xl font-bold font-heading text-slate-900 dark:text-white flex items-center gap-2">
-                    <i class="ph-fill ph-faders text-kinetic-primary"></i> Filter Status
-                </h3>
-                <button type="button" id="closeFilterBtn" class="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-[#222] text-slate-500 hover:text-red-500 transition-colors">
-                    <i class="ph-bold ph-x"></i>
-                </button>
-            </div>
-            
-            <form action="{{ route('jadwal-saya') }}" method="GET" class="space-y-6">
-                {{-- Mempertahankan bulan/tahun yang ada agar tidak keriset saat difilter --}}
-                <input type="hidden" name="month" value="{{ request('month', $month) }}">
-                <input type="hidden" name="year" value="{{ request('year', $year) }}">
-
-                <div class="space-y-3">
-                    <label class="flex items-center gap-3 p-3 border border-slate-200 dark:border-[#2A2A2A] rounded-xl cursor-pointer hover:bg-slate-50 dark:hover:bg-[#1A1A1A] transition-colors">
-                        <input type="checkbox" name="status_filters[]" value="tersedia" class="w-5 h-5 text-teal-500 rounded border-slate-300 focus:ring-teal-500" {{ in_array('tersedia', $statusFilters) ? 'checked' : '' }}>
-                        <span class="text-sm font-bold text-slate-700 dark:text-gray-300">Tersedia / Confirmed</span>
-                        <span class="ml-auto w-3 h-3 rounded-full bg-kinetic-primary"></span>
-                    </label>
-                    
-                    <label class="flex items-center gap-3 p-3 border border-slate-200 dark:border-[#2A2A2A] rounded-xl cursor-pointer hover:bg-slate-50 dark:hover:bg-[#1A1A1A] transition-colors">
-                        <input type="checkbox" name="status_filters[]" value="tertunda" class="w-5 h-5 text-blue-500 rounded border-slate-300 focus:ring-blue-500" {{ in_array('tertunda', $statusFilters) ? 'checked' : '' }}>
-                        <span class="text-sm font-bold text-slate-700 dark:text-gray-300">Tertunda (Pending)</span>
-                        <span class="ml-auto w-3 h-3 rounded-full bg-blue-500"></span>
-                    </label>
-
-                    <label class="flex items-center gap-3 p-3 border border-slate-200 dark:border-[#2A2A2A] rounded-xl cursor-pointer hover:bg-slate-50 dark:hover:bg-[#1A1A1A] transition-colors">
-                        <input type="checkbox" name="status_filters[]" value="terkunci" class="w-5 h-5 text-red-500 rounded border-slate-300 focus:ring-red-500" {{ in_array('terkunci', $statusFilters) ? 'checked' : '' }}>
-                        <span class="text-sm font-bold text-slate-700 dark:text-gray-300">Terkunci (Maintenance)</span>
-                        <span class="ml-auto w-3 h-3 rounded-full bg-red-500"></span>
-                    </label>
-                </div>
-
-                <div class="pt-2 flex gap-3">
-                    <a href="{{ route('jadwal-saya', ['month' => request('month'), 'year' => request('year')]) }}" class="flex-1 flex justify-center items-center px-4 py-3 border border-slate-200 dark:border-[#2A2A2A] text-slate-600 dark:text-gray-300 rounded-xl text-sm font-bold hover:bg-slate-50 dark:hover:bg-[#222] transition-colors">
-                        Reset Semua
-                    </a>
-                    <button type="submit" class="flex-1 flex justify-center items-center px-4 py-3 bg-kinetic-primary hover:bg-teal-600 dark:hover:bg-kinetic-secondary text-white dark:text-slate-900 rounded-xl text-sm font-bold shadow-[0_0_15px_rgba(20,184,166,0.3)] transition transform hover:-translate-y-0.5">
-                        Terapkan
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
 </x-app-layout>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const filterBtn = document.getElementById('filterBtn');
-        const filterModal = document.getElementById('filterModal');
-        const filterModalContent = document.getElementById('filterModalContent');
-        const closeFilterBtn = document.getElementById('closeFilterBtn');
+        const rawBookings = @json($allBookings);
 
-        // Buka Modal
-        filterBtn.addEventListener('click', () => {
-            filterModal.classList.remove('hidden');
-            setTimeout(() => {
-                filterModal.classList.remove('opacity-0');
-                filterModalContent.classList.remove('scale-95');
-                filterModalContent.classList.add('scale-100');
-            }, 10);
+        const calendarEvents = rawBookings.map(b => {
+            const isLocked = b.event_name && b.event_name.toUpperCase().includes('[MAINTENANCE HARD-LOCK]');
+            const statusLower = b.status ? b.status.toLowerCase() : '';
+            
+            let eventStatus = 'pending';
+            let bgColor = '#3b82f6'; // Biru (Pending)
+            let textColor = '#ffffff';
+
+            if (isLocked) {
+                eventStatus = 'locked';
+                bgColor = '#ef4444'; // Merah
+            } else if (statusLower === 'approved') {
+                eventStatus = 'booked';
+                bgColor = '#14b8a6'; // Teal
+            }
+
+            const datePart = b.booking_date.split('T')[0].split(' ')[0];
+
+            return {
+                id: b.id,
+                title: `${b.room ? b.room.room_name : 'Ruangan'} - ${isLocked ? 'Locked by IT' : b.event_name}`,
+                start: `${datePart}T${b.start_time}`,
+                end: `${datePart}T${b.end_time}`,
+                backgroundColor: bgColor,
+                borderColor: bgColor,
+                textColor: textColor,
+                extendedProps: {
+                    statusCategory: eventStatus,
+                    roomName: b.room ? b.room.room_name : 'Ruangan',
+                    originalStatus: b.status
+                }
+            };
         });
 
-        // Tutup Modal
-        const closeModal = () => {
-            filterModal.classList.add('opacity-0');
-            filterModalContent.classList.remove('scale-100');
-            filterModalContent.classList.add('scale-95');
-            setTimeout(() => {
-                filterModal.classList.add('hidden');
-            }, 300);
+        let activeFilters = {
+            booked: true,
+            pending: true,
+            locked: true
         };
 
-        closeFilterBtn.addEventListener('click', closeModal);
+        const calendarEl = document.getElementById('calendar');
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+            // -- KONFIGURASI BAHASA INDONESIA --
+            locale: 'id', 
+            buttonText: {
+                today: 'Hari Ini',
+                month: 'Bulan',
+                week: 'Minggu',
+                day: 'Hari',
+                list: 'Agenda'
+            },
+            
+            // -- KONFIGURASI FORMAT 24 JAM --
+            slotLabelFormat: {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false // Mematikan AM/PM, mengubah jadi 07:00, 08:00, dst.
+            },
+            eventTimeFormat: {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            },
 
-        // Tutup jika user klik area background gelap di luar modal
-        filterModal.addEventListener('click', (e) => {
-            if (e.target === filterModal) {
-                closeModal();
+            initialView: 'timeGridWeek',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            },
+            slotMinTime: '07:00:00',
+            slotMaxTime: '22:00:00',
+            allDaySlot: false,
+            expandRows: true,
+            height: 700,
+            
+            events: function(info, successCallback, failureCallback) {
+                const filteredEvents = calendarEvents.filter(e => activeFilters[e.extendedProps.statusCategory]);
+                successCallback(filteredEvents);
+            },
+            
+            eventClick: function(info) {
+                const props = info.event.extendedProps;
+                alert(`Detail Jadwal:\n\nRuangan: ${props.roomName}\nKegiatan: ${info.event.title.split(' - ')[1]}\nStatus: ${props.originalStatus}\nWaktu: ${info.event.start.toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'})} - ${info.event.end.toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'})}`);
             }
+        });
+        
+        calendar.render();
+
+        const filterButtons = document.querySelectorAll('.filter-toggle');
+        filterButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const statusType = this.getAttribute('data-status');
+                activeFilters[statusType] = !activeFilters[statusType];
+                
+                if (activeFilters[statusType]) {
+                    this.classList.remove('opacity-50', 'bg-transparent');
+                } else {
+                    this.classList.add('opacity-50', 'bg-transparent');
+                }
+
+                calendar.refetchEvents();
+            });
         });
     });
 </script>

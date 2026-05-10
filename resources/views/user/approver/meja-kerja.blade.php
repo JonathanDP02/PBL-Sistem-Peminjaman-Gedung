@@ -9,12 +9,36 @@
                 </p>
             </div>
             
-            <div class="flex items-center gap-4 w-full md:w-auto">
-                <div class="relative w-full md:w-72">
-                    <i class="ph ph-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                    <input type="text" placeholder="Cari pemohon atau ruangan..." 
-                        class="w-full pl-11 pr-4 py-2.5 bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] rounded-xl text-sm text-slate-900 dark:text-white focus:ring-teal-500 focus:border-teal-500 dark:focus:ring-kinetic-primary dark:focus:border-kinetic-primary transition-colors placeholder:text-slate-400 dark:placeholder:text-gray-600">
-                </div>
+            <div class="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
+                <form action="{{ route('approver.meja-kerja') }}" method="GET" class="flex flex-col md:flex-row gap-3 w-full">
+                    
+                    <div class="relative w-full md:w-48">
+                        <select name="unit_id" onchange="this.form.submit()" 
+                            class="w-full pl-4 pr-10 py-2.5 bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] rounded-xl text-sm text-slate-700 dark:text-white focus:ring-teal-500 outline-none appearance-none transition-colors">
+                            <option value="">Semua Unit</option>
+                            @foreach($units as $unit)
+                                <option value="{{ $unit->id }}" {{ request('unit_id') == $unit->id ? 'selected' : '' }}>
+                                    {{ $unit->unit_name }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <i class="ph ph-caret-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
+                    </div>
+
+                    <div class="relative w-full md:w-72">
+                        <i class="ph ph-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="text" name="search" value="{{ request('search') }}" 
+                            placeholder="Cari pemohon atau ruangan..." 
+                            class="w-full pl-11 pr-4 py-2.5 bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] rounded-xl text-sm text-slate-900 dark:text-white focus:ring-teal-500 focus:border-teal-500 transition-colors placeholder:text-slate-400 dark:placeholder:text-gray-600">
+                    </div>
+
+                    @if(request('search') || request('unit_id'))
+                        <a href="{{ route('approver.meja-kerja') }}" class="flex items-center justify-center px-4 py-2.5 text-xs font-bold text-red-500 hover:text-red-600 transition-colors">
+                            Reset
+                        </a>
+                    @endif
+                </form>
+
                 <button class="w-11 h-11 shrink-0 flex items-center justify-center bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] hover:bg-slate-50 dark:hover:bg-[#1A1A1A] rounded-xl text-slate-600 dark:text-gray-400 transition-colors relative">
                     <i class="ph ph-bell text-xl"></i>
                     <span class="absolute top-3 right-3 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-[#151515]"></span>
