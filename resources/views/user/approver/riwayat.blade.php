@@ -9,12 +9,35 @@
                 </p>
             </div>
             
-            <div class="flex items-center gap-4 w-full md:w-auto">
-                <div class="relative w-full md:w-72">
-                    <i class="ph ph-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                    <input type="text" placeholder="Cari riwayat..." 
-                        class="w-full pl-11 pr-4 py-2.5 bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] rounded-xl text-sm text-slate-900 dark:text-white focus:ring-teal-500 focus:border-teal-500 dark:focus:ring-kinetic-primary dark:focus:border-kinetic-primary transition-colors placeholder:text-slate-400 dark:placeholder:text-gray-600">
-                </div>
+            <div class="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
+                <form action="{{ route('approver.riwayat') }}" method="GET" class="flex flex-col md:flex-row gap-3 w-full">
+                    
+                    <div class="relative w-full md:w-48">
+                        <select name="unit_id" onchange="this.form.submit()" 
+                            class="w-full pl-4 pr-10 py-2.5 bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] rounded-xl text-sm text-slate-700 dark:text-white focus:ring-teal-500 outline-none appearance-none transition-colors">
+                            <option value="">Semua Unit</option>
+                            @foreach($units as $unit)
+                                <option value="{{ $unit->id }}" {{ request('unit_id') == $unit->id ? 'selected' : '' }}>
+                                    {{ $unit->unit_name }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <i class="ph ph-caret-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
+                    </div>
+
+                    <div class="relative w-full md:w-72">
+                        <i class="ph ph-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="text" name="search" value="{{ request('search') }}" 
+                            placeholder="Cari riwayat event/ruang..." 
+                            class="w-full pl-11 pr-4 py-2.5 bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] rounded-xl text-sm text-slate-900 dark:text-white focus:ring-teal-500 focus:border-teal-500 transition-colors placeholder:text-slate-400 dark:placeholder:text-gray-600">
+                    </div>
+
+                    @if(request('search') || request('unit_id'))
+                        <a href="{{ route('approver.riwayat') }}" class="flex items-center justify-center px-2 text-xs font-bold text-red-500 hover:text-red-600 transition-colors">
+                            Reset
+                        </a>
+                    @endif
+                </form>
             </div>
         </div>
 
@@ -44,7 +67,7 @@
                                     </div>
                                     <div>
                                         <p class="text-sm font-bold text-slate-700 dark:text-gray-300">{{ $approval->booking->user->name }}</p>
-                                        <p class="text-[10px] text-slate-500 dark:text-gray-500">{{ $approval->booking->user->email }}</p>
+                                        <p class="text-[10px] text-slate-500 dark:text-gray-500">{{ $approval->booking->user->unit->unit_name ?? 'N/A' }}</p>
                                     </div>
                                 </div>
                             </td>
@@ -64,7 +87,7 @@
                                     {{ $approval->approval_status }}
                                 </span>
                                 @if($approval->notes)
-                                    <p class="text-[10px] text-slate-500 mt-2 italic">"{{ $approval->notes }}"</p>
+                                    <p class="text-[10px] text-slate-500 mt-2 italic max-w-xs overflow-hidden text-ellipsis whitespace-nowrap">"{{ $approval->notes }}"</p>
                                 @endif
                             </td>
                             <td class="px-6 py-5 text-center">
@@ -78,7 +101,7 @@
                             <td colspan="5" class="px-6 py-12 text-center">
                                 <div class="flex flex-col items-center justify-center">
                                     <i class="ph ph-calendar-x text-5xl text-slate-200 dark:text-[#2A2A2A] mb-4"></i>
-                                    <p class="text-slate-400 dark:text-gray-600 font-medium">Belum ada riwayat persetujuan.</p>
+                                    <p class="text-slate-400 dark:text-gray-600 font-medium">Data riwayat tidak ditemukan.</p>
                                 </div>
                             </td>
                         </tr>
@@ -88,17 +111,15 @@
         </div>
 
         <div class="mt-6">
-            {{ $approvals->links() }}
+            {{ $approvals->appends(request()->input())->links() }}
         </div>
     </div>
 
-    <!-- History Detail Modal -->
     <div id="historyModal" class="hidden fixed inset-0 z-[60] overflow-y-auto">
         <div class="flex items-center justify-center min-h-screen p-4">
             <div class="fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm transition-opacity" onclick="closeHistoryModal()"></div>
             
             <div class="relative bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden transform transition-all">
-                <!-- Modal Header -->
                 <div class="flex items-center justify-between p-6 border-b border-slate-200 dark:border-[#2A2A2A]">
                     <div>
                         <h3 class="font-heading text-xl font-extrabold text-slate-900 dark:text-white">Detail Riwayat Pengajuan</h3>
@@ -109,11 +130,9 @@
                     </button>
                 </div>
 
-                <!-- Modal Body -->
                 <div class="p-8 space-y-8 max-h-[70vh] overflow-y-auto custom-scrollbar">
                     
-                    <!-- Basic Info -->
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="bg-slate-50 dark:bg-[#1A1A1A] p-4 rounded-2xl border border-slate-100 dark:border-[#2A2A2A]">
                             <p class="text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-1">Peminjam</p>
                             <p id="modalBorrower" class="text-sm font-bold text-slate-700 dark:text-gray-300">-</p>
@@ -132,7 +151,6 @@
                         </div>
                     </div>
 
-                    <!-- Approval Timeline -->
                     <div>
                         <h4 class="text-sm font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
                             <i class="ph-bold ph-git-merge text-teal-500 dark:text-kinetic-primary"></i>
@@ -140,14 +158,10 @@
                         </h4>
                         
                         <div id="approvalTimeline" class="space-y-6 relative before:absolute before:left-4 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100 dark:before:bg-[#2A2A2A]">
-                            <!-- Will be populated by JS -->
-                            <p class="text-center text-slate-400 text-xs italic py-4">Memuat riwayat...</p>
-                        </div>
+                            </div>
                     </div>
-
                 </div>
 
-                <!-- Modal Footer -->
                 <div class="p-6 bg-slate-50 dark:bg-[#1A1A1A] border-t border-slate-200 dark:border-[#2A2A2A] flex justify-end">
                     <button onclick="closeHistoryModal()" class="px-6 py-2.5 rounded-xl bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] text-slate-600 dark:text-gray-400 font-bold text-xs hover:bg-slate-50 dark:hover:bg-[#1A1A1A] transition-all shadow-sm">
                         Tutup
@@ -164,72 +178,49 @@
         function openHistoryModal(bookingId) {
             modal.classList.remove('hidden');
             document.body.style.overflow = 'hidden';
-
-            // Reset modal content to loading state
             timeline.innerHTML = '<p class="text-center text-slate-400 text-xs italic py-4">Memuat riwayat...</p>';
 
             fetch(`/approver/approvals/${bookingId}`, {
-                headers: {
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
+                headers: { 'Accept': 'application/json' }
             })
             .then(response => response.json())
             .then(res => {
                 if (res.success) {
                     const data = res.data;
-                    const booking = data.booking;
-                    
-                    // Populate Basic Info
-                    document.getElementById('modalEventName').textContent = booking.event_name;
+                    document.getElementById('modalEventName').textContent = data.booking.event_name;
                     document.getElementById('modalBorrower').textContent = data.peminjam.name;
                     document.getElementById('modalRoom').textContent = data.room.room_name;
-                    document.getElementById('modalDateTime').textContent = `${booking.booking_date} (${booking.start_time} - ${booking.end_time})`;
+                    document.getElementById('modalDateTime').textContent = `${data.booking.booking_date} (${data.booking.start_time} - ${data.booking.end_time})`;
                     
                     const statusEl = document.getElementById('modalStatus');
-                    statusEl.textContent = booking.status;
-                    statusEl.className = `text-sm font-bold ${booking.status === 'Approved' ? 'text-emerald-500' : (booking.status === 'Rejected' ? 'text-red-500' : 'text-amber-500')}`;
+                    statusEl.textContent = data.booking.status;
+                    statusEl.className = `text-sm font-bold ${data.booking.status === 'Approved' ? 'text-emerald-500' : 'text-amber-500'}`;
 
-                    // Populate Timeline
                     let timelineHtml = '';
-                    if (data.approval_history && data.approval_history.length > 0) {
+                    if (data.approval_history.length > 0) {
                         data.approval_history.forEach(hist => {
                             const isApproved = hist.approval_status === 'Approved';
-                            const iconClass = isApproved ? 'ph-check bg-emerald-500 text-white' : 'ph-x bg-red-500 text-white';
-                            
                             timelineHtml += `
                                 <div class="relative pl-10">
-                                    <div class="absolute left-1.5 top-1 w-5 h-5 rounded-full flex items-center justify-center ${isApproved ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)]' : 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.3)]'} z-10">
+                                    <div class="absolute left-1.5 top-1 w-5 h-5 rounded-full flex items-center justify-center ${isApproved ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)]' : 'bg-red-500'} z-10">
                                         <i class="ph-bold ${isApproved ? 'ph-check' : 'ph-x'} text-[10px] text-white"></i>
                                     </div>
                                     <div class="bg-white dark:bg-[#151515] border border-slate-100 dark:border-[#2A2A2A] rounded-2xl p-4 shadow-sm">
                                         <div class="flex justify-between items-start mb-2">
                                             <div>
                                                 <h5 class="text-sm font-bold text-slate-900 dark:text-white">${hist.position}</h5>
-                                                <p class="text-[10px] text-slate-500 dark:text-gray-500">Oleh ${hist.approver_name}</p>
+                                                <p class="text-[10px] text-slate-500">Oleh ${hist.approver_name}</p>
                                             </div>
-                                            <span class="px-2 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider ${isApproved ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}">
-                                                ${hist.approval_status}
-                                            </span>
+                                            <span class="px-2 py-0.5 rounded text-[8px] font-bold uppercase ${isApproved ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}">${hist.approval_status}</span>
                                         </div>
-                                        ${hist.notes ? `<p class="text-[11px] text-slate-600 dark:text-gray-400 italic bg-slate-50 dark:bg-[#1A1A1A] p-2 rounded-lg mt-2 border-l-2 ${isApproved ? 'border-emerald-400' : 'border-red-400'}">"${hist.notes}"</p>` : ''}
-                                        <p class="text-[9px] text-slate-400 dark:text-gray-500 mt-3 flex items-center gap-1">
-                                            <i class="ph ph-clock text-xs"></i>
-                                            ${hist.approved_at_formatted}
-                                        </p>
+                                        ${hist.notes ? `<p class="text-[11px] text-slate-600 bg-slate-50 p-2 rounded-lg mt-2 border-l-2 ${isApproved ? 'border-emerald-400' : 'border-red-400'} italic">"${hist.notes}"</p>` : ''}
+                                        <p class="text-[9px] text-slate-400 mt-3"><i class="ph ph-clock"></i> ${hist.approved_at_formatted}</p>
                                     </div>
-                                </div>
-                            `;
+                                </div>`;
                         });
-                    } else {
-                        timelineHtml = '<p class="text-center text-slate-400 text-xs italic py-4">Belum ada catatan persetujuan.</p>';
                     }
                     timeline.innerHTML = timelineHtml;
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                timeline.innerHTML = '<p class="text-center text-red-500 text-xs italic py-4">Gagal memuat data.</p>';
             });
         }
 
@@ -237,12 +228,5 @@
             modal.classList.add('hidden');
             document.body.style.overflow = 'auto';
         }
-
-        // Close modal on Escape key
-        document.addEventListener('keydown', function(event) {
-            if (event.key === "Escape") {
-                closeHistoryModal();
-            }
-        });
     </script>
 </x-app-layout>
