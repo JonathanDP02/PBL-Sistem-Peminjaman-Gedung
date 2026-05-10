@@ -233,7 +233,6 @@ Route::middleware('auth')->group(function () {
         Route::get('/approvals', [ApprovalController::class, 'index'])->name('approval.index');
         Route::post('/approvals/{booking_id}/approve', [ApprovalController::class, 'approve'])->name('approval.approve');
         Route::post('/approvals/{booking_id}/reject', [ApprovalController::class, 'reject'])->name('approval.reject');
-        // Route::get('/riwayat', [ApprovalController::class, 'history'])->name('approver.riwayat');
     });
 
     // --- USER / PEMINJAM SECTION ---
