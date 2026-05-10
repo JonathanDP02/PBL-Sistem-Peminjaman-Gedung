@@ -135,6 +135,13 @@ public function blockRoom(Request $request)
         $startDateTime = \Carbon\Carbon::parse($request->mulai_dari);
         $endDateTime = \Carbon\Carbon::parse($request->hingga);
 
+        $diffInDays = $startDateTime->diffInDays($endDateTime);
+        if ($diffInDays > 366) {
+            return redirect()->back()->withErrors([
+                'hingga' => 'Durasi pemblokiran maksimal 1 tahun '
+            ])->withInput();
+        }
+
         // Pisahkan Jam Mulai dan Jam Selesai
         $startTime = $startDateTime->format('H:i');
         $endTime = $endDateTime->format('H:i');
@@ -146,6 +153,9 @@ public function blockRoom(Request $request)
         // Mulai Looping dari Hari Pertama sampai Hari Terakhir
         $currentDate = $startDateTime->copy()->startOfDay();
         $lastDate = $endDateTime->copy()->startOfDay();
+
+        // Tambahkan Batch ID untuk pengelompokan (Grouping)
+        $batchId = strtoupper(substr(uniqid(), -6));
 
         while ($currentDate->lte($lastDate)) {
             
@@ -178,7 +188,7 @@ public function blockRoom(Request $request)
                 'end_time' => $dayEndTime,
                 // Tambahkan workflow_id dummy (biarkan null/0 jika database mengizinkan, atau ambil workflow pertama)
                 'workflow_id' => \App\Models\Workflow::where('unit_id', $room->unit_id)->value('id') ?? 1, 
-                'event_name' => '[MAINTENANCE HARD-LOCK]',
+                'event_name' => "[MAINTENANCE HARD-LOCK] #$batchId",
                 'event_description' => $request->alasan,
                 'status' => 'Approved', // Otomatis disetujui agar langsung memblokir kalender
             ]);
@@ -188,5 +198,26 @@ public function blockRoom(Request $request)
         }
 
         return redirect()->back()->with('success', 'Jadwal ruangan berhasil diblokir secara Hard-Lock!');
+    }
+
+    public function unblockRoom($eventName)
+    {
+        $user = Auth::user();
+        
+        // Ambil data untuk verifikasi (opsional, untuk pesan sukses)
+        $blockings = Booking::where('event_name', $eventName)
+            ->whereHas('room', function($q) use ($user) {
+                $q->where('unit_id', $user->unit_id);
+            });
+
+        $count = $blockings->count();
+        
+        if ($count === 0) {
+            return redirect()->back()->withErrors(['message' => 'Jadwal pemblokiran tidak ditemukan atau Anda tidak memiliki akses.']);
+        }
+
+        $blockings->delete();
+
+        return redirect()->back()->with('success', "Pemblokiran berhasil dibatalkan. $count slot jadwal telah dibuka kembali.");
     }
 }

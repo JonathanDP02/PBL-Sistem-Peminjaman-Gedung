@@ -1,12 +1,12 @@
 <x-app-layout>
     <div class="bg-slate-50 dark:bg-[#0f0f0f] min-h-screen py-12 text-slate-800 dark:text-[#e5e5e5] font-sans transition-colors duration-300">
-        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             
             <div class="flex flex-col md:flex-row justify-between items-start mb-8 gap-4 md:gap-0">
                 <div>
                     <p class="text-teal-600 dark:text-[#2dd4bf] text-xs font-bold tracking-widest uppercase mb-2">Security & Maintenance</p>
                     <h1 class="text-4xl font-bold text-slate-900 dark:text-white leading-tight mb-3">Pemblokiran Jadwal<br>(Maintenance)</h1>
-                    <p class="text-slate-500 dark:text-gray-400 text-sm max-w-xl">Kunci ruangan secara manual untuk keperluan perawatan atau acara internal unit tanpa melalui alur reguler.</p>
+                    <p class="text-slate-500 dark:text-gray-400 text-sm max-w-2xl">Kunci ruangan secara manual untuk keperluan perawatan atau acara internal unit tanpa melalui alur reguler.</p>
                 </div>
                 <div class="flex items-center gap-3 bg-red-50 dark:bg-[#1a1111] border border-red-200 dark:border-red-900/50 px-4 py-2 rounded-xl shadow-sm dark:shadow-none transition-colors">
                     <div class="bg-red-100 dark:bg-red-500/20 p-2 rounded-lg text-red-600 dark:text-red-500">
@@ -24,7 +24,7 @@
                     ruanganId: '', 
                     roomsData: {{ Js::from($rooms) }},
                     get selectedRoom() { return this.roomsData.find(r => r.id == this.ruanganId) || null; }
-                }" class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                }" class="grid grid-cols-1 lg:grid-cols-5 gap-8">
                 
                 <!-- LEFT SIDE: CONFIGURATION FORM -->
                 <div class="lg:col-span-3 bg-white dark:bg-[#161616] border border-slate-200 dark:border-gray-800 shadow-sm dark:shadow-none rounded-2xl p-6 transition-colors">
@@ -36,6 +36,20 @@
                     @if (session('success'))
                         <div class="mb-4 p-3 bg-teal-50 dark:bg-[#052E16] border border-teal-200 dark:border-[#064E3B] text-teal-700 dark:text-[#10B981] rounded-xl text-sm font-medium">
                             {{ session('success') }}
+                        </div>
+                    @endif
+
+                    @if ($errors->any())
+                        <div class="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-400 rounded-2xl text-sm">
+                            <div class="flex items-center gap-2 mb-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+                                <p class="font-bold uppercase tracking-wider text-[10px]">Peringatan Sistem</p>
+                            </div>
+                            <ul class="list-disc list-inside space-y-1">
+                                @foreach ($errors->all() as $error)
+                                    <li class="font-medium">{{ $error }}</li>
+                                @endforeach
+                            </ul>
                         </div>
                     @endif
 
@@ -61,7 +75,7 @@
                                     <h3 class="text-slate-900 dark:text-white font-semibold text-sm">{{ $room->room_name }}</h3>
                                     <p class="text-slate-500 dark:text-gray-500 text-xs mt-1">{{ $room->building->building_name ?? 'N/A' }}</p>
                                     
-                                    <input type="radio" name="room_id" value="{{ $room->id }}" x-model="ruanganId" class="hidden" required>
+                                      <input type="radio" name="room_id" value="{{ $room->id }}" x-model="ruanganId" class="hidden" required>
                                 </div>
                                 @empty
                                     <p class="text-slate-500 dark:text-gray-400 text-sm italic col-span-2">Tidak ada ruangan tersedia.</p>
@@ -138,29 +152,57 @@
                     <div class="bg-white dark:bg-[#161616] border border-slate-200 dark:border-gray-800 shadow-sm rounded-2xl p-6 transition-colors">
                         <div class="flex justify-between items-center mb-6">
                             <h3 class="text-[15px] font-bold text-slate-900 dark:text-white">Daftar Pemblokiran Aktif</h3>
-                            <a href="#" class="text-xs text-teal-600 dark:text-[#2dd4bf] hover:underline font-medium">Lihat Semua</a>
                         </div>
                         
                         <div class="space-y-4">
                             @forelse($activeBlockings as $block)
-                                <div class="flex items-center gap-4 relative">
-                                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-red-500 dark:bg-red-400 rounded-r-md"></div>
-                                    <div class="bg-slate-100 dark:bg-[#222] rounded-lg text-center p-2 min-w-[50px] ml-3 border border-slate-200 dark:border-transparent">
-                                        <p class="text-[10px] text-slate-500 dark:text-gray-400 font-bold uppercase leading-none mb-1">
-                                            {{ \Carbon\Carbon::parse($block->booking_date)->translatedFormat('M') }}
+                                <div class="flex items-center gap-4 relative group">
+                                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-red-500 dark:bg-red-400 rounded-r-md group-hover:w-1.5 transition-all"></div>
+                                    <div class="bg-slate-100 dark:bg-[#222] rounded-xl text-center p-2.5 min-w-[65px] ml-3 border border-slate-200 dark:border-transparent shadow-sm">
+                                        <p class="text-[9px] text-slate-500 dark:text-gray-400 font-bold uppercase leading-none mb-1.5 tracking-tighter">
+                                            {{ \Carbon\Carbon::parse($block->start_date)->translatedFormat('M Y') }}
                                         </p>
-                                        <p class="text-lg text-slate-900 dark:text-white font-bold leading-none">
-                                            {{ \Carbon\Carbon::parse($block->booking_date)->format('d') }}
-                                        </p>
+                                        <div class="flex flex-col items-center">
+                                            <p class="text-lg text-slate-900 dark:text-white font-extrabold leading-none">
+                                                {{ \Carbon\Carbon::parse($block->start_date)->format('d') }}
+                                            </p>
+                                            @if($block->is_range)
+                                                <div class="w-4 h-0.5 bg-red-200 dark:bg-red-900/50 my-1 rounded-full"></div>
+                                                <p class="text-xs text-red-500 dark:text-red-400 font-bold leading-none">
+                                                    {{ \Carbon\Carbon::parse($block->end_date)->format('d') }}
+                                                </p>
+                                            @endif
+                                        </div>
                                     </div>
                                     <div class="flex-1 overflow-hidden">
-                                        <h4 class="text-sm font-bold text-slate-900 dark:text-white truncate">
-                                            {{ $block->room->room_name ?? 'N/A' }}
-                                        </h4>
-                                        <p class="text-xs text-slate-500 dark:text-gray-500 truncate">
+                                        <div class="flex items-center gap-2 mb-0.5">
+                                            <h4 class="text-sm font-bold text-slate-900 dark:text-white truncate">
+                                                {{ $block->room->room_name ?? 'N/A' }}
+                                            </h4>
+                                            @if($block->is_range)
+                                                <span class="text-[8px] bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400 px-1.5 py-0.5 rounded-full font-bold uppercase tracking-widest">{{ $block->count }} HARI</span>
+                                            @endif
+                                        </div>
+                                        <p class="text-[11px] text-slate-500 dark:text-gray-400 truncate font-medium">
                                             {{ $block->event_description }}
                                         </p>
+                                        <p class="text-[9px] text-slate-400 dark:text-gray-500 mt-1 flex items-center gap-1">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+                                            {{ \Carbon\Carbon::parse($block->start_date)->translatedFormat('d M') }} 
+                                            @if($block->is_range)
+                                                - {{ \Carbon\Carbon::parse($block->end_date)->translatedFormat('d M Y') }}
+                                            @endif
+                                        </p>
                                     </div>
+                                    
+                                    <!-- Delete Button -->
+                                    <form action="{{ route('pemblokiran.destroy', urlencode($block->event_name)) }}" method="POST" onsubmit="return confirm('Batalkan pemblokiran ini? Seluruh jadwal dalam rentang waktu tersebut akan dibuka kembali.')" class="opacity-0 group-hover:opacity-100 transition-opacity pr-2">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="p-2 bg-red-50 dark:bg-red-500/10 text-red-500 dark:text-red-400 rounded-xl hover:bg-red-500 hover:text-white dark:hover:bg-red-500 dark:hover:text-white transition-all shadow-sm">
+                                            <i class="ph-bold ph-trash"></i>
+                                        </button>
+                                    </form>
                                 </div>
                             @empty
                                 <div class="text-center py-6 border-2 border-dashed border-slate-200 dark:border-[#222] rounded-xl">
