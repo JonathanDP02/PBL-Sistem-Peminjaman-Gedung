@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Booking;
 use App\Models\Building;
 use App\Models\Position;
 use App\Models\Room;
@@ -149,10 +150,39 @@ it('allows admin_unit to block a room (maintenance) via web form', function () {
     ]);
 
     $response->assertRedirect();
-    $this->assertDatabaseHas('bookings', [
+
+    // Since the event_name contains a dynamic batch suffix, we verify using a query
+    $booking = Booking::where('room_id', $room->id)
+        ->where('status', 'Approved')
+        ->where('event_name', 'LIKE', '[MAINTENANCE HARD-LOCK]%')
+        ->first();
+    expect($booking)->not->toBeNull();
+});
+
+it('allows admin_unit to unblock a room via web form', function () {
+    $room = Room::where('unit_id', $this->jurusanTI->id)->first();
+    $eventName = '[MAINTENANCE HARD-LOCK] #ABC123';
+
+    Booking::create([
         'room_id' => $room->id,
-        'event_name' => '[MAINTENANCE HARD-LOCK]',
+        'user_id' => $this->adminUnit->id,
+        'booking_date' => now()->addDay()->format('Y-m-d'),
+        'start_time' => '08:00',
+        'end_time' => '10:00',
+        'workflow_id' => Workflow::where('unit_id', $room->unit_id)->value('id') ?? 1,
+        'event_name' => $eventName,
+        'event_description' => 'Test Maintenance',
         'status' => 'Approved',
+    ]);
+
+    // Perform unblock request using form parameter
+    $response = $this->actingAs($this->adminUnit)->delete('/admin_unit/pemblokiran-ruangan', [
+        'event_name' => $eventName,
+    ]);
+
+    $response->assertRedirect();
+    $this->assertDatabaseMissing('bookings', [
+        'event_name' => $eventName,
     ]);
 });
 

@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Booking;
 use App\Models\Room;
+use App\Models\Workflow;
+use Carbon\Carbon;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -117,7 +120,7 @@ class RoomController extends Controller
         return response()->json($room);
     }
 
-public function blockRoom(Request $request)
+    public function blockRoom(Request $request)
     {
         $request->validate([
             'room_id' => 'required|exists:rooms,id',
@@ -127,18 +130,18 @@ public function blockRoom(Request $request)
         ]);
 
         $user = Auth::user();
-        
+
         // Pastikan ruangan benar-benar milik unit admin ini (Keamanan)
         $room = Room::where('id', $request->room_id)->where('unit_id', $user->unit_id)->firstOrFail();
 
         // 1. Parsing Tanggal dan Waktu menggunakan Carbon
-        $startDateTime = \Carbon\Carbon::parse($request->mulai_dari);
-        $endDateTime = \Carbon\Carbon::parse($request->hingga);
+        $startDateTime = Carbon::parse($request->mulai_dari);
+        $endDateTime = Carbon::parse($request->hingga);
 
         $diffInDays = $startDateTime->diffInDays($endDateTime);
         if ($diffInDays > 366) {
             return redirect()->back()->withErrors([
-                'hingga' => 'Durasi pemblokiran maksimal 1 tahun '
+                'hingga' => 'Durasi pemblokiran maksimal 1 tahun ',
             ])->withInput();
         }
 
@@ -158,7 +161,7 @@ public function blockRoom(Request $request)
         $batchId = strtoupper(substr(uniqid(), -6));
 
         while ($currentDate->lte($lastDate)) {
-            
+
             // Logika Penentuan Jam per Harinya
             $dayStartTime = '00:00';
             $dayEndTime = '23:59';
@@ -187,7 +190,7 @@ public function blockRoom(Request $request)
                 'start_time' => $dayStartTime,
                 'end_time' => $dayEndTime,
                 // Tambahkan workflow_id dummy (biarkan null/0 jika database mengizinkan, atau ambil workflow pertama)
-                'workflow_id' => \App\Models\Workflow::where('unit_id', $room->unit_id)->value('id') ?? 1, 
+                'workflow_id' => Workflow::where('unit_id', $room->unit_id)->value('id') ?? 1,
                 'event_name' => "[MAINTENANCE HARD-LOCK] #$batchId",
                 'event_description' => $request->alasan,
                 'status' => 'Approved', // Otomatis disetujui agar langsung memblokir kalender
@@ -200,18 +203,20 @@ public function blockRoom(Request $request)
         return redirect()->back()->with('success', 'Jadwal ruangan berhasil diblokir secara Hard-Lock!');
     }
 
-    public function unblockRoom($eventName)
+    public function unblockRoom(Request $request): RedirectResponse
     {
+        $eventName = urldecode($request->input('event_name', ''));
+        $eventName = trim($eventName);
         $user = Auth::user();
-        
+
         // Ambil data untuk verifikasi (opsional, untuk pesan sukses)
         $blockings = Booking::where('event_name', $eventName)
-            ->whereHas('room', function($q) use ($user) {
+            ->whereHas('room', function ($q) use ($user) {
                 $q->where('unit_id', $user->unit_id);
             });
 
         $count = $blockings->count();
-        
+
         if ($count === 0) {
             return redirect()->back()->withErrors(['message' => 'Jadwal pemblokiran tidak ditemukan atau Anda tidak memiliki akses.']);
         }

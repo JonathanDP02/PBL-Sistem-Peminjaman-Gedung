@@ -214,8 +214,8 @@ describe('Booking Revision Feature', function () {
             "requirement_{$this->disposisiReq->id}" => UploadedFile::fake()->create('disposisi.pdf', 300),
         ]);
 
-        // Assert email queued ke approver
-        Mail::assertQueued(ApprovalNeededMail::class, function ($mail) {
+        // Assert email sent ke approver
+        Mail::assertSent(ApprovalNeededMail::class, function ($mail) {
             return $mail->hasTo($this->approver->email);
         });
     });
