@@ -2,12 +2,11 @@
 
 namespace Tests\Feature;
 
-use App\Models\Approval;
 use App\Models\Booking;
 use App\Models\BookingAttachment;
-use App\Models\Role;
+use App\Models\Room;
 use App\Models\User;
-use App\Models\WorkflowStep;
+use App\Models\Workflow;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -22,15 +21,15 @@ class ApproverWorkflowEnhancedTest extends TestCase
     {
         parent::setUp();
         $this->seed(DatabaseSeeder::class);
-        
+
         $this->approver = User::where('email', 'kaprodi.ti@spacein.test')->first();
         $this->borrower = User::where('email', 'user@spacein.test')->first();
-        
-        $this->room = \App\Models\Room::where('room_name', 'Ruang Kelas TI')->first(); 
-        $this->workflow = \App\Models\Workflow::where('name', 'Peminjaman JTI')->first();
-        
-        if (!$this->room || !$this->workflow) {
-            throw new \Exception("Room or Workflow not found in seeded data. Check DatabaseSeeder.");
+
+        $this->room = Room::where('room_name', 'Ruang Kelas TI')->first();
+        $this->workflow = Workflow::where('name', 'Peminjaman JTI')->first();
+
+        if (! $this->room || ! $this->workflow) {
+            throw new \Exception('Room or Workflow not found in seeded data. Check DatabaseSeeder.');
         }
     }
 
@@ -72,7 +71,7 @@ class ApproverWorkflowEnhancedTest extends TestCase
     public function test_borrower_revision_restores_booking_to_approver_pending_list()
     {
         Storage::fake('private');
-        
+
         // 1. Create a Revising booking (originally at step 2)
         $booking = Booking::create([
             'user_id' => $this->borrower->id,
@@ -96,7 +95,7 @@ class ApproverWorkflowEnhancedTest extends TestCase
             'event_name' => 'Updated Event Name',
             'event_description' => 'Updated Desc',
         ];
-        foreach($reqs as $req) {
+        foreach ($reqs as $req) {
             $params['requirement_'.$req->id] = UploadedFile::fake()->create('doc.pdf', 100);
         }
 
@@ -134,7 +133,7 @@ class ApproverWorkflowEnhancedTest extends TestCase
         ]);
 
         // 2. Check history page
-        $response = $this->actingAs($this->approver)->get(route('approver.riwayat'));
+        $response = $this->actingAs($this->approver)->get(route('riwayat'));
         $response->assertStatus(200);
         $response->assertSee('History Test Event');
         $response->assertSee('Sesuai prosedur.');
@@ -144,7 +143,7 @@ class ApproverWorkflowEnhancedTest extends TestCase
     public function test_approver_can_access_attachment_file()
     {
         Storage::fake('private');
-        
+
         // 1. Create booking and attachment
         $booking = Booking::create([
             'user_id' => $this->borrower->id,
@@ -160,7 +159,7 @@ class ApproverWorkflowEnhancedTest extends TestCase
 
         $file = UploadedFile::fake()->create('proposal.pdf', 50);
         $path = $file->store('attachments/'.$booking->id, 'private');
-        
+
         $attachment = BookingAttachment::create([
             'booking_id' => $booking->id,
             'uploader_id' => $this->borrower->id,
@@ -172,9 +171,9 @@ class ApproverWorkflowEnhancedTest extends TestCase
         // 2. Access via secure route as Approver
         $url = route('booking.attachment.show', ['id' => $booking->id, 'attachmentId' => $attachment->id]);
         $response = $this->actingAs($this->approver)->get($url);
-        
+
         $response->assertStatus(200);
-        // Sometimes fake storage returns application/x-empty or something else if content is small, 
+        // Sometimes fake storage returns application/x-empty or something else if content is small,
         // we just care it's 200 and not 403
     }
 }

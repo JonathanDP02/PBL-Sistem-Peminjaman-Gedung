@@ -1,0 +1,55 @@
+sequenceDiagram
+    actor Approver
+
+    participant Review as Review Pengajuan
+    participant System
+    participant DB as Database
+    participant PDF as PDF Generator
+
+    Approver->>Review: buka menu review pengajuan
+    Review->>System: request daftar pengajuan
+
+    System->>DB: ambil data pengajuan pending
+    DB-->>System: data pengajuan
+    System-->>Review: tampil daftar pengajuan
+
+    Approver->>Review: pilih pengajuan
+    Review->>System: request detail pengajuan
+
+    System->>DB: ambil detail pengajuan
+    DB-->>System: detail + dokumen
+    System-->>Review: tampil detail pengajuan
+
+    Approver->>Review: pilih Setuju / Tolak
+    Review->>System: kirim keputusan
+
+    alt Approver memilih Setuju
+
+        System->>DB: simpan persetujuan
+
+        alt Approver terakhir
+            System->>DB: ubah status Hard-Lock
+            System->>PDF: generate surat izin + QR
+            PDF-->>System: file PDF
+            System-->>Review: status berhasil disetujui
+        else Masih ada approver berikutnya
+            System->>DB: teruskan ke approver berikutnya
+            System-->>Review: pengajuan diteruskan
+        end
+
+    else Approver memilih Tolak
+
+        System-->>Review: minta alasan penolakan
+        Approver->>Review: isi alasan penolakan
+        Review->>System: kirim alasan
+
+        alt alasan diisi
+            System->>DB: simpan penolakan
+            System-->>Review: pengajuan ditolak
+        else alasan kosong
+            System-->>Review: tampil pesan error
+        end
+
+    end
+
+    Review-->>Approver: tampil halaman review

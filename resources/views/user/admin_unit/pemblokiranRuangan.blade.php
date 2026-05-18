@@ -196,9 +196,10 @@
                                     </div>
                                     
                                     <!-- Delete Button -->
-                                    <form action="{{ route('pemblokiran.destroy', urlencode($block->event_name)) }}" method="POST" onsubmit="return confirm('Batalkan pemblokiran ini? Seluruh jadwal dalam rentang waktu tersebut akan dibuka kembali.')" class="opacity-0 group-hover:opacity-100 transition-opacity pr-2">
+                                    <form action="{{ route('pemblokiran.destroy') }}" method="POST" onsubmit="return confirm('Batalkan pemblokiran ini? Seluruh jadwal dalam rentang waktu tersebut akan dibuka kembali.')" class="opacity-0 group-hover:opacity-100 transition-opacity pr-2">
                                         @csrf
                                         @method('DELETE')
+                                        <input type="hidden" name="event_name" value="{{ $block->event_name }}">
                                         <button type="submit" class="p-2 bg-red-50 dark:bg-red-500/10 text-red-500 dark:text-red-400 rounded-xl hover:bg-red-500 hover:text-white dark:hover:bg-red-500 dark:hover:text-white transition-all shadow-sm">
                                             <i class="ph-bold ph-trash"></i>
                                         </button>

@@ -177,6 +177,7 @@ Route::middleware('auth')->group(function () {
 
             $activeBlockings = $rawBlockings->groupBy('event_name')->map(function ($group) {
                 $first = $group->first();
+
                 return (object) [
                     'id' => $first->id,
                     'event_name' => $first->event_name,
@@ -185,7 +186,7 @@ Route::middleware('auth')->group(function () {
                     'start_date' => $group->min('booking_date'),
                     'end_date' => $group->max('booking_date'),
                     'is_range' => $group->count() > 1,
-                    'count' => $group->count()
+                    'count' => $group->count(),
                 ];
             })->take(5);
 
@@ -199,7 +200,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/rooms', [RoomController::class, 'store'])->name('rooms.store');
         Route::put('/rooms/{id}', [RoomController::class, 'update'])->name('rooms.update');
         Route::post('/pemblokiran-ruangan', [RoomController::class, 'blockRoom'])->name('pemblokiran.store');
-        Route::delete('/pemblokiran-ruangan/{eventName}', [RoomController::class, 'unblockRoom'])->name('pemblokiran.destroy');
+        Route::delete('/pemblokiran-ruangan', [RoomController::class, 'unblockRoom'])->name('pemblokiran.destroy');
 
         // Admin Unit API (Fetch/Async)
         Route::prefix('api')->group(function () {
@@ -225,7 +226,7 @@ Route::middleware('auth')->group(function () {
     });
 
     // --- APPROVER SECTION ---
-// --- APPROVER SECTION ---
+    // --- APPROVER SECTION ---
     Route::middleware('checkRole:Approver')->prefix('approver')->group(function () {
 
         Route::get('/meja-kerja', [ApprovalController::class, 'mejaKerja'])->name('meja-kerja');
