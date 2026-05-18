@@ -22,20 +22,33 @@ if (!function_exists('getPageTitle')) {
      * Get page title based on current route name
      * Mengambil dari route yang sedang aktif
      */
-    function getPageTitle()
+    function getPageTitle(): string
     {
         $titles = [
-            'admin.dashboard' => 'Dashboard',
-            'user.dashboard' => 'Dashboard',
-            'peminjam.booking' => 'Booking',
+            'dashboard' => 'Dashboard',
+            'ruangan' => 'Daftar Ruangan',
+            'booking' => 'Booking Ruangan',
             'jadwal-saya' => 'Jadwal Saya',
-            'riwayat' => 'Riwayat',
-            'profile.edit' => 'Profil',
-            'approve' => 'Persetujuan',
+            'riwayat' => 'Riwayat Peminjaman',
+            'peminjaman' => 'Permohonan Peminjaman',
+            'meja-kerja' => 'Meja Kerja',
+            'manajemenRuangan' => 'Manajemen Ruangan',
+            'pemblokiranRuangan' => 'Pemblokiran Ruangan',
+            'workflowsBuilder' => 'Workflow Builder',
+            'workflowsIndex' => 'Daftar Workflow',
+            'laporan' => 'Laporan Penggunaan',
+            'fasilitas' => 'Kelola Fasilitas',
+            'unit' => 'Kelola Unit',
+            'kelola-user' => 'Manajemen Pengguna',
+            'profile.edit' => 'Profil Saya',
+            'approvals.show' => 'Detail Persetujuan',
+            'booking.show' => 'Detail Peminjaman',
+            'detail' => 'Detail Booking',
+            'booking.validate' => 'Validasi Dokumen',
         ];
-        
+
         $currentRoute = Route::currentRouteName();
-        
+
         return $titles[$currentRoute] ?? 'Dashboard';
     }
 }

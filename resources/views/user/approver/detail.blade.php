@@ -97,22 +97,33 @@
                     @endif
                 </div>
 
-                <!-- Previous Approvals -->
-                @if($approval['previous_approvals'] && count($approval['previous_approvals']) > 0)
+                <!-- Approval History -->
+                @if($approval['approval_history'] && count($approval['approval_history']) > 0)
                     <div class="bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] rounded-2xl p-6">
-                        <h3 class="font-bold text-slate-900 dark:text-white text-sm mb-4">Persetujuan Sebelumnya</h3>
+                        <h3 class="font-bold text-slate-900 dark:text-white text-sm mb-4">Riwayat Persetujuan</h3>
                         <div class="space-y-4">
-                            @foreach($approval['previous_approvals'] as $prevApproval)
+                            @foreach($approval['approval_history'] as $hist)
                                 <div class="flex items-start gap-4 pb-4 border-b border-slate-200 dark:border-[#2A2A2A] last:border-0">
-                                    <div class="w-8 h-8 rounded-full bg-teal-100 dark:bg-[#2A2A2A] flex items-center justify-center shrink-0 mt-0.5">
-                                        <i class="ph-fill ph-check text-teal-600 dark:text-kinetic-primary text-sm"></i>
+                                    <div class="w-8 h-8 rounded-full {{ $hist['approval_status'] === 'Approved' ? 'bg-teal-100 dark:bg-emerald-500/10' : 'bg-red-100 dark:bg-red-500/10' }} flex items-center justify-center shrink-0 mt-0.5">
+                                        @if($hist['approval_status'] === 'Approved')
+                                            <i class="ph-fill ph-check text-teal-600 dark:text-emerald-500 text-sm"></i>
+                                        @else
+                                            <i class="ph-fill ph-x text-red-600 dark:text-red-500 text-sm"></i>
+                                        @endif
                                     </div>
-                                    <div>
-                                        <p class="text-sm font-bold text-slate-900 dark:text-white">{{ $prevApproval['position'] }}</p>
-                                        <p class="text-xs text-slate-500 dark:text-gray-500">Oleh {{ $prevApproval['approver_name'] }}</p>
-                                        <p class="text-[10px] text-slate-400 dark:text-gray-500 mt-1">Disetujui pada {{ $prevApproval['approved_at_formatted'] }}</p>
-                                        @if($prevApproval['notes'])
-                                            <p class="text-xs text-slate-600 dark:text-gray-400 italic mt-1">{{ $prevApproval['notes'] }}</p>
+                                    <div class="flex-1">
+                                        <div class="flex justify-between items-start">
+                                            <div>
+                                                <p class="text-sm font-bold text-slate-900 dark:text-white">{{ $hist['position'] }}</p>
+                                                <p class="text-xs text-slate-500 dark:text-gray-500">Oleh {{ $hist['approver_name'] }}</p>
+                                            </div>
+                                            <span class="px-2 py-0.5 rounded text-[10px] font-bold {{ $hist['approval_status'] === 'Approved' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700' }}">
+                                                {{ $hist['approval_status'] }}
+                                            </span>
+                                        </div>
+                                        <p class="text-[10px] text-slate-400 dark:text-gray-500 mt-1">Pada {{ $hist['approved_at_formatted'] }}</p>
+                                        @if($hist['notes'])
+                                            <p class="text-xs text-slate-600 dark:text-gray-400 italic mt-1 p-2 bg-slate-50 dark:bg-[#1A1A1A] rounded-lg">"{{ $hist['notes'] }}"</p>
                                         @endif
                                     </div>
                                 </div>
@@ -161,7 +172,7 @@
                             <i class="ph-bold ph-x-circle mr-2"></i>Tolak/Revisi
                         </button>
                         <button onclick="submitApprove()" class="w-full py-3 rounded-xl bg-teal-600 dark:bg-kinetic-primary text-white dark:text-[#151515] font-bold text-sm hover:bg-teal-700 dark:hover:bg-[#2dd4bf] transition-colors shadow-[0_4px_12px_rgba(20,184,166,0.2)]">
-                            <i class="ph-bold ph-check-circle mr-2"></i>Setujui Sekarang
+                            <i class="ph-bold ph-check-circle mr-2"></i>{{ ($approval['booking']['revision_count'] ?? 0) > 0 ? 'Setujui Revisi' : 'Setujui Sekarang' }}
                         </button>
                     </div>
 
@@ -179,9 +190,14 @@
             <!-- Modal Header -->
             <div class="flex items-center justify-between p-6 border-b border-slate-200 dark:border-[#2A2A2A]">
                 <h3 id="documentTitle" class="font-bold text-slate-900 dark:text-white">Dokumen</h3>
-                <button onclick="closeDocumentModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-gray-300 transition-colors">
-                    <i class="ph-bold ph-x text-2xl"></i>
-                </button>
+                <div class="flex items-center gap-4">
+                    <a id="downloadBtn" href="" download class="text- kinetic-primary hover:text-teal-600 transition-colors">
+                        <i class="ph-bold ph-download-simple text-2xl"></i>
+                    </a>
+                    <button onclick="closeDocumentModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-gray-300 transition-colors">
+                        <i class="ph-bold ph-x text-2xl"></i>
+                    </button>
+                </div>
             </div>
 
             <!-- Modal Body -->
@@ -222,7 +238,8 @@
     <script>
         function viewDocument(filePath, fileName) {
             document.getElementById('documentTitle').textContent = fileName;
-            document.getElementById('documentFrame').src = '/' + filePath;
+            document.getElementById('documentFrame').src = filePath;
+            document.getElementById('downloadBtn').href = filePath;
             document.getElementById('documentModal').classList.remove('hidden');
         }
 

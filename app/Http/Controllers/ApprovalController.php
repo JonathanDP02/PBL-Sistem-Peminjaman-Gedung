@@ -6,6 +6,7 @@ use App\Models\Booking;
 use App\Models\BookingAttachment;
 use App\Models\BookingLog;
 use App\Models\WorkflowStep;
+use App\Models\Unit;
 use App\Services\LoggerService;
 use App\Services\WorkflowService;
 use Illuminate\Http\JsonResponse;
@@ -37,7 +38,7 @@ class ApprovalController extends Controller
             'approvals.approver.position',
             'approvals.step',
         ])
-            ->whereIn('status', ['Pending', 'Revising'])
+            ->where('status', 'Pending')
             ->whereHas('workflow.steps', function ($q) use ($positionId) {
                 $q->where('position_id', $positionId)
                     ->whereColumn('step_order', 'bookings.current_step');
@@ -68,17 +69,18 @@ class ApprovalController extends Controller
             ->where('position_id', $positionId)
             ->first();
 
-        $previousApprovals = $booking->approvals
-            ->where('step_id', '<', $currentStep?->id)
+        $approvalHistory = $booking->approvals
             ->sortBy('created_at')
             ->map(function ($approval) {
                 return [
-                    'step_order' => $approval->step->step_order,
-                    'position' => $approval->step->position->name ?? null,
-                    'approver_name' => $approval->approver->name,
+                    'step_order' => $approval->step->step_order ?? null,
+                    'position' => $approval->step->position->name ?? 'System',
+                    'approver_name' => $approval->approver->name ?? 'System',
                     'approval_status' => ucfirst($approval->approval_status),
-                    'approved_at' => $approval->approved_at->toIso8601String(),
+                    'approved_at' => $approval->created_at->toIso8601String(),
+                    'approved_at_formatted' => $approval->created_at->format('d M Y, H:i'),
                     'notes' => $approval->notes,
+                    'attempt' => $approval->attempt ?? 1,
                 ];
             })
             ->values();
@@ -88,7 +90,7 @@ class ApprovalController extends Controller
                 'id' => $attachment->id,
                 'document_name' => $attachment->document_name,
                 'document_type' => $attachment->document_type,
-                'file_path' => $attachment->file_path,
+                'file_path' => route('booking.attachment.show', ['id' => $booking->id, 'attachmentId' => $attachment->id]),
                 'file_size' => $this->formatFileSize($attachment->file_size ?? 0),
                 'uploaded_at' => $attachment->created_at->toIso8601String(),
                 'uploaded_by' => $booking->user->name,
@@ -144,7 +146,7 @@ class ApprovalController extends Controller
                 'requires_attachment' => (bool) $currentStep?->requires_attachment,
                 'attachment_type' => $currentStep?->attachment_type ?? null,
             ],
-            'previous_approvals' => $previousApprovals,
+            'approval_history' => $approvalHistory,
             'documents_uploaded' => $documentsUploaded,
             'priority_indicator' => $this->calculatePriority($booking),
             'time_remaining' => $this->calculateTimeRemaining($booking),
@@ -419,7 +421,7 @@ class ApprovalController extends Controller
             'approvals.approver.position',
             'approvals.step',
         ])
-            ->whereIn('status', ['Pending', 'Revising'])
+            ->where('status', 'Pending')
             ->whereHas('workflow.steps', function ($q) use ($positionId) {
                 $q->where('position_id', $positionId)
                     ->whereColumn('step_order', 'bookings.current_step');
@@ -465,13 +467,17 @@ class ApprovalController extends Controller
      * GET /meja-kerja
      * Render Meja Kerja (Work Desk) view with all pending approvals for current approver
      */
-    public function mejaKerja(Request $request)
+public function mejaKerja(Request $request)
     {
         $approver = Auth::user();
         $positionId = $approver->position_id;
 
-        // Fetch all pending approvals (sama seperti API index tapi render sebagai view)
-        $bookings = Booking::with([
+        // 1. Ambil input filter
+        $search = $request->input('search');
+        $unitFilter = $request->input('unit_id');
+
+        // 2. Query dasar pengajuan pending sesuai posisi pejabat
+        $query = Booking::with([
             'room.building',
             'user.unit',
             'workflow.steps.position',
@@ -479,33 +485,56 @@ class ApprovalController extends Controller
             'approvals.approver.position',
             'approvals.step',
         ])
-            ->whereIn('status', ['Pending', 'Revising'])
-            ->whereHas('workflow.steps', function ($q) use ($positionId) {
-                $q->where('position_id', $positionId)
-                    ->whereColumn('step_order', 'bookings.current_step');
-            })
-            ->orderBy('created_at', 'desc')
-            ->get();
+        ->where('status', 'Pending')
+        ->whereHas('workflow.steps', function ($q) use ($positionId) {
+            $q->where('position_id', $positionId)
+                ->whereColumn('step_order', 'bookings.current_step');
+        });
 
-        // Transform ke format approval response
+        // 3. Logika Pencarian (Event, Peminjam, atau Ruangan)
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('event_name', 'ilike', "%$search%")
+                  ->orWhereHas('user', function($qu) use ($search) {
+                      $qu->where('name', 'ilike', "%$search%");
+                  })
+                  ->orWhereHas('room', function($qr) use ($search) {
+                      $qr->where('room_name', 'ilike', "%$search%");
+                  });
+            });
+        }
+
+        // 4. Logika Filter Berdasarkan Unit
+        if ($unitFilter) {
+            $query->whereHas('user', function($q) use ($unitFilter) {
+                $q->where('unit_id', $unitFilter);
+            });
+        }
+
+        $bookings = $query->orderBy('created_at', 'desc')->get();
+
+        // 5. Transformasi data ke format yang dibutuhkan Blade
         $approvals = $bookings->map(function ($booking) use ($positionId) {
             return $this->formatApprovalResponse($booking, $positionId);
         });
 
-        // Calculate summary stats
+        // 6. Hitung Statistik untuk Dashboard Meja Kerja
         $stats = [
             'pending_count' => $approvals->count(),
             'urgent_count' => $approvals->filter(fn ($a) => $a['priority_indicator'] === 'urgent')->count(),
             'high_count' => $approvals->filter(fn ($a) => $a['priority_indicator'] === 'high')->count(),
         ];
 
+        // 7. Ambil daftar unit untuk Dropdown (FIX: Pakai unit_name)
+        $units = Unit::orderBy('unit_name', 'asc')->get();
+
         return view('user.approver.meja-kerja', [
             'approvals' => $approvals->values(),
             'stats' => $stats,
             'approver' => $approver,
+            'units' => $units,
         ]);
     }
-
     /**
      * GET /approver/approvals/{id}
      * Show detail view for single approval/booking
@@ -537,10 +566,65 @@ class ApprovalController extends Controller
         // Format approval response
         $approval = $this->formatApprovalResponse($booking, $positionId);
 
+        if (request()->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'data' => $approval
+            ]);
+        }
+
         return view('user.approver.detail', [
             'approval' => $approval,
             'booking' => $booking,
             'approver' => $approver,
+        ]);
+    }
+
+    /**
+     * GET /approver/history
+     * Show history of approvals/rejections by this approver
+     */
+    public function history(Request $request)
+    {
+        $approver = Auth::user();
+        
+        // 1. Ambil input dari request
+        $search = $request->input('search');
+        $unitFilter = $request->input('unit_id');
+
+        // 2. Query dasar: Hanya ambil riwayat milik Pejabat yang sedang login
+        $query = Approval::with(['booking.room.building', 'booking.user.unit', 'step.position'])
+            ->where('approver_id', $approver->id);
+
+        // 3. Logika SEARCH (Nama Event, Nama Peminjam, atau Nama Ruangan)
+        if ($search) {
+            $query->whereHas('booking', function($q) use ($search) {
+                $q->where('event_name', 'ilike', "%$search%")
+                ->orWhereHas('user', function($qu) use ($search) {
+                    $qu->where('name', 'ilike', "%$search%");
+                })
+                ->orWhereHas('room', function($qr) use ($search) {
+                    $qr->where('room_name', 'ilike', "%$search%");
+                });
+            });
+        }
+
+        // 4. Logika FILTER UNIT (Berdasarkan unit asal peminjam)
+        if ($unitFilter) {
+            $query->whereHas('booking.user', function($q) use ($unitFilter) {
+                $q->where('unit_id', $unitFilter);
+            });
+        }
+
+        // 5. Eksekusi Paginate
+        $approvals = $query->orderBy('created_at', 'desc')->paginate(10);
+
+        // 6. Ambil daftar unit untuk dropdown (Fix column: unit_name)
+        $units = \App\Models\Unit::orderBy('unit_name', 'asc')->get();
+
+        return view('user.approver.riwayat', [
+            'approvals' => $approvals,
+            'units' => $units
         ]);
     }
 }

@@ -13,7 +13,7 @@ use Illuminate\Queue\SerializesModels;
 
 class BookingSubmittedMail extends Mailable
 {
-    use Queueable, SerializesModels;
+    use SerializesModels;
 
     public $booking;
 

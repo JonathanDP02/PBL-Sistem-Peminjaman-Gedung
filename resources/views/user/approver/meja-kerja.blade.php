@@ -5,16 +5,40 @@
             <div>
                 <h1 class="font-heading text-4xl font-extrabold text-slate-900 dark:text-white mb-2">Meja Kerja</h1>
                 <p class="text-sm text-slate-500 dark:text-gray-400">
-                    Anda memiliki <span class="text-teal-600 dark:text-kinetic-primary font-bold">4 pengajuan</span> yang butuh tinjauan segera.
+                    Anda memiliki <span class="text-teal-600 dark:text-kinetic-primary font-bold">{{ count($approvals) }} pengajuan</span> yang butuh tinjauan segera.
                 </p>
             </div>
             
-            <div class="flex items-center gap-4 w-full md:w-auto">
-                <div class="relative w-full md:w-72">
-                    <i class="ph ph-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                    <input type="text" placeholder="Cari pemohon atau ruangan..." 
-                        class="w-full pl-11 pr-4 py-2.5 bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] rounded-xl text-sm text-slate-900 dark:text-white focus:ring-teal-500 focus:border-teal-500 dark:focus:ring-kinetic-primary dark:focus:border-kinetic-primary transition-colors placeholder:text-slate-400 dark:placeholder:text-gray-600">
-                </div>
+            <div class="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
+                <form action="{{ route('meja-kerja') }}" method="GET" class="flex flex-col md:flex-row gap-3 w-full">
+                    
+                    <div class="relative w-full md:w-48">
+                        <select name="unit_id" onchange="this.form.submit()" 
+                            class="w-full pl-4 pr-10 py-2.5 bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] rounded-xl text-sm text-slate-700 dark:text-white focus:ring-teal-500 outline-none appearance-none transition-colors">
+                            <option value="">Semua Unit</option>
+                            @foreach($units as $unit)
+                                <option value="{{ $unit->id }}" {{ request('unit_id') == $unit->id ? 'selected' : '' }}>
+                                    {{ $unit->unit_name }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <i class="ph ph-caret-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
+                    </div>
+
+                    <div class="relative w-full md:w-72">
+                        <i class="ph ph-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="text" name="search" value="{{ request('search') }}" 
+                            placeholder="Cari pemohon atau ruangan..." 
+                            class="w-full pl-11 pr-4 py-2.5 bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] rounded-xl text-sm text-slate-900 dark:text-white focus:ring-teal-500 focus:border-teal-500 transition-colors placeholder:text-slate-400 dark:placeholder:text-gray-600">
+                    </div>
+
+                    @if(request('search') || request('unit_id'))
+                        <a href="{{ route('meja-kerja') }}" class="flex items-center justify-center px-4 py-2.5 text-xs font-bold text-red-500 hover:text-red-600 transition-colors">
+                            Reset
+                        </a>
+                    @endif
+                </form>
+
                 <button class="w-11 h-11 shrink-0 flex items-center justify-center bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] hover:bg-slate-50 dark:hover:bg-[#1A1A1A] rounded-xl text-slate-600 dark:text-gray-400 transition-colors relative">
                     <i class="ph ph-bell text-xl"></i>
                     <span class="absolute top-3 right-3 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-[#151515]"></span>
@@ -55,6 +79,7 @@
                         <tr class="border-b border-slate-200 dark:border-[#2A2A2A]">
                             <th class="px-2 pb-4 text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest">Nama Event</th>
                             <th class="px-6 pb-4 text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest">Peminjam</th>
+                            <th class="px-6 pb-4 text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest">Tipe</th>
                             <th class="px-6 pb-4 text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest">Ruangan</th>
                             <th class="px-6 pb-4 text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest">Waktu Digunakan</th>
                             <th class="px-6 pb-4 text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest text-center">Aksi</th>
@@ -80,6 +105,17 @@
                                     </div>
                                 </td>
                                 <td class="px-6 py-5">
+                                    @if(($approval['booking']['revision_count'] ?? 0) > 0)
+                                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700 border border-amber-200 uppercase tracking-wider">
+                                            Revisi #{{ $approval['booking']['revision_count'] }}
+                                        </span>
+                                    @else
+                                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-700 border border-blue-200 uppercase tracking-wider">
+                                            Baru
+                                        </span>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-5">
                                     <div class="flex items-center gap-2">
                                         <span class="w-1.5 h-1.5 rounded-full {{ $approval['priority_indicator'] === 'urgent' ? 'bg-red-500' : ($approval['priority_indicator'] === 'high' ? 'bg-yellow-500' : 'bg-green-500') }} shadow-[0_0_5px_rgba(20,184,166,0.5)]"></span>
                                         <span class="text-sm font-bold text-slate-700 dark:text-gray-300">{{ $approval['room']['room_name'] }}</span>
@@ -97,7 +133,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="px-6 py-8 text-center">
+                                <td colspan="6" class="px-6 py-8 text-center">
                                     <p class="text-sm text-slate-500 dark:text-gray-400">Tidak ada permintaan tertunda</p>
                                 </td>
                             </tr>

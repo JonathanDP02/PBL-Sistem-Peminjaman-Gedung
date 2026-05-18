@@ -368,106 +368,106 @@ class DatabaseSeeder extends Seeder
         // Generate bookings & approvals untuk dashboard test
         // ═══════════════════════════════════════════════════════
 
-        // Get users & rooms untuk factory
-        $peminjam = User::where('email', 'user@spacein.test')->first();
-        $approverKaprodi = User::where('email', 'kaprodi.ti@spacein.test')->first();
-        $approverKajur = User::where('email', 'kajur.ti@spacein.test')->first();
-        $ruangKelas = Room::where('room_name', 'Ruang Kelas TI')->first();
+    //     // Get users & rooms untuk factory
+    //     $peminjam = User::where('email', 'user@spacein.test')->first();
+    //     $approverKaprodi = User::where('email', 'kaprodi.ti@spacein.test')->first();
+    //     $approverKajur = User::where('email', 'kajur.ti@spacein.test')->first();
+    //     $ruangKelas = Room::where('room_name', 'Ruang Kelas TI')->first();
 
-        // 1. Create 3 bookings pending di Kaprodi (Step 1)
-        $step1JTI = WorkflowStep::where('workflow_id', $wfJTI->id)->where('step_order', 1)->first();
-        for ($i = 0; $i < 3; $i++) {
-            $booking = Booking::factory()->create([
-                'user_id' => $peminjam->id,
-                'room_id' => $ruangKelas->id,
-                'workflow_id' => $wfJTI->id,
-                'current_step' => 1,
-                'status' => 'Pending',
-            ]);
+    //     // 1. Create 3 bookings pending di Kaprodi (Step 1)
+    //     $step1JTI = WorkflowStep::where('workflow_id', $wfJTI->id)->where('step_order', 1)->first();
+    //     for ($i = 0; $i < 3; $i++) {
+    //         $booking = Booking::factory()->create([
+    //             'user_id' => $peminjam->id,
+    //             'room_id' => $ruangKelas->id,
+    //             'workflow_id' => $wfJTI->id,
+    //             'current_step' => 1,
+    //             'status' => 'Pending',
+    //         ]);
 
-            Approval::create([
-                'booking_id' => $booking->id,
-                'approver_id' => $approverKaprodi->id,
-                'step_id' => $step1JTI->id,
-                'approval_status' => 'Pending',
-                'attempt' => 1,
-            ]);
-        }
+    //         Approval::create([
+    //             'booking_id' => $booking->id,
+    //             'approver_id' => $approverKaprodi->id,
+    //             'step_id' => $step1JTI->id,
+    //             'approval_status' => 'Pending',
+    //             'attempt' => 1,
+    //         ]);
+    //     }
 
-        // 2. Create 2 bookings pending di Kajur (Step 2)
-        $step2JTI = WorkflowStep::where('workflow_id', $wfJTI->id)->where('step_order', 2)->first();
-        for ($i = 0; $i < 2; $i++) {
-            $booking = Booking::factory()->create([
-                'user_id' => $peminjam->id,
-                'room_id' => $ruangKelas->id,
-                'workflow_id' => $wfJTI->id,
-                'current_step' => 2,
-                'status' => 'Pending',
-            ]);
+    //     // 2. Create 2 bookings pending di Kajur (Step 2)
+    //     $step2JTI = WorkflowStep::where('workflow_id', $wfJTI->id)->where('step_order', 2)->first();
+    //     for ($i = 0; $i < 2; $i++) {
+    //         $booking = Booking::factory()->create([
+    //             'user_id' => $peminjam->id,
+    //             'room_id' => $ruangKelas->id,
+    //             'workflow_id' => $wfJTI->id,
+    //             'current_step' => 2,
+    //             'status' => 'Pending',
+    //         ]);
 
-            // Approved by Kaprodi
-            Approval::create([
-                'booking_id' => $booking->id,
-                'approver_id' => $approverKaprodi->id,
-                'step_id' => $step1JTI->id,
-                'approval_status' => 'Approved',
-                'approved_at' => now()->subDay(),
-                'attempt' => 1,
-            ]);
+    //         // Approved by Kaprodi
+    //         Approval::create([
+    //             'booking_id' => $booking->id,
+    //             'approver_id' => $approverKaprodi->id,
+    //             'step_id' => $step1JTI->id,
+    //             'approval_status' => 'Approved',
+    //             'approved_at' => now()->subDay(),
+    //             'attempt' => 1,
+    //         ]);
 
-            // Pending at Kajur
-            Approval::create([
-                'booking_id' => $booking->id,
-                'approver_id' => $approverKajur->id,
-                'step_id' => $step2JTI->id,
-                'approval_status' => 'Pending',
-                'attempt' => 1,
-            ]);
-        }
+    //         // Pending at Kajur
+    //         Approval::create([
+    //             'booking_id' => $booking->id,
+    //             'approver_id' => $approverKajur->id,
+    //             'step_id' => $step2JTI->id,
+    //             'approval_status' => 'Pending',
+    //             'attempt' => 1,
+    //         ]);
+    //     }
 
-        // 3. Create approved booking (Hard-Lock)
-        $approvedBooking = Booking::factory()->create([
-            'user_id' => $peminjam->id,
-            'room_id' => $ruangKelas->id,
-            'workflow_id' => $wfJTI->id,
-            'status' => 'Approved',
-            'current_step' => 4, // Step setelah Wadir
-        ]);
+    //     // 3. Create approved booking (Hard-Lock)
+    //     $approvedBooking = Booking::factory()->create([
+    //         'user_id' => $peminjam->id,
+    //         'room_id' => $ruangKelas->id,
+    //         'workflow_id' => $wfJTI->id,
+    //         'status' => 'Approved',
+    //         'current_step' => 4, // Step setelah Wadir
+    //     ]);
 
-        foreach ($wfJTI->steps as $step) {
-            $approverId = match ($step->step_order) {
-                1 => $approverKaprodi->id,
-                2 => $approverKajur->id,
-                3 => User::where('email', 'wadir@spacein.test')->first()->id,
-            };
+    //     foreach ($wfJTI->steps as $step) {
+    //         $approverId = match ($step->step_order) {
+    //             1 => $approverKaprodi->id,
+    //             2 => $approverKajur->id,
+    //             3 => User::where('email', 'wadir@spacein.test')->first()->id,
+    //         };
 
-            Approval::create([
-                'booking_id' => $approvedBooking->id,
-                'approver_id' => $approverId,
-                'step_id' => $step->id,
-                'approval_status' => 'Approved',
-                'approved_at' => now()->subDays(4 - $step->step_order),
-                'attempt' => 1,
-            ]);
-        }
+    //         Approval::create([
+    //             'booking_id' => $approvedBooking->id,
+    //             'approver_id' => $approverId,
+    //             'step_id' => $step->id,
+    //             'approval_status' => 'Approved',
+    //             'approved_at' => now()->subDays(4 - $step->step_order),
+    //             'attempt' => 1,
+    //         ]);
+    //     }
 
-        // 4. Create rejected/revising booking
-        $revisingBooking = Booking::factory()->create([
-            'user_id' => $peminjam->id,
-            'room_id' => $ruangKelas->id,
-            'workflow_id' => $wfJTI->id,
-            'status' => 'Revising',
-            'current_step' => 1,
-            'revision_count' => 1,
-        ]);
+    //     // 4. Create rejected/revising booking
+    //     $revisingBooking = Booking::factory()->create([
+    //         'user_id' => $peminjam->id,
+    //         'room_id' => $ruangKelas->id,
+    //         'workflow_id' => $wfJTI->id,
+    //         'status' => 'Revising',
+    //         'current_step' => 1,
+    //         'revision_count' => 1,
+    //     ]);
 
-        Approval::create([
-            'booking_id' => $revisingBooking->id,
-            'approver_id' => $approverKaprodi->id,
-            'step_id' => $step1JTI->id,
-            'approval_status' => 'Rejected',
-            'notes' => 'Dokumen lampiran kurang jelas, mohon upload ulang.',
-            'attempt' => 1,
-        ]);
+    //     Approval::create([
+    //         'booking_id' => $revisingBooking->id,
+    //         'approver_id' => $approverKaprodi->id,
+    //         'step_id' => $step1JTI->id,
+    //         'approval_status' => 'Rejected',
+    //         'notes' => 'Dokumen lampiran kurang jelas, mohon upload ulang.',
+    //         'attempt' => 1,
+    //     ]);
     }
 }
