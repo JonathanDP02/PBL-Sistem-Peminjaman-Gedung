@@ -11,6 +11,7 @@ use App\Http\Controllers\BookingPdfController;
 use App\Http\Controllers\BookingValidationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoomController;
+use App\Http\Controllers\UnitController;
 use App\Models\Booking;
 use App\Models\BookingLog;
 use App\Models\Building;
@@ -144,11 +145,14 @@ Route::middleware('auth')->group(function () {
     });
 
     // --- SHARED ADMIN API (SuperAdmin & Admin_Unit) ---
-    Route::middleware('checkRole:SuperAdmin,Admin_Unit')->prefix('admin/api')->group(function () {
-        Route::apiResource('users', UserController::class);
-        Route::get('/units', [UserController::class, 'getUnitsDropdown']);
-        Route::get('/roles', [UserController::class, 'getRolesDropdown']);
-        Route::get('/positions', [UserController::class, 'getPositionsDropdown']);
+Route::middleware('checkRole:SuperAdmin')->prefix('superadmin')->group(function () {
+        Route::get('/fasilitas', fn () => view('user.superadmin.fasilitas'))->name('fasilitas');
+        
+        // Rute Unit yang sudah diperbarui menggunakan Controller
+        Route::get('/unit', [UnitController::class, 'index'])->name('unit');
+        Route::post('/unit', [UnitController::class, 'store'])->name('unit.store');
+        
+        Route::post('/user', [UserController::class, 'store'])->name('tambah-user.store');
     });
 
     // --- ADMIN UNIT SECTION ---
