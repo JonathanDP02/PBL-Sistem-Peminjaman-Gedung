@@ -47,9 +47,20 @@
             </div>
 
             <div>
-                <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">Deskripsi / Fasilitas</label>
-                <!-- Tambahkan name="description" -->
-                <input type="text" id="editFasilitas" name="description" placeholder="Contoh: Proyektor, AC, Papan Tulis" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-kinetic-primary transition-colors">
+                <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">Deskripsi Ruangan</label>
+                <input type="text" id="editDeskripsi" name="description" placeholder="Contoh: Ruang rapat VVIP" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-kinetic-primary transition-colors">
+            </div>
+
+            <div class="pt-2">
+                <div class="flex justify-between items-center mb-2">
+                    <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest">Detail Fasilitas (Inventaris)</label>
+                    <button type="button" onclick="addFacilityRow('edit')" class="text-xs font-bold text-teal-600 dark:text-teal-400 hover:underline flex items-center gap-1">
+                        <i class="ph-bold ph-plus"></i> Tambah Item
+                    </button>
+                </div>
+                
+                <div id="container-fasilitas-edit" class="space-y-3 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
+                    </div>
             </div>
 
             <div class="flex gap-3 pt-4 border-t border-slate-200 dark:border-[#2A2A2A] mt-6">
