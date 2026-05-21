@@ -1,5 +1,15 @@
 <x-app-layout>
-    <div class="bg-slate-50 dark:bg-[#0f0f0f] min-h-screen py-12 text-slate-800 dark:text-[#e5e5e5] font-sans transition-colors duration-300">
+    <div class="bg-slate-50 dark:bg-[#0f0f0f] min-h-screen py-12 text-slate-800 dark:text-[#e5e5e5] font-sans transition-colors duration-300 relative">
+        
+        @if(session('success'))
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-4">
+            <div class="bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 p-4 rounded-xl text-sm font-bold flex items-center gap-2">
+                <i class="ph-fill ph-check-circle text-lg"></i>
+                {{ session('success') }}
+            </div>
+        </div>
+        @endif
+
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex flex-col md:flex-row justify-between items-start gap-6 mb-8">
                 <div>
@@ -9,96 +19,101 @@
                 </div>
 
                 <div class="flex flex-col sm:flex-row items-stretch gap-3">
-                    <button type="button" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-kinetic-primary px-6 py-3 text-sm font-semibold text-white transition hover:bg-teal-600 dark:hover:bg-kinetic-secondary">
+                    <button onclick="document.getElementById('modalTambah').classList.remove('hidden')" type="button" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-teal-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-teal-700">
                         <i class="ph-bold ph-plus"></i>
                         Tambah Fasilitas
                     </button>
-                    <button type="button" class="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-300 bg-white dark:border-kinetic-border dark:bg-slate-950 px-6 py-3 text-sm font-semibold text-slate-800 dark:text-white transition hover:border-cyan-400 hover:text-cyan-600 dark:hover:border-kinetic-secondary/60 dark:hover:text-kinetic-secondary">
-                        <i class="ph-bold ph-faders-horizontal"></i>
-                        Filter
-                    </button>
+                    
+                    <form action="{{ route('fasilitas') }}" method="GET" class="relative inline-flex items-center">
+                        <i class="ph-bold ph-faders-horizontal absolute left-4 text-slate-400 pointer-events-none z-10"></i>
+                        
+                        <select name="status" onchange="this.form.submit()" 
+                            class="pl-11 pr-10 py-3 bg-white dark:bg-[#151515] border border-slate-300 dark:border-[#2A2A2A] rounded-2xl text-sm font-semibold text-slate-800 dark:text-white appearance-none outline-none focus:border-teal-500 transition-colors cursor-pointer w-full sm:w-44">
+                            <option value="">Semua Status</option>
+                            <option value="Tersedia" {{ request('status') == 'Tersedia' ? 'selected' : '' }}>Tersedia</option>
+                            <option value="Dipakai" {{ request('status') == 'Dipakai' ? 'selected' : '' }}>Dipakai</option>
+                            <option value="Maintenance" {{ request('status') == 'Maintenance' ? 'selected' : '' }}>Maintenance</option>
+                            <option value="Rusak" {{ request('status') == 'Rusak' ? 'selected' : '' }}>Rusak</option>
+                        </select>
+                        
+                        <i class="ph-bold ph-caret-down absolute right-4 text-slate-400 pointer-events-none z-10"></i>
+                    </form>
+
+                    @if(request('status'))
+                        <a href="{{ route('fasilitas') }}" class="flex items-center justify-center text-xs font-bold text-red-500 hover:text-red-600 transition-colors px-2">
+                            Reset
+                        </a>
+                    @endif
                 </div>
             </div>
 
             <div class="grid grid-cols-1 xl:grid-cols-[1.8fr_1fr] gap-6">
                 <div class="space-y-6">
                     <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
-                        <div class="rounded-3xl border border-slate-200 dark:border-kinetic-border bg-white dark:bg-[#161616] p-6 shadow-sm dark:shadow-none">
-                            <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-slate-400 dark:text-gray-500 mb-4">Total Fasilitas</p>
-                            <h2 class="text-3xl font-bold text-slate-900 dark:text-white">128</h2>
-                            <p class="mt-3 text-sm text-slate-500 dark:text-gray-400">Semua item fasilitas dalam inventaris.</p>
+                        <div class="rounded-3xl border border-slate-200 dark:border-[#2A2A2A] bg-white dark:bg-[#151515] p-6 shadow-sm dark:shadow-none">
+                            <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-slate-400 dark:text-gray-500 mb-4">Total Unit</p>
+                            <h2 class="text-3xl font-bold text-slate-900 dark:text-white">{{ $totalFasilitas ?? 0 }}</h2>
                         </div>
-
-                        <div class="rounded-3xl border border-slate-200 dark:border-kinetic-border bg-white dark:bg-[#161616] p-6 shadow-sm dark:shadow-none">
+                        <div class="rounded-3xl border border-slate-200 dark:border-[#2A2A2A] bg-white dark:bg-[#151515] p-6 shadow-sm dark:shadow-none">
                             <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-slate-400 dark:text-gray-500 mb-4">Kategori</p>
-                            <h2 class="text-3xl font-bold text-slate-900 dark:text-white">5</h2>
-                            <p class="mt-3 text-sm text-slate-500 dark:text-gray-400">Audio, Visual, Furnitur, IT, Keamanan.</p>
+                            <h2 class="text-3xl font-bold text-slate-900 dark:text-white">{{ $kategoriCount ?? 0 }}</h2>
                         </div>
-
-                        <div class="rounded-3xl border border-slate-200 dark:border-kinetic-border bg-white dark:bg-[#161616] p-6 shadow-sm dark:shadow-none">
+                        <div class="rounded-3xl border border-slate-200 dark:border-[#2A2A2A] bg-white dark:bg-[#151515] p-6 shadow-sm dark:shadow-none">
                             <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-slate-400 dark:text-gray-500 mb-4">Tersedia</p>
-                            <h2 class="text-3xl font-bold text-slate-900 dark:text-white">102</h2>
-                            <p class="mt-3 text-sm text-slate-500 dark:text-gray-400">Siap dipakai untuk pemesanan ruangan.</p>
+                            <h2 class="text-3xl font-bold text-teal-600 dark:text-[#2dd4bf]">{{ $tersedia ?? 0 }}</h2>
                         </div>
-
-                        <div class="rounded-3xl border border-slate-200 dark:border-kinetic-border bg-white dark:bg-[#161616] p-6 shadow-sm dark:shadow-none">
+                        <div class="rounded-3xl border border-slate-200 dark:border-[#2A2A2A] bg-white dark:bg-[#151515] p-6 shadow-sm dark:shadow-none">
                             <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-slate-400 dark:text-gray-500 mb-4">Perlu Servis</p>
-                            <h2 class="text-3xl font-bold text-slate-900 dark:text-white">8</h2>
-                            <p class="mt-3 text-sm text-slate-500 dark:text-gray-400">Fasilitas dalam status maintenance atau rusak.</p>
+                            <h2 class="text-3xl font-bold text-red-500">{{ $maintenance ?? 0 }}</h2>
                         </div>
                     </div>
 
-                    <div class="rounded-[2rem] border border-slate-200 dark:border-kinetic-border bg-white dark:bg-[#161616] shadow-sm dark:shadow-none overflow-hidden">
+                    <div class="rounded-[2rem] border border-slate-200 dark:border-[#2A2A2A] bg-white dark:bg-[#151515] shadow-sm dark:shadow-none overflow-hidden">
                         <div class="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
                             <div>
                                 <h2 class="text-lg font-bold text-slate-900 dark:text-white">Daftar Fasilitas</h2>
-                                <p class="mt-1 text-sm text-slate-500 dark:text-gray-400">Kelola item fasilitas bersama status dan lokasi ruangannya.</p>
-                            </div>
-                            <div class="inline-flex items-center gap-3 rounded-2xl bg-slate-50 dark:bg-[#111111] px-4 py-3 border border-slate-200 dark:border-kinetic-border">
-                                <span class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 dark:text-gray-400">Sort</span>
-                                <select class="bg-transparent outline-none text-sm text-slate-900 dark:text-white">
-                                    <option>Terbaru</option>
-                                    <option>Kategori</option>
-                                    <option>Status</option>
-                                </select>
                             </div>
                         </div>
 
                         <div class="overflow-x-auto">
                             <table class="min-w-full text-left text-sm text-slate-600 dark:text-slate-300">
-                                <thead class="border-b border-slate-200 dark:border-kinetic-border bg-slate-50 dark:bg-[#111111] text-slate-500 dark:text-slate-400">
+                                <thead class="border-b border-slate-200 dark:border-[#2A2A2A] bg-slate-50 dark:bg-[#111111] text-slate-500">
                                     <tr>
                                         <th class="px-6 py-4 font-semibold">Fasilitas</th>
                                         <th class="px-6 py-4 font-semibold">Kategori</th>
-                                        <th class="px-6 py-4 font-semibold">Lokasi</th>
-                                        <th class="px-6 py-4 font-semibold">Jumlah</th>
+                                        <th class="px-6 py-4 font-semibold">Lokasi Ruang</th>
+                                        <th class="px-6 py-4 font-semibold text-center">Jumlah</th>
                                         <th class="px-6 py-4 font-semibold">Status</th>
                                         <th class="px-6 py-4 font-semibold">Aksi</th>
                                     </tr>
                                 </thead>
-                                <tbody class="divide-y divide-slate-200 dark:divide-kinetic-border/70">
-                                    @foreach ([
-                                        ['name' => 'Proyektor Laser', 'category' => 'Visual', 'location' => 'Ruang Rapat 01', 'count' => '4 unit', 'status' => 'Tersedia'],
-                                        ['name' => 'Microphone Wireless', 'category' => 'Audio', 'location' => 'Auditorium', 'count' => '12 unit', 'status' => 'Tersedia'],
-                                        ['name' => 'Speaker Portable', 'category' => 'Audio', 'location' => 'Lab Komputer', 'count' => '6 unit', 'status' => 'Maintenance'],
-                                        ['name' => 'Kursi Lipat', 'category' => 'Furnitur', 'location' => 'Gedung A', 'count' => '30 unit', 'status' => 'Tersedia'],
-                                        ['name' => 'Laptop Presenter', 'category' => 'IT', 'location' => 'Ruang Seminar', 'count' => '8 unit', 'status' => 'Dipakai'],
-                                    ] as $item)
+                                <tbody class="divide-y divide-slate-200 dark:divide-[#2A2A2A]">
+                                    @forelse($facilities as $item)
                                         <tr class="hover:bg-slate-50 dark:hover:bg-[#111111] transition-colors">
-                                            <td class="px-6 py-4 font-semibold text-slate-900 dark:text-white">{{ $item['name'] }}</td>
-                                            <td class="px-6 py-4">{{ $item['category'] }}</td>
-                                            <td class="px-6 py-4">{{ $item['location'] }}</td>
-                                            <td class="px-6 py-4">{{ $item['count'] }}</td>
+                                            <td class="px-6 py-4 font-bold text-slate-900 dark:text-white">{{ $item->name }}</td>
+                                            <td class="px-6 py-4">{{ $item->category }}</td>
+                                            <td class="px-6 py-4">{{ $item->room->room_name ?? '-' }}</td>
+                                            <td class="px-6 py-4 text-center">{{ $item->quantity }} unit</td>
                                             <td class="px-6 py-4">
-                                                <span class="inline-flex rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.24em] {{ $item['status'] === 'Tersedia' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300' : ($item['status'] === 'Maintenance' ? 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300' : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300') }}">
-                                                    {{ $item['status'] }}
+                                                @php
+                                                    $bg = 'bg-slate-100 text-slate-700';
+                                                    if($item->status == 'Tersedia') $bg = 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400';
+                                                    elseif(in_array($item->status, ['Maintenance', 'Rusak'])) $bg = 'bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400';
+                                                    elseif($item->status == 'Dipakai') $bg = 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400';
+                                                @endphp
+                                                <span class="inline-flex rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-widest {{ $bg }}">
+                                                    {{ $item->status }}
                                                 </span>
                                             </td>
                                             <td class="px-6 py-4">
-                                                <button type="button" class="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-kinetic-border dark:bg-[#111111] dark:text-slate-300 dark:hover:bg-slate-900">Edit</button>
+                                                <button class="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 dark:border-[#333] dark:bg-[#222] dark:text-white">Edit</button>
                                             </td>
                                         </tr>
-                                    @endforeach
+                                    @empty
+                                        <tr>
+                                            <td colspan="6" class="px-6 py-8 text-center text-slate-500 italic">Belum ada data fasilitas tersimpan.</td>
+                                        </tr>
+                                    @endforelse
                                 </tbody>
                             </table>
                         </div>
@@ -106,38 +121,92 @@
                 </div>
 
                 <aside class="space-y-6">
-                    <div class="rounded-[2rem] border border-slate-200 dark:border-kinetic-border bg-white dark:bg-[#161616] shadow-sm dark:shadow-none p-6">
+                    <div class="rounded-[2rem] border border-slate-200 dark:border-[#2A2A2A] bg-white dark:bg-[#151515] shadow-sm p-6">
                         <h2 class="text-lg font-bold text-slate-900 dark:text-white">Status Kategori</h2>
-                        <p class="mt-2 text-sm text-slate-500 dark:text-gray-400">Ringkasan kondisi fasilitas per kategori.</p>
                         <div class="mt-6 space-y-4">
-                            @foreach ([
-                                ['label' => 'Audio', 'value' => '34', 'color' => 'bg-cyan-500/10 text-cyan-600'],
-                                ['label' => 'Visual', 'value' => '22', 'color' => 'bg-emerald-500/10 text-emerald-600'],
-                                ['label' => 'IT', 'value' => '18', 'color' => 'bg-indigo-500/10 text-indigo-600'],
-                            ] as $status)
-                                <div class="rounded-3xl bg-slate-50 dark:bg-[#111111] p-4 border border-slate-200 dark:border-kinetic-border">
+                            @php $colors = ['bg-cyan-500/10 text-cyan-600', 'bg-emerald-500/10 text-emerald-600', 'bg-indigo-500/10 text-indigo-600', 'bg-amber-500/10 text-amber-600']; @endphp
+                            @forelse($kategoriStats as $index => $stat)
+                                <div class="rounded-3xl bg-slate-50 dark:bg-[#111111] p-4 border border-slate-200 dark:border-[#2A2A2A]">
                                     <div class="flex items-center justify-between gap-4">
                                         <div>
-                                            <p class="text-sm font-semibold text-slate-900 dark:text-white">{{ $status['label'] }}</p>
-                                            <p class="text-xs text-slate-500 dark:text-gray-400 mt-1">{{ $status['value'] }} item</p>
+                                            <p class="text-sm font-semibold text-slate-900 dark:text-white">{{ $stat->category }}</p>
+                                            <p class="text-xs text-slate-500 mt-1">{{ $stat->total }} unit total</p>
                                         </div>
-                                        <span class="inline-flex rounded-full px-3 py-1 text-xs font-semibold {{ $status['color'] }}">Aktif</span>
+                                        <span class="inline-flex rounded-full px-3 py-1 text-xs font-semibold {{ $colors[$index % 4] }}">Aktif</span>
                                     </div>
                                 </div>
-                            @endforeach
+                            @empty
+                                <p class="text-xs text-slate-500 italic">Belum ada kategori terdaftar.</p>
+                            @endforelse
                         </div>
                     </div>
 
-                    <div class="rounded-[2rem] border border-slate-200 dark:border-kinetic-border bg-slate-50 dark:bg-[#111111] p-6 shadow-sm dark:shadow-none">
-                        <h2 class="text-lg font-bold text-slate-900 dark:text-white">Perhatian</h2>
+                    <div class="rounded-[2rem] border border-slate-200 dark:border-[#2A2A2A] bg-slate-50 dark:bg-[#111111] p-6 shadow-sm">
+                        <h2 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                            <i class="ph-fill ph-warning-circle text-amber-500"></i> Perhatian
+                        </h2>
                         <ul class="mt-4 space-y-4 text-sm text-slate-500 dark:text-gray-400">
-                            <li class="flex gap-3"><span class="mt-1 inline-flex h-2.5 w-2.5 rounded-full bg-amber-500"></span>4 proyektor akan masuk jadwal maintenance besok.</li>
-                            <li class="flex gap-3"><span class="mt-1 inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500"></span>Microphone wireless siap digunakan untuk acara besar.</li>
-                            <li class="flex gap-3"><span class="mt-1 inline-flex h-2.5 w-2.5 rounded-full bg-red-500"></span>2 laptop presenter rusak dan sedang diperbaiki.</li>
+                            @forelse($perhatian as $p)
+                                <li class="flex gap-3">
+                                    <span class="mt-1.5 inline-flex h-2 w-2 rounded-full shrink-0 {{ $p->status == 'Rusak' ? 'bg-red-500' : 'bg-amber-500' }}"></span>
+                                    <span>{{ $p->quantity }} {{ $p->name }} di {{ $p->room->room_name ?? '-' }} statusnya <strong class="{{ $p->status == 'Rusak' ? 'text-red-500' : 'text-amber-500' }}">{{ $p->status }}</strong>.</span>
+                                </li>
+                            @empty
+                                <li class="text-emerald-500 italic text-xs"><i class="ph-bold ph-check"></i> Semua fasilitas dalam kondisi baik!</li>
+                            @endforelse
                         </ul>
                     </div>
                 </aside>
             </div>
         </div>
+
+        <div id="modalTambah" class="hidden fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm flex items-center justify-center">
+            <div class="bg-white dark:bg-[#151515] rounded-3xl border border-slate-200 dark:border-[#2A2A2A] w-full max-w-lg p-6 md:p-8 relative shadow-2xl">
+                <button onclick="document.getElementById('modalTambah').classList.add('hidden')" class="absolute top-6 right-6 text-slate-400 hover:text-slate-600 dark:hover:text-white">
+                    <i class="ph-bold ph-x text-xl"></i>
+                </button>
+                <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-6">Tambah Inventaris Baru</h3>
+                
+                <form action="{{ route('fasilitas.store') }}" method="POST" class="space-y-4">
+                    @csrf
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Nama Barang</label>
+                        <input type="text" name="name" required class="w-full rounded-xl bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333] px-4 py-3 text-sm dark:text-white">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Kategori</label>
+                            <input type="text" name="category" placeholder="Contoh: IT, Audio..." required class="w-full rounded-xl bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333] px-4 py-3 text-sm dark:text-white">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Jumlah Unit</label>
+                            <input type="number" name="quantity" min="1" value="1" required class="w-full rounded-xl bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333] px-4 py-3 text-sm dark:text-white">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Lokasi Ruangan</label>
+                        <select name="room_id" required class="w-full rounded-xl bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333] px-4 py-3 text-sm dark:text-white">
+                            <option value="">-- Pilih Ruangan --</option>
+                            @foreach($rooms as $r)
+                                <option value="{{ $r->id }}">{{ $r->room_name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Status Kondisi</label>
+                        <select name="status" required class="w-full rounded-xl bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333] px-4 py-3 text-sm dark:text-white">
+                            <option value="Tersedia">Tersedia (Siap Pakai)</option>
+                            <option value="Dipakai">Sedang Dipakai</option>
+                            <option value="Maintenance">Maintenance / Servis</option>
+                            <option value="Rusak">Rusak</option>
+                        </select>
+                    </div>
+                    <div class="pt-4 mt-4 border-t border-slate-100 dark:border-[#2A2A2A] flex justify-end">
+                        <button type="submit" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-6 rounded-xl transition-colors">Simpan Fasilitas</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
     </div>
 </x-app-layout>

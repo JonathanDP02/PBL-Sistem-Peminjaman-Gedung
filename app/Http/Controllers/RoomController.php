@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Booking;
 use App\Models\Room;
 use App\Models\Workflow;
+use App\Models\Facility;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -27,57 +28,88 @@ class RoomController extends Controller
     {
         $user = Auth::user();
 
-        // Validasi input
+        // Validasi input (description tetap dipertahankan)
         $validated = $request->validate([
             'building_id' => 'required',
             'room_name' => 'required',
             'capacity' => 'required|integer',
-            'description' => 'nullable',
-            // unit_id must be provided unless the user is Admin_Unit (we'll auto-assign their unit)
+            'description' => 'nullable', // <- TETAP ADA
             'unit_id' => $user->role->name === 'Admin_Unit' ? 'nullable' : 'required',
         ]);
 
-        // Atur unit_id sesuai role
         if ($user->role->name === 'Admin_Unit') {
             $validated['unit_id'] = $user->unit_id;
         }
 
-        if ($user->role->name === 'SuperAdmin' && ! $request->unit_id) {
-            return redirect()->back()->withErrors(['unit_id' => 'unit_id wajib untuk SuperAdmin']);
+        $room = Room::create($validated);
+
+        // PROSES SIMPAN FASILITAS (Tabel Terpisah)
+        if ($request->has('facilities')) {
+            foreach ($request->facilities as $fac) {
+                if (!empty($fac['name']) && $fac['quantity'] > 0) {
+                    \App\Models\Facility::create([
+                        'room_id' => $room->id,
+                        'name' => $fac['name'],
+                        'category' => $this->getFacilityCategory($fac['name']),
+                        'quantity' => $fac['quantity'],
+                        'status' => 'Tersedia',
+                    ]);
+                }
+            }
         }
 
-        // Buat ruangan
-        Room::create($validated);
-
-        // Kembali ke halaman sebelumnya karena disubmit via form HTML
-        return redirect()->back()->with('success', 'Ruangan berhasil ditambahkan!');
+        return redirect()->back()->with('success', 'Ruangan dan fasilitas berhasil ditambahkan');
     }
 
     public function update(Request $request, $id)
     {
-        $user = Auth::user();
         $room = Room::findOrFail($id);
+        
+        $validated = $request->validate([
+            'building_id' => 'required',
+            'room_name' => 'required',
+            'capacity' => 'required|integer',
+            'description' => 'nullable', // <- TETAP ADA
+        ]);
 
-        // Authorization check
-        if ($user->role->name === 'Admin_Unit') {
-            if ($room->unit_id != $user->unit_id) {
-                abort(403, 'Unauthorized');
+        $room->update($validated);
+
+        // Hapus fasilitas lama, masukkan yang baru
+        if ($request->has('facilities')) {
+            \App\Models\Facility::where('room_id', $room->id)->delete();
+            foreach ($request->facilities as $fac) {
+                if (!empty($fac['name']) && $fac['quantity'] > 0) {
+                    \App\Models\Facility::create([
+                        'room_id' => $room->id,
+                        'name' => $fac['name'],
+                        'category' => $this->getFacilityCategory($fac['name']),
+                        'quantity' => $fac['quantity'],
+                        'status' => 'Tersedia',
+                    ]);
+                }
             }
         }
 
-        // Validasi input
-        $validated = $request->validate([
-            'building_id' => 'required|exists:buildings,id',
-            'room_name' => 'required|string|max:255',
-            'capacity' => 'required|integer|min:1',
-            'description' => 'nullable|string',
-        ]);
+        return redirect()->back()->with('success', 'Data ruangan berhasil diperbarui');
+    }
 
-        // Update ruangan
-        $room->update($validated);
+    // (Fungsi show dan getFacilityCategory tetap sama seperti jawaban saya sebelumnya)
 
-        // Kembali ke halaman sebelumnya karena disubmit via form HTML
-        return redirect()->back()->with('success', 'Ruangan berhasil diperbarui!');
+    // Pastikan API/Method yang dipanggil oleh modal Edit mengambil data fasilitas juga
+    public function show($id)
+    {
+        // Ganti dengan method API kamu yang mereturn JSON untuk modal edit
+        $room = Room::with('facilities')->findOrFail($id);
+        return response()->json($room);
+    }
+
+    // Helper untuk auto-kategori
+    private function getFacilityCategory($name) {
+        if (in_array($name, ['Proyektor Laser', 'Layar Proyektor'])) return 'Visual';
+        if (in_array($name, ['Microphone Wireless', 'Speaker Portable'])) return 'Audio';
+        if (in_array($name, ['AC', 'Kursi Lipat', 'Meja', 'Papan Tulis'])) return 'Furnitur';
+        if (in_array($name, ['Laptop Presenter', 'PC Lab'])) return 'IT';
+        return 'Lainnya';
     }
 
     public function destroy(Request $request, $id)
