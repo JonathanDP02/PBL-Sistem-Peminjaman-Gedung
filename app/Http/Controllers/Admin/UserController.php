@@ -17,7 +17,7 @@ class UserController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-        $query = User::with(['role', 'unit', 'position']);
+        $baseQuery = User::with(['role', 'unit', 'position']);
 
         if ($user->role->name !== 'SuperAdmin') {
             // Admin_Unit dapat melihat users dari unit mereka dan semua unit anak
@@ -26,24 +26,52 @@ class UserController extends Controller
                 ->pluck('id')
                 ->toArray();
 
-            $query->whereIn('unit_id', $allowedUnitIds);
+            $baseQuery->whereIn('unit_id', $allowedUnitIds);
         }
 
-        $users = $query->orderBy('name')->paginate(15);
-
-        $superAdminCount = (clone $query)->whereHas('role', fn($q) => $q->where('name', 'SuperAdmin'))->count();
-        $unitAdminCount = (clone $query)->whereHas('role', fn($q) => $q->where('name', 'Admin_Unit'))->count();
+        // Hitung statistik global berdasarkan unit yang boleh diakses (sebelum filter pencarian/saringan)
+        $superAdminCount = (clone $baseQuery)->whereHas('role', fn($q) => $q->where('name', 'SuperAdmin'))->count();
+        $unitAdminCount = (clone $baseQuery)->whereHas('role', fn($q) => $q->where('name', 'Admin_Unit'))->count();
         
-        $activeNow = (clone $query)->join('sessions', 'users.id', '=', 'sessions.user_id')
+        $activeNow = (clone $baseQuery)->join('sessions', 'users.id', '=', 'sessions.user_id')
             ->where('sessions.last_activity', '>=', now()->subMinutes(15)->getTimestamp())
             ->distinct()
             ->count('users.id');
+
+        // Terapkan filter pencarian, unit, level, dan role ke query utama
+        $query = clone $baseQuery;
+
+        if ($request->filled('search')) {
+            $query->where('name', 'ilike', '%' . $request->query('search') . '%');
+        }
+
+        if ($request->filled('unit_id')) {
+            $query->where('unit_id', $request->query('unit_id'));
+        }
+
+        if ($request->filled('level')) {
+            $query->whereHas('unit', function ($q) use ($request) {
+                $q->where('level', $request->query('level'));
+            });
+        }
+
+        if ($request->filled('role_id')) {
+            $query->where('role_id', $request->query('role_id'));
+        }
+
+        // Pengurutan Nama (A-Z / Z-A)
+        $sort = $request->query('sort_name', 'asc');
+        if (!in_array($sort, ['asc', 'desc'])) {
+            $sort = 'asc';
+        }
+
+        $users = $query->orderBy('name', $sort)->paginate(10);
         
         return response()->json([
             'success' => true,
             'data' => $users,
             'stats' => [
-                'total' => $users->total(),
+                'total' => (clone $baseQuery)->count(), // Total user global dalam scope
                 'super_admin' => $superAdminCount,
                 'unit_admin' => $unitAdminCount,
                 'active_now' => $activeNow,

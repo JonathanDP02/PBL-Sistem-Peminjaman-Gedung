@@ -5,11 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\Booking;
 use App\Models\Room;
 use App\Models\Workflow;
-use App\Models\Facility;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class RoomController extends Controller
 {
@@ -28,88 +28,69 @@ class RoomController extends Controller
     {
         $user = Auth::user();
 
-        // Validasi input (description tetap dipertahankan)
+        // Validasi input (description tetap dipertahankan, tambah image)
         $validated = $request->validate([
             'building_id' => 'required',
             'room_name' => 'required',
             'capacity' => 'required|integer',
-            'description' => 'nullable', // <- TETAP ADA
+            'description' => 'nullable',
             'unit_id' => $user->role->name === 'Admin_Unit' ? 'nullable' : 'required',
+            'workflow_id' => 'nullable|exists:workflows,id',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ]);
 
         if ($user->role->name === 'Admin_Unit') {
             $validated['unit_id'] = $user->unit_id;
         }
 
-        $room = Room::create($validated);
-
-        // PROSES SIMPAN FASILITAS (Tabel Terpisah)
-        if ($request->has('facilities')) {
-            foreach ($request->facilities as $fac) {
-                if (!empty($fac['name']) && $fac['quantity'] > 0) {
-                    \App\Models\Facility::create([
-                        'room_id' => $room->id,
-                        'name' => $fac['name'],
-                        'category' => $this->getFacilityCategory($fac['name']),
-                        'quantity' => $fac['quantity'],
-                        'status' => 'Tersedia',
-                    ]);
-                }
-            }
+        // Proses upload gambar
+        if ($request->hasFile('image')) {
+            $validated['image'] = $request->file('image')->store('rooms', 'public');
         }
 
-        return redirect()->back()->with('success', 'Ruangan dan fasilitas berhasil ditambahkan');
+        $room = Room::create($validated);
+
+        return redirect()->back()->with('success', 'Ruangan berhasil ditambahkan');
     }
 
     public function update(Request $request, $id)
     {
         $room = Room::findOrFail($id);
-        
-        $validated = $request->validate([
+
+        $validationRules = [
             'building_id' => 'required',
             'room_name' => 'required',
             'capacity' => 'required|integer',
-            'description' => 'nullable', // <- TETAP ADA
-        ]);
+            'description' => 'nullable',
+            'workflow_id' => 'nullable|exists:workflows,id',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+        ];
+
+        if (Auth::user()->role->name === 'SuperAdmin') {
+            $validationRules['unit_id'] = 'required|exists:units,id';
+        }
+
+        $validated = $request->validate($validationRules);
+
+        // Proses upload gambar baru
+        if ($request->hasFile('image')) {
+            // Hapus gambar lama jika ada
+            if ($room->image) {
+                Storage::disk('public')->delete($room->image);
+            }
+            $validated['image'] = $request->file('image')->store('rooms', 'public');
+        }
 
         $room->update($validated);
-
-        // Hapus fasilitas lama, masukkan yang baru
-        if ($request->has('facilities')) {
-            \App\Models\Facility::where('room_id', $room->id)->delete();
-            foreach ($request->facilities as $fac) {
-                if (!empty($fac['name']) && $fac['quantity'] > 0) {
-                    \App\Models\Facility::create([
-                        'room_id' => $room->id,
-                        'name' => $fac['name'],
-                        'category' => $this->getFacilityCategory($fac['name']),
-                        'quantity' => $fac['quantity'],
-                        'status' => 'Tersedia',
-                    ]);
-                }
-            }
-        }
 
         return redirect()->back()->with('success', 'Data ruangan berhasil diperbarui');
     }
 
-    // (Fungsi show dan getFacilityCategory tetap sama seperti jawaban saya sebelumnya)
-
-    // Pastikan API/Method yang dipanggil oleh modal Edit mengambil data fasilitas juga
     public function show($id)
     {
-        // Ganti dengan method API kamu yang mereturn JSON untuk modal edit
-        $room = Room::with('facilities')->findOrFail($id);
-        return response()->json($room);
-    }
+        $room = Room::findOrFail($id);
 
-    // Helper untuk auto-kategori
-    private function getFacilityCategory($name) {
-        if (in_array($name, ['Proyektor Laser', 'Layar Proyektor'])) return 'Visual';
-        if (in_array($name, ['Microphone Wireless', 'Speaker Portable'])) return 'Audio';
-        if (in_array($name, ['AC', 'Kursi Lipat', 'Meja', 'Papan Tulis'])) return 'Furnitur';
-        if (in_array($name, ['Laptop Presenter', 'PC Lab'])) return 'IT';
-        return 'Lainnya';
+        return response()->json($room);
     }
 
     public function destroy(Request $request, $id)
@@ -135,6 +116,10 @@ class RoomController extends Controller
             ], 422);
         }
 
+        if ($room->image) {
+            Storage::disk('public')->delete($room->image);
+        }
+
         $room->delete();
 
         // Mengembalikan JSON karena disubmit via JavaScript (Fetch)
@@ -146,7 +131,8 @@ class RoomController extends Controller
         $room = Room::with([
             'building',
             'unit',
-            'bookings.workflow',
+            'workflow.steps.position',
+            'workflow.requirements',
         ])->findOrFail($id);
 
         return response()->json($room);
