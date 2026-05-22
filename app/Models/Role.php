@@ -20,10 +20,5 @@ class Role extends Model
     {
         return $this->hasMany(User::class);
     }
-
-    public function facilities()
-    {
-        return $this->hasMany(Facility::class, 'room_id');
-    }
 }
 

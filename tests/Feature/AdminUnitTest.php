@@ -62,6 +62,30 @@ it('allows admin_unit to access pemblokiran ruangan via web', function () {
 
 // --- API ROUTES TESTING ---
 
+it('allows admin_unit to get filtered positions via api', function () {
+    // Create units
+    $pusatUnit = Unit::create(['unit_name' => 'Pusat Test', 'level' => 'Pusat']);
+    $otherUnit = Unit::create(['unit_name' => 'Other Jurusan', 'level' => 'Jurusan']);
+
+    // Create positions
+    $pusatPos = Position::create(['name' => 'Wadir Pusat', 'unit_id' => $pusatUnit->id]);
+    $localPos = Position::create(['name' => 'Kaprodi Local', 'unit_id' => $this->jurusanTI->id]);
+    $otherPos = Position::create(['name' => 'Kaprodi Other', 'unit_id' => $otherUnit->id]);
+
+    $response = $this->actingAs($this->adminUnit)->getJson('/admin_unit/api/positions');
+
+    $response->assertStatus(200);
+    $data = $response->json('data');
+
+    $names = collect($data)->pluck('name')->toArray();
+
+    // Harus memuat posisi dari unit Pusat dan Unit lokal (jurusanTI)
+    expect($names)->toContain('Wadir Pusat');
+    expect($names)->toContain('Kaprodi Local');
+    // Dan tidak boleh memuat posisi dari unit lain yang tidak relevan (otherUnit)
+    expect($names)->not->toContain('Kaprodi Other');
+});
+
 it('allows admin_unit to get workflows via api', function () {
     $response = $this->actingAs($this->adminUnit)->getJson('/admin_unit/api/workflows');
     $response->assertStatus(200);
