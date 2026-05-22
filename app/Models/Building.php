@@ -13,6 +13,7 @@ class Building extends Model
     protected $fillable = [
         'building_name',
         'location',
+        'image',
     ];
 
     public function rooms(): HasMany
