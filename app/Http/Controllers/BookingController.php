@@ -8,10 +8,11 @@ use App\Models\Booking;
 use App\Models\BookingAttachment;
 use App\Models\BookingLog;
 use App\Models\Building;
+use App\Models\Room;
+use App\Models\User;
 use App\Models\Workflow;
 use App\Models\WorkflowRequirement;
 use App\Models\WorkflowStep;
-use App\Models\User;
 use App\Services\LoggerService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -39,11 +40,15 @@ class BookingController extends Controller
 
     public function showBookingForm()
     {
-        // Mengambil data gedung beserta relasi ruangannya
-        $buildings = \App\Models\Building::with('rooms.unit')->get();
+        // Mengambil data gedung beserta relasi ruangan, unit, dan alur kerjanya
+        $buildings = Building::with([
+            'rooms.unit',
+            'rooms.workflow.steps.position',
+            'rooms.workflow.requirements',
+        ])->get();
 
         // Mengambil data alur (workflow) beserta langkah dan syaratnya
-        $workflows = \App\Models\Workflow::with(['steps.position', 'requirements'])->get();
+        $workflows = Workflow::with(['steps.position', 'requirements'])->get();
 
         // Mengirimkan variabel $buildings dan $workflows ke halaman view
         return view('user.peminjam.booking', compact('buildings', 'workflows'));
@@ -60,13 +65,21 @@ class BookingController extends Controller
     {
         $validated = $request->validate([
             'room_id' => 'required|exists:rooms,id',
-            'workflow_id' => 'required|exists:workflows,id',
             'event_name' => 'required|string|max:200',
             'event_description' => 'nullable|string',
             'booking_date' => 'required|date|after_or_equal:today',
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'required|date_format:H:i|after:start_time',
         ]);
+
+        $room = Room::findOrFail($validated['room_id']);
+        if (! $room->workflow_id) {
+            return response()->json([
+                'error' => "Ruangan '{$room->room_name}' belum memiliki alur persetujuan (workflow) yang dikonfigurasi. Silakan hubungi pengelola unit.",
+            ], 422);
+        }
+
+        $validated['workflow_id'] = $room->workflow_id;
 
         // Cek mandatory requirements sebelum transaksi
         $mandatoryRequirements = WorkflowRequirement::where('workflow_id', $validated['workflow_id'])
@@ -153,19 +166,19 @@ class BookingController extends Controller
 
                 if ($currentStep) {
                     $approvers = User::where('position_id', $currentStep->position_id)->get();
-                    \Log::info('Attempting to send email to ' . $approvers->count() . ' approvers for booking #' . $booking->id);
+                    \Log::info('Attempting to send email to '.$approvers->count().' approvers for booking #'.$booking->id);
                     foreach ($approvers as $approver) {
                         Mail::to($approver->email)->send(new ApprovalNeededMail($booking, $approver));
-                        \Log::info('Email sent to approver: ' . $approver->email);
+                        \Log::info('Email sent to approver: '.$approver->email);
                     }
                 }
 
-                \Log::info('Attempting to send confirmation email to borrower: ' . Auth::user()->email);
+                \Log::info('Attempting to send confirmation email to borrower: '.Auth::user()->email);
                 Mail::to(Auth::user()->email)->send(new BookingSubmittedMail($booking));
                 \Log::info('Confirmation email sent to borrower.');
             } catch (\Exception $e) {
                 // Log mail error but don't fail the request
-                \Log::error('Mail Error (Booking #' . $booking->id . '): ' . $e->getMessage());
+                \Log::error('Mail Error (Booking #'.$booking->id.'): '.$e->getMessage());
                 \Log::error($e->getTraceAsString());
             }
 
@@ -182,7 +195,7 @@ class BookingController extends Controller
 
         } catch (\Throwable $e) {
             return response()->json([
-                'error' => 'Gagal membuat booking: ' . $e->getMessage()
+                'error' => 'Gagal membuat booking: '.$e->getMessage(),
             ], 409);
         }
     }
@@ -286,20 +299,20 @@ class BookingController extends Controller
 
                 if ($currentStep) {
                     $approvers = User::where('position_id', $currentStep->position_id)->get();
-                    \Log::info('Attempting to send revision email to ' . $approvers->count() . ' approvers for booking #' . $booking->id);
+                    \Log::info('Attempting to send revision email to '.$approvers->count().' approvers for booking #'.$booking->id);
                     foreach ($approvers as $approver) {
                         Mail::to($approver->email)->send(new ApprovalNeededMail($booking, $approver));
-                        \Log::info('Revision email sent to approver: ' . $approver->email);
+                        \Log::info('Revision email sent to approver: '.$approver->email);
                     }
                 }
             } catch (\Exception $e) {
                 // Log mail error but don't fail the request
-                \Log::error('Mail Error (Revision #' . $booking->id . '): ' . $e->getMessage());
+                \Log::error('Mail Error (Revision #'.$booking->id.'): '.$e->getMessage());
                 \Log::error($e->getTraceAsString());
             }
         } catch (\Throwable $e) {
             return response()->json([
-                'error' => 'Gagal mengirim revisi: ' . $e->getMessage()
+                'error' => 'Gagal mengirim revisi: '.$e->getMessage(),
             ], 409);
         }
 
@@ -312,18 +325,18 @@ class BookingController extends Controller
         $month = request('month', now()->month);
         $year = request('year', now()->year);
 
-        $startOfMonth = \Carbon\Carbon::createFromDate($year, $month, 1)->startOfDay();
+        $startOfMonth = Carbon::createFromDate($year, $month, 1)->startOfDay();
         $endOfMonth = $startOfMonth->clone()->endOfMonth()->endOfDay();
 
         // Ambil semua booking di bulan tersebut (untuk kalender umum)
-        $allBookings = \App\Models\Booking::with(['room', 'user'])
+        $allBookings = Booking::with(['room', 'user'])
             ->whereBetween('booking_date', [$startOfMonth, $endOfMonth])
             ->whereIn('status', ['Approved', 'Pending'])
             ->get();
 
         // Ambil booking khusus milik user yang sedang login (untuk statistik)
-        $userBookings = \App\Models\Booking::with('room')
-            ->where('user_id', \Illuminate\Support\Facades\Auth::id())
+        $userBookings = Booking::with('room')
+            ->where('user_id', Auth::id())
             ->whereBetween('booking_date', [$startOfMonth, $endOfMonth])
             ->whereIn('status', ['Approved', 'Pending'])
             ->get();
@@ -333,15 +346,15 @@ class BookingController extends Controller
         $complianceScore = 4.8; // Nilai default
 
         foreach ($userBookings as $booking) {
-            $start = \Carbon\Carbon::parse($booking->start_time);
-            $end = \Carbon\Carbon::parse($booking->end_time);
+            $start = Carbon::parse($booking->start_time);
+            $end = Carbon::parse($booking->end_time);
             $hours = $end->diffInHours($start);
             $hoursUsed += $hours;
         }
 
         // Kelompokkan booking berdasarkan ruangan dan tanggal untuk mempermudah render di kalender
         $bookingsByRoomAndDate = $allBookings->groupBy(function ($booking) {
-            return $booking->room_id . '_' . $booking->booking_date;
+            return $booking->room_id.'_'.$booking->booking_date;
         });
 
         return view('user.peminjam.jadwal-saya', [

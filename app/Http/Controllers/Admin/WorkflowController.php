@@ -125,7 +125,7 @@ class WorkflowController extends Controller
                 }
 
                 // 3. Simpan Tahapan (Dengan Logika Hierarki Level Anda)
-                if (!empty($validated['steps'])) {
+                if (! empty($validated['steps'])) {
                     $positionIds = collect($validated['steps'])->pluck('position_id');
                     $positions = Position::with('unit')->whereIn('id', $positionIds)->get()->keyBy('id');
 
@@ -139,6 +139,7 @@ class WorkflowController extends Controller
                     // Urutkan langkah berdasarkan level unit pejabat
                     $sortedSteps = collect($validated['steps'])->sortBy(function ($step) use ($positions, $levelScore) {
                         $unitLevel = $positions[$step['position_id']]->unit->level ?? 'Organisasi';
+
                         return $levelScore[$unitLevel] ?? 1;
                     })->values();
 
@@ -171,7 +172,20 @@ class WorkflowController extends Controller
      */
     public function getPositions()
     {
-        $positions = Position::select('id', 'name')->orderBy('name', 'asc')->get();
+        $user = Auth::user();
+
+        $positions = Position::query()
+            ->where(function ($query) use ($user) {
+                if ($user && $user->unit_id) {
+                    $query->where('unit_id', $user->unit_id);
+                }
+            })
+            ->orWhereHas('unit', function ($query) {
+                $query->where('level', 'Pusat');
+            })
+            ->orderBy('name', 'asc')
+            ->get(['id', 'name']);
+
         return response()->json(['data' => $positions]);
     }
 

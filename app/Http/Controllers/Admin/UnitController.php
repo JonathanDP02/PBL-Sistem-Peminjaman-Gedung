@@ -21,7 +21,7 @@ class UnitController extends Controller
             // SuperAdmin - tampilkan semua unit
             $units = Unit::with('parent', 'children')
                 ->orderBy('level')
-                ->orderBy('name')
+                ->orderBy('unit_name')
                 ->get();
         } elseif ($userUnit) {
             // Admin_Unit - tampilkan berdasarkan level
@@ -31,7 +31,7 @@ class UnitController extends Controller
                     ->where('id', $userUnit->id)  // Unit sendiri
                     ->orWhere('parent_id', $userUnit->id)  // Anak unit (level 3)
                     ->orderBy('level')
-                    ->orderBy('name')
+                    ->orderBy('unit_name')
                     ->get();
             } elseif ($userUnit->level === 'Organisasi') {
                 // Level 3 (Organisasi): tampilkan unit sendiri saja
@@ -113,8 +113,8 @@ class UnitController extends Controller
         // Validasi akses berdasarkan role dan level
         if ($user->role->name !== 'SuperAdmin') {
             $userUnit = $user->unit;
-            
-            if (!$userUnit) {
+
+            if (! $userUnit) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Anda tidak memiliki akses untuk mengedit unit ini.',
