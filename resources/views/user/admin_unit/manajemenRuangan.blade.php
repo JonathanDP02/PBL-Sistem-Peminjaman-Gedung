@@ -1,4 +1,4 @@
-﻿<x-app-layout>
+<x-app-layout>
     <div class="relative px-8 py-8 space-y-8 min-h-full">
         <div class="absolute top-0 right-0 w-96 h-96 bg-teal-100/30 dark:bg-kinetic-primary/10 rounded-full blur-[100px] pointer-events-none"></div>
 
@@ -73,6 +73,7 @@
                                 data-room-capacity="{{ $room->capacity }}" 
                                 data-room-building="{{ $room->building->building_name }}" 
                                 data-room-description="{{ $room->description }}" 
+                                data-room-workflow="{{ $room->workflow_id }}"
                                 data-room-facilities="{{ json_encode($room->facilities ?? []) }}"
                                 class="edit-btn inline-flex items-center justify-center rounded-full border border-teal-500/20 bg-teal-500/10 px-4 py-2 text-sm font-semibold text-teal-200 transition hover:bg-teal-500/20">
                                 Edit
@@ -165,6 +166,7 @@
                     const capacity = this.getAttribute('data-room-capacity');
                     const building = this.getAttribute('data-room-building');
                     const description = this.getAttribute('data-room-description');
+                    const workflowId = this.getAttribute('data-room-workflow');
                     
                     const facilitiesRaw = this.getAttribute('data-room-facilities');
                     let facilities = [];
@@ -174,7 +176,7 @@
                         console.error("Gagal parsing fasilitas", e);
                     }
                     
-                    openEditModal(roomId, roomName, capacity, building, description, facilities);
+                    openEditModal(roomId, roomName, capacity, building, description, facilities, workflowId);
                 });
             });
         });
@@ -197,7 +199,7 @@
             }, 300);
         }
 
-        function openEditModal(roomId, roomName, capacity, building, description, facilities = []) {
+        function openEditModal(roomId, roomName, capacity, building, description, facilities = [], workflowId = '') {
             const modal = document.getElementById('modalEditRuang');
             
             const formEdit = document.getElementById('formEditRuangan');
@@ -222,6 +224,11 @@
                         break;
                     }
                 }
+            }
+            
+            const workflowSelect = document.getElementById('editWorkflowId');
+            if(workflowSelect) {
+                workflowSelect.value = workflowId || '';
             }
 
             const containerEdit = document.getElementById('container-fasilitas-edit');

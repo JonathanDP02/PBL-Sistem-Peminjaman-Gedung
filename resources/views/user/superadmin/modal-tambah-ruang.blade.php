@@ -12,7 +12,7 @@
         </div>
 
         <!-- 1. Tambahkan action URL dan method POST -->
-        <form action="/admin_unit/rooms" method="POST" enctype="multipart/form-data" class="space-y-5">
+        <form action="/superadmin/rooms" method="POST" enctype="multipart/form-data" class="space-y-5">
             
             <!-- 2. Wajib tambahkan CSRF token untuk keamanan Laravel -->
             @csrf
@@ -44,15 +44,25 @@
                 </div>
             </div>
 
-            <div>
-                <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">Alur Persetujuan (SOP)</label>
-                <select name="workflow_id" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-kinetic-primary transition-colors appearance-none">
-                    <option value="">-- Tidak Ada Alur (Ruangan Tidak Dapat Dipinjam) --</option>
-                    @foreach(App\Models\Workflow::where('unit_id', auth()->user()->unit_id)->get() as $workflow)
-                        <option value="{{ $workflow->id }}">{{ $workflow->name }}</option>
-                    @endforeach
-                </select>
-                <p class="text-[10px] text-slate-500 mt-1">Jika kosong, peminjam tidak akan bisa mengajukan peminjaman untuk ruangan ini.</p>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">Pemilik (Unit)</label>
+                    <select name="unit_id" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-kinetic-primary transition-colors appearance-none" required>
+                        <option value="">Pilih Unit</option>
+                        @foreach(App\Models\Unit::whereIn('level', ['Pusat', 'Jurusan'])->orderBy('unit_name', 'asc')->get() as $unit)
+                            <option value="{{ $unit->id }}">{{ $unit->unit_name }} ({{ $unit->level }})</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">Alur Persetujuan (SOP)</label>
+                    <select name="workflow_id" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-kinetic-primary transition-colors appearance-none">
+                        <option value="">-- Tidak Ada Alur (Ruangan Tidak Dapat Dipinjam) --</option>
+                        @foreach(App\Models\Workflow::with('unit')->get() as $workflow)
+                            <option value="{{ $workflow->id }}">{{ $workflow->unit->unit_name ?? 'Global' }} - {{ $workflow->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
             </div>
 
             <div>
@@ -62,7 +72,7 @@
 
             <div>
                 <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">Gambar Ruangan</label>
-                <input type="file" name="image" accept="image/*" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-[#14B8A6] transition-colors">
+                <input type="file" name="image" accept="image/*" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-kinetic-primary transition-colors">
             </div>
 
             <div class="pt-2">

@@ -1,4 +1,4 @@
-﻿<x-guest-layout>
+<x-guest-layout>
 
 <section class="relative pt-32 pb-12 lg:pt-40 lg:pb-24 flex items-center justify-center text-center">
     <div class="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 flex flex-col items-center">
@@ -115,6 +115,69 @@
             <h2 class="text-3xl font-bold text-white">Ruang Populer</h2>
         </div>
 
+        @if($rooms->isNotEmpty())
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- Left Large Card: First dynamic room -->
+            @php $firstRoom = $rooms->first(); @endphp
+            <div class="lg:col-span-5 bg-[#111] rounded-2xl relative overflow-hidden group flex flex-col justify-end border border-white/5 hover:border-[#14B8A6]/30 min-h-[400px]">
+                <div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" style="background-image: url('{{ $firstRoom->image ? asset('storage/' . $firstRoom->image) : 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80' }}'); opacity: 0.4;"></div>
+                <div class="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-[#0A0A0A]/80 to-transparent"></div>
+                
+                <div class="relative z-10 p-8 text-left">
+                    <span class="inline-block px-3 py-1 mb-4 text-[10px] font-bold tracking-wider text-[#14B8A6] bg-[#14B8A6]/20 rounded-full border border-[#14B8A6]/30">{{ strtoupper($firstRoom->building->building_name ?? 'LOKASI UTAMA') }}</span>
+                    <h3 class="text-3xl font-bold text-white mb-2">{{ $firstRoom->room_name }}</h3>
+                    <p class="text-sm text-gray-400 mb-6 max-w-sm">{{ $firstRoom->description ?? 'Fasilitas premium dengan kenyamanan dan teknologi terkini.' }}</p>
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-gray-300">KAPASITAS: {{ $firstRoom->capacity }} ORANG</span>
+                        <a href="{{ route('login') }}" class="inline-block px-6 py-3 bg-[#14B8A6] text-black font-semibold rounded-xl hover:bg-[#10ECE8] transition shadow-[0_0_20px_rgba(20,184,166,0.3)]">
+                            Pesan Sekarang
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side Grid: Rest of dynamic rooms -->
+            <div class="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-6">
+                
+                @foreach($rooms->skip(1) as $room)
+                <div class="bg-[#111] p-6 rounded-2xl border border-white/5 hover:bg-[#151515] hover:border-[#14B8A6]/30 transition group flex flex-col text-left">
+                    @if($room->image)
+                        <div class="w-full h-32 rounded-xl overflow-hidden mb-4 relative">
+                            <img src="{{ asset('storage/' . $room->image) }}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" alt="{{ $room->room_name }}">
+                        </div>
+                    @else
+                        <div class="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center text-gray-300 mb-4 group-hover:bg-[#14B8A6]/10 group-hover:text-[#14B8A6] transition">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                        </div>
+                    @endif
+                    <span class="text-[10px] font-bold text-[#14B8A6] uppercase mb-1">{{ $room->building->building_name ?? 'Gedung' }}</span>
+                    <h3 class="text-xl font-bold text-white mb-2 group-hover:text-[#10ECE8] transition">{{ $room->room_name }}</h3>
+                    <p class="text-xs text-gray-500 mb-6 flex-grow truncate">{{ $room->description ?? 'Fasilitas premium siap digunakan.' }}</p>
+                    <div class="flex items-center justify-between pt-4 border-t border-white/5">
+                        <span class="text-xs font-semibold text-gray-400">KAPASITAS: {{ $room->capacity }} ORANG</span>
+                        <a href="{{ route('login') }}" class="text-[#14B8A6] group-hover:text-white transition">
+                            <svg class="w-5 h-5 text-gray-500 group-hover:text-[#10ECE8] transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                        </a>
+                    </div>
+                </div>
+                @endforeach
+
+                <!-- Dynamic Web Help Card to balance grid if only 1 or 2 rooms on the right -->
+                <div class="sm:col-span-2 bg-[#0c2423] border border-[#14B8A6]/20 p-8 rounded-2xl flex items-center justify-between group overflow-hidden relative text-left">
+                    <div class="absolute inset-0 bg-[#14B8A6]/5 opacity-0 group-hover:opacity-100 transition"></div>
+                    <div class="relative z-10">
+                        <h3 class="text-xl font-bold text-white mb-2">Butuh Bantuan?</h3>
+                        <p class="text-sm text-[#14B8A6]/80">Tim IT kami siap membantu instalasi perangkat di ruangan pilihan Anda.</p>
+                    </div>
+                    <div class="relative z-10 w-12 h-12 rounded-xl bg-[#14B8A6] text-black flex items-center justify-center shrink-0">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        @else
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
             
             <!-- Left Large Card: Gedung Riset Pusat -->
@@ -122,7 +185,7 @@
                 <div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" style="background-image: url('https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80'); opacity: 0.4;"></div>
                 <div class="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-[#0A0A0A]/80 to-transparent"></div>
                 
-                <div class="relative z-10 p-8">
+                <div class="relative z-10 p-8 text-left">
                     <span class="inline-block px-3 py-1 mb-4 text-[10px] font-bold tracking-wider text-[#14B8A6] bg-[#14B8A6]/20 rounded-full border border-[#14B8A6]/30">PRIME LOCATION</span>
                     <h3 class="text-3xl font-bold text-white mb-2">Gedung Riset Pusat</h3>
                     <p class="text-sm text-gray-400 mb-6 max-w-sm">Fasilitas kelas dunia dengan dukungan teknis 24/7 untuk mahasiswa tingkat akhir.</p>
@@ -136,7 +199,7 @@
             <div class="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-6">
                 
                 <!-- Ruang Kolaborasi -->
-                <div class="bg-[#111] p-6 rounded-2xl border border-white/5 hover:bg-[#151515] transition group flex flex-col">
+                <div class="bg-[#111] p-6 rounded-2xl border border-white/5 hover:bg-[#151515] transition group flex flex-col text-left">
                     <div class="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center text-gray-300 mb-6 group-hover:bg-[#14B8A6]/10 group-hover:text-[#14B8A6] transition">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                     </div>
@@ -149,7 +212,7 @@
                 </div>
 
                 <!-- Auditorium Mini -->
-                <div class="bg-[#111] p-6 rounded-2xl border border-white/5 hover:bg-[#151515] transition group flex flex-col">
+                <div class="bg-[#111] p-6 rounded-2xl border border-white/5 hover:bg-[#151515] transition group flex flex-col text-left">
                     <div class="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center text-gray-300 mb-6 group-hover:bg-[#14B8A6]/10 group-hover:text-[#14B8A6] transition">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
                     </div>
@@ -162,7 +225,7 @@
                 </div>
 
                 <!-- Web Help Card -->
-                <div class="sm:col-span-2 bg-[#0c2423] border border-[#14B8A6]/20 p-8 rounded-2xl flex items-center justify-between group overflow-hidden relative">
+                <div class="sm:col-span-2 bg-[#0c2423] border border-[#14B8A6]/20 p-8 rounded-2xl flex items-center justify-between group overflow-hidden relative text-left">
                     <div class="absolute inset-0 bg-[#14B8A6]/5 opacity-0 group-hover:opacity-100 transition"></div>
                     <div class="relative z-10">
                         <h3 class="text-xl font-bold text-white mb-2">Butuh Bantuan?</h3>
@@ -175,6 +238,7 @@
 
             </div>
         </div>
+        @endif
     </div>
 </section>
 
