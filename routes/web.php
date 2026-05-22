@@ -11,6 +11,8 @@ use App\Http\Controllers\BookingPdfController;
 use App\Http\Controllers\BookingValidationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoomController;
+use App\Http\Controllers\UnitController;
+use App\Http\Controllers\FacilityController;
 use App\Models\Booking;
 use App\Models\BookingLog;
 use App\Models\Building;
@@ -144,11 +146,15 @@ Route::middleware('auth')->group(function () {
     });
 
     // --- SHARED ADMIN API (SuperAdmin & Admin_Unit) ---
-    Route::middleware('checkRole:SuperAdmin,Admin_Unit')->prefix('admin/api')->group(function () {
-        Route::apiResource('users', UserController::class);
-        Route::get('/units', [UserController::class, 'getUnitsDropdown']);
-        Route::get('/roles', [UserController::class, 'getRolesDropdown']);
-        Route::get('/positions', [UserController::class, 'getPositionsDropdown']);
+Route::middleware('checkRole:SuperAdmin')->prefix('superadmin')->group(function () {
+        Route::get('/fasilitas', [FacilityController::class, 'index'])->name('fasilitas');
+        Route::post('/fasilitas', [FacilityController::class, 'store'])->name('fasilitas.store');
+        
+        // Rute Unit yang sudah diperbarui menggunakan Controller
+        Route::get('/unit', [UnitController::class, 'index'])->name('unit');
+        Route::post('/unit', [UnitController::class, 'store'])->name('unit.store');
+        
+        Route::post('/user', [UserController::class, 'store'])->name('tambah-user.store');
     });
 
     // --- ADMIN UNIT SECTION ---
@@ -158,7 +164,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/laporan', fn () => view('user.admin_unit.laporan'))->name('laporan');
         Route::get('/bookings/bulk-pdf', [BookingPdfController::class, 'bulkDownload'])->name('booking.pdf.bulk');
         Route::get('/manajemen-ruangan', function () {
-            $rooms = Room::where('unit_id', Auth::user()->unit_id)->with('building')->get();
+            $rooms = Room::where('unit_id', Auth::user()->unit_id)->with(['building', 'facilities'])->get();
 
             return view('user.admin_unit.manajemenRuangan', compact('rooms'));
         })->name('manajemenRuangan');
