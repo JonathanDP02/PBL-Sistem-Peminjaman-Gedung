@@ -100,13 +100,13 @@
                                         </div>
 
                                         <div class="flex-1 bg-white border border-slate-200 rounded-lg p-5 hover:border-teal-500 transition-colors shadow-sm">
-                                            <div class="flex items-start justify-between mb-3">
+                                            <div class="flex items-start justify-between">
                                                 <div class="flex items-start gap-3 flex-1">
                                                     
                                                     <div class="flex-1">
                                                         <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Urutan <span x-text="index + 1"></span></p>
                                                         
-                                                        <select x-model="step.position_id" class="text-lg font-bold text-slate-900 bg-transparent border-b border-dashed border-slate-300 focus:border-teal-500 focus:ring-0 p-0 pb-1 mb-3 w-full cursor-pointer">
+                                                        <select x-model="step.position_id" class="text-lg font-bold text-slate-900 bg-transparent border-b border-dashed border-slate-300 focus:border-teal-500 focus:ring-0 p-0 pb-1 w-full cursor-pointer">
                                                             <option value="" disabled>-- Pilih Jabatan / Pejabat --</option>
                                                             <template x-for="pos in availablePositions" :key="pos.id">
                                                                 <option :value="pos.id" x-text="pos.name" :selected="step.position_id == pos.id"></option>
@@ -117,15 +117,6 @@
 
                                                 <button type="button" @click="removeStep(index)" class="text-slate-400 hover:text-red-500 p-2 rounded transition-colors shrink-0" title="Hapus Tahap">
                                                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-                                                </button>
-                                            </div>
-
-                                            <div class="flex items-center justify-between pt-3 border-t border-slate-100">
-                                                <span class="text-xs font-bold text-slate-600 uppercase tracking-widest">Wajib Upload Surat Balasan (Disposisi)</span>
-                                                <button type="button" @click="step.requires_attachment = !step.requires_attachment" 
-                                                        :class="step.requires_attachment ? 'bg-teal-500' : 'bg-slate-300'" 
-                                                        class="relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors">
-                                                    <span :class="step.requires_attachment ? 'translate-x-2' : 'translate-x-0'" class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white transition duration-200"></span>
                                                 </button>
                                             </div>
                                         </div>
