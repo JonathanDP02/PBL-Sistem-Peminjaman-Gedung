@@ -9,14 +9,18 @@ use App\Http\Controllers\BookingAttachmentController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\BookingPdfController;
 use App\Http\Controllers\BookingValidationController;
+use App\Http\Controllers\BuildingController;
+use App\Http\Controllers\FacilityController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\UnitController;
-use App\Http\Controllers\FacilityController;
 use App\Models\Booking;
 use App\Models\BookingLog;
 use App\Models\Building;
+use App\Models\Position;
+use App\Models\Role;
 use App\Models\Room;
+use App\Models\Workflow;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -41,7 +45,12 @@ Route::get('/', function () {
         $weekDates->push($startOfWeek->copy()->addDays($i));
     }
 
-    return view('welcome', compact('bookings', 'weekDates'));
+    $rooms = collect();
+    if (Schema::hasTable('rooms')) {
+        $rooms = Room::with('building')->latest()->take(3)->get();
+    }
+
+    return view('welcome', compact('bookings', 'weekDates', 'rooms'));
 })->name('welcome');
 
 Route::get('ruangan', function () {
@@ -134,6 +143,42 @@ Route::middleware('auth')->group(function () {
         return view($view);
     })->name('kelola-user');
 
+// --- INTERNAL API FOR AJAX (Uses Web Session) ---
+    Route::prefix('admin/api')->group(function () {
+        // Units
+        Route::get('/units', [App\Http\Controllers\Admin\UnitController::class, 'index']);
+        Route::post('/units', [App\Http\Controllers\Admin\UnitController::class, 'store']);
+        Route::put('/units/{id}', [App\Http\Controllers\Admin\UnitController::class, 'update']);
+        Route::delete('/units/{id}', [App\Http\Controllers\Admin\UnitController::class, 'destroy']);
+        Route::get('/units/{id}/positions', [App\Http\Controllers\Admin\UnitController::class, 'positions']);
+
+        // Users
+        Route::get('/users', [UserController::class, 'index']);
+        Route::get('/users/{id}', [UserController::class, 'show']);
+        Route::post('/users', [UserController::class, 'store']);
+        Route::put('/users/{id}', [UserController::class, 'update']);
+        Route::delete('/users/{id}', [UserController::class, 'destroy']);
+
+        // Rooms (create via API)
+        Route::post('/rooms', [RoomController::class, 'store']);
+
+        // Roles
+        Route::get('/roles', function () {
+            return response()->json([
+                'success' => true,
+                'data' => Role::all(),
+            ]);
+        });
+
+        // Positions
+        Route::get('/positions', function () {
+            return response()->json([
+                'success' => true,
+                'data' => Position::all(),
+            ]);
+        });
+    });
+
     // --- SHARED FILE ACCESS (All Auth Roles with Internal Auth Logic) ---
     Route::get('/user/bookings/{id}/attachments/{attachmentId}', [BookingAttachmentController::class, 'show'])->name('booking.attachment.show');
     Route::get('/user/bookings/{id}/download-pdf', [BookingPdfController::class, 'generate'])->name('booking.pdf');
@@ -146,15 +191,25 @@ Route::middleware('auth')->group(function () {
     });
 
     // --- SHARED ADMIN API (SuperAdmin & Admin_Unit) ---
-Route::middleware('checkRole:SuperAdmin')->prefix('superadmin')->group(function () {
+    Route::middleware('checkRole:SuperAdmin')->prefix('superadmin')->group(function () {
         Route::get('/fasilitas', [FacilityController::class, 'index'])->name('fasilitas');
         Route::post('/fasilitas', [FacilityController::class, 'store'])->name('fasilitas.store');
-        
+
         // Rute Unit yang sudah diperbarui menggunakan Controller
         Route::get('/unit', [UnitController::class, 'index'])->name('unit');
         Route::post('/unit', [UnitController::class, 'store'])->name('unit.store');
-        
+
         Route::post('/user', [UserController::class, 'store'])->name('tambah-user.store');
+
+        // Form Standard untuk Superadmin mengelola Rooms
+        Route::post('/rooms', [RoomController::class, 'store'])->name('superadmin.rooms.store');
+        Route::put('/rooms/{id}', [RoomController::class, 'update'])->name('superadmin.rooms.update');
+        Route::delete('/api/rooms/{room}', [RoomController::class, 'destroy'])->name('superadmin.rooms.destroy');
+
+        // Form Standard untuk Superadmin mengelola Buildings
+        Route::post('/buildings', [BuildingController::class, 'store'])->name('superadmin.buildings.store');
+        Route::put('/buildings/{building}', [BuildingController::class, 'update'])->name('superadmin.buildings.update');
+        Route::delete('/api/buildings/{building}', [BuildingController::class, 'destroy'])->name('superadmin.buildings.destroy');
     });
 
     // --- ADMIN UNIT SECTION ---
@@ -164,9 +219,10 @@ Route::middleware('checkRole:SuperAdmin')->prefix('superadmin')->group(function 
         Route::get('/laporan', fn () => view('user.admin_unit.laporan'))->name('laporan');
         Route::get('/bookings/bulk-pdf', [BookingPdfController::class, 'bulkDownload'])->name('booking.pdf.bulk');
         Route::get('/manajemen-ruangan', function () {
-            $rooms = Room::where('unit_id', Auth::user()->unit_id)->with(['building', 'facilities'])->get();
+            $rooms = Room::where('unit_id', Auth::user()->unit_id)->with(['building', 'facilities', 'workflow'])->get();
+            $workflows = Workflow::where('unit_id', Auth::user()->unit_id)->get();
 
-            return view('user.admin_unit.manajemenRuangan', compact('rooms'));
+            return view('user.admin_unit.manajemenRuangan', compact('rooms', 'workflows'));
         })->name('manajemenRuangan');
 
         Route::get('/pemblokiran-ruangan', function () {
