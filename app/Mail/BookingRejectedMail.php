@@ -10,9 +10,9 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class BookingRejectedMail extends Mailable
+class BookingRejectedMail extends Mailable implements ShouldQueue
 {
-    use SerializesModels;
+    use Queueable, SerializesModels;
 
     public function __construct(
         public Booking $booking,
@@ -29,7 +29,7 @@ class BookingRejectedMail extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'emails.booking-rejected',
+            markdown: 'emails.booking-rejected',
         );
     }
 }

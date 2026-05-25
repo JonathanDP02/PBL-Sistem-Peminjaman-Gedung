@@ -11,9 +11,9 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class BookingSubmittedMail extends Mailable
+class BookingSubmittedMail extends Mailable implements ShouldQueue
 {
-    use SerializesModels;
+    use Queueable, SerializesModels;
 
     public $booking;
 
@@ -31,7 +31,7 @@ class BookingSubmittedMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Peminjaman Ruangan: ' . $this->booking->event_name,
+            subject: 'Peminjaman Ruangan: '.$this->booking->event_name,
         );
     }
 

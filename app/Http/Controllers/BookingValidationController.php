@@ -24,4 +24,12 @@ class BookingValidationController extends Controller
             'booking' => $booking,
         ]);
     }
+
+    /**
+     * Display the QR code scanner page for validating permits on-site
+     */
+    public function scanner()
+    {
+        return view('booking.scan');
+    }
 }
