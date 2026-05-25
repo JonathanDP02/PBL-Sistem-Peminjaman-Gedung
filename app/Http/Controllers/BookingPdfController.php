@@ -3,10 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Booking;
+use App\Support\QrCodeHelper;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
-use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class BookingPdfController extends Controller
 {
@@ -26,7 +26,7 @@ class BookingPdfController extends Controller
         $isAdminUnit = $user->role->name === 'Admin_Unit' && $booking->room->unit_id === $user->unit_id;
         $isSuperAdmin = $user->role->name === 'SuperAdmin';
 
-        if (!$isOwner && !$isApprover && !$isAdminUnit && !$isSuperAdmin) {
+        if (! $isOwner && ! $isApprover && ! $isAdminUnit && ! $isSuperAdmin) {
             abort(403, 'Anda tidak memiliki akses ke resource ini.');
         }
 
@@ -34,12 +34,16 @@ class BookingPdfController extends Controller
             abort(403, 'PDF belum tersedia karena pengajuan belum disetujui sepenuhnya.');
         }
 
-        $qrCode = QrCode::format('svg')
-            ->size(120)
-            ->generate(url('/validate/'.$booking->id));
+        $lastApproval = $booking->approvals
+            ->where('approval_status', 'Approved')
+            ->sortByDesc(fn ($a) => $a->step->step_order ?? 0)
+            ->first();
+
+        $qrCode = QrCodeHelper::generateBase64(url('/validate/'.$booking->id));
 
         $pdf = Pdf::loadView('pdf.surat-izin', [
             'booking' => $booking,
+            'lastApproval' => $lastApproval,
             'qrCode' => $qrCode,
         ])->setPaper('a4', 'portrait');
 
@@ -72,12 +76,16 @@ class BookingPdfController extends Controller
             abort(401, 'Silakan login terlebih dahulu');
         }
 
-        $qrCode = QrCode::format('svg')
-            ->size(120)
-            ->generate(url('/validate/'.$booking->id));
+        $lastApproval = $booking->approvals
+            ->where('approval_status', 'Approved')
+            ->sortByDesc(fn ($a) => $a->step->step_order ?? 0)
+            ->first();
+
+        $qrCode = QrCodeHelper::generateBase64(url('/validate/'.$booking->id));
 
         return view('pdf.surat-izin', [
             'booking' => $booking,
+            'lastApproval' => $lastApproval,
             'qrCode' => $qrCode,
         ]);
     }

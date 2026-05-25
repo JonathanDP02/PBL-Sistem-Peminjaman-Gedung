@@ -283,6 +283,7 @@ class BookingController extends Controller
 
                 $booking->update([
                     'status' => 'Pending',
+                    'current_step' => 1,
                     'revision_count' => ($booking->revision_count ?? 0) + 1,
                     'event_name' => $request->input('event_name', $booking->event_name),
                     'event_description' => $request->input('event_description', $booking->event_description),

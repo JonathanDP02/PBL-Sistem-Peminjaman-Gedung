@@ -30,9 +30,9 @@ class UserController extends Controller
         }
 
         // Hitung statistik global berdasarkan unit yang boleh diakses (sebelum filter pencarian/saringan)
-        $superAdminCount = (clone $baseQuery)->whereHas('role', fn($q) => $q->where('name', 'SuperAdmin'))->count();
-        $unitAdminCount = (clone $baseQuery)->whereHas('role', fn($q) => $q->where('name', 'Admin_Unit'))->count();
-        
+        $superAdminCount = (clone $baseQuery)->whereHas('role', fn ($q) => $q->where('name', 'SuperAdmin'))->count();
+        $unitAdminCount = (clone $baseQuery)->whereHas('role', fn ($q) => $q->where('name', 'Admin_Unit'))->count();
+
         $activeNow = (clone $baseQuery)->join('sessions', 'users.id', '=', 'sessions.user_id')
             ->where('sessions.last_activity', '>=', now()->subMinutes(15)->getTimestamp())
             ->distinct()
@@ -42,7 +42,8 @@ class UserController extends Controller
         $query = clone $baseQuery;
 
         if ($request->filled('search')) {
-            $query->where('name', 'ilike', '%' . $request->query('search') . '%');
+            $operator = config('database.default') === 'sqlite' ? 'like' : 'ilike';
+            $query->where('name', $operator, '%'.$request->query('search').'%');
         }
 
         if ($request->filled('unit_id')) {
@@ -61,12 +62,12 @@ class UserController extends Controller
 
         // Pengurutan Nama (A-Z / Z-A)
         $sort = $request->query('sort_name', 'asc');
-        if (!in_array($sort, ['asc', 'desc'])) {
+        if (! in_array($sort, ['asc', 'desc'])) {
             $sort = 'asc';
         }
 
         $users = $query->orderBy('name', $sort)->paginate(10);
-        
+
         return response()->json([
             'success' => true,
             'data' => $users,
@@ -75,7 +76,7 @@ class UserController extends Controller
                 'super_admin' => $superAdminCount,
                 'unit_admin' => $unitAdminCount,
                 'active_now' => $activeNow,
-            ]
+            ],
         ]);
     }
 

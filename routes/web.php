@@ -28,8 +28,9 @@ use Illuminate\Support\Facades\Schema;
 
 // --- GUEST / PUBLIC ROUTES ---
 Route::get('/', function () {
-    $startOfWeek = Carbon::now()->startOfWeek();
-    $endOfWeek = Carbon::now()->endOfWeek();
+    $selectedDate = request('date') ? Carbon::parse(request('date')) : Carbon::now();
+    $startOfWeek = $selectedDate->copy()->startOfWeek();
+    $endOfWeek = $selectedDate->copy()->endOfWeek();
 
     $bookings = collect();
     if (Schema::hasTable('bookings')) {
@@ -143,7 +144,7 @@ Route::middleware('auth')->group(function () {
         return view($view);
     })->name('kelola-user');
 
-// --- INTERNAL API FOR AJAX (Uses Web Session) ---
+    // --- INTERNAL API FOR AJAX (Uses Web Session) ---
     Route::prefix('admin/api')->group(function () {
         // Units
         Route::get('/units', [App\Http\Controllers\Admin\UnitController::class, 'index']);
@@ -219,7 +220,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/laporan', fn () => view('user.admin_unit.laporan'))->name('laporan');
         Route::get('/bookings/bulk-pdf', [BookingPdfController::class, 'bulkDownload'])->name('booking.pdf.bulk');
         Route::get('/manajemen-ruangan', function () {
-            $rooms = Room::where('unit_id', Auth::user()->unit_id)->with(['building', 'facilities', 'workflow'])->get();
+            $rooms = Room::where('unit_id', Auth::user()->unit_id)->with(['building', 'workflow'])->get();
             $workflows = Workflow::where('unit_id', Auth::user()->unit_id)->get();
 
             return view('user.admin_unit.manajemenRuangan', compact('rooms', 'workflows'));
@@ -323,6 +324,7 @@ Route::middleware('auth')->group(function () {
 // --- GLOBAL UTILITIES ---
 require __DIR__.'/auth.php';
 
+Route::get('/scan', [BookingValidationController::class, 'scanner'])->name('booking.scan');
 Route::get('/validate/{bookingId}', [BookingValidationController::class, 'show'])->name('booking.validate');
 Route::get('/rooms/{id}', [RoomController::class, 'showApi']);
 Route::middleware('auth')->get('/preview-surat/{bookingId}', [BookingPdfController::class, 'preview'])->name('booking.pdf.preview');

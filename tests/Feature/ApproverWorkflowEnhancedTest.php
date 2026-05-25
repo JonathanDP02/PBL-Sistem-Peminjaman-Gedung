@@ -104,12 +104,10 @@ class ApproverWorkflowEnhancedTest extends TestCase
 
         $booking->refresh();
         $this->assertEquals('Pending', $booking->status);
-        $this->assertEquals(2, $booking->current_step); // TETAP DI LANGKAH 2 (sesuai permintaan user)
+        $this->assertEquals(1, $booking->current_step); // DIRESET KE LANGKAH 1 (sesuai spesifikasi)
 
-        // 4. Ensure it RE-APPEARS in Meja Kerja of the approver who rejected it (Step 2)
-        // Find approver for step 2 (Kajur TI in seeder)
-        $approverStep2 = User::where('email', 'kajur.ti@spacein.test')->first();
-        $response = $this->actingAs($approverStep2)->get(route('meja-kerja'));
+        // 4. Ensure it RE-APPEARS in Meja Kerja of the step 1 approver
+        $response = $this->actingAs($this->approver)->get(route('meja-kerja'));
         $response->assertSee('Updated Event Name');
     }
 

@@ -3,13 +3,17 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Mail\ApprovalNeededMail;
+use App\Mail\BookingRejectedMail;
 use App\Models\Approval;
 use App\Models\Booking;
 use App\Models\BookingLog;
+use App\Models\User;
 use App\Models\WorkflowStep;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 
 /**
  * API v1 ApprovalController
@@ -145,6 +149,7 @@ class ApprovalController extends Controller
                     'approval_status' => 'Approved',
                     'notes' => $request->notes,
                     'approved_at' => now(),
+                    'attempt' => ($booking->revision_count ?? 0) + 1,
                 ]);
 
                 BookingLog::create([
@@ -157,6 +162,27 @@ class ApprovalController extends Controller
             });
 
             $booking->refresh();
+
+            // Dispatch intermediate email notifications outside transaction
+            try {
+                if ($booking->status === 'Pending') {
+                    $nextStepOrder = $booking->current_step;
+                    $nextWorkflowStep = WorkflowStep::where('workflow_id', $booking->workflow_id)
+                        ->where('step_order', $nextStepOrder)
+                        ->first();
+
+                    if ($nextWorkflowStep) {
+                        $nextApprovers = User::where('position_id', $nextWorkflowStep->position_id)->get();
+                        \Log::info('Attempting to send intermediate email to '.$nextApprovers->count().' approvers for booking #'.$booking->id);
+                        foreach ($nextApprovers as $nextApprover) {
+                            Mail::to($nextApprover->email)->send(new ApprovalNeededMail($booking, $nextApprover));
+                            \Log::info('Intermediate email sent to approver: '.$nextApprover->email);
+                        }
+                    }
+                }
+            } catch (\Exception $e) {
+                \Log::error('Mail Error (Intermediate Approval Needed booking #'.$booking->id.'): '.$e->getMessage());
+            }
 
             return response()->json([
                 'success' => true,
@@ -231,6 +257,7 @@ class ApprovalController extends Controller
                     'approval_status' => 'Rejected',
                     'notes' => $request->notes,
                     'approved_at' => now(),
+                    'attempt' => ($booking->revision_count ?? 0) + 1,
                 ]);
 
                 BookingLog::create([
@@ -243,6 +270,14 @@ class ApprovalController extends Controller
             });
 
             $booking->refresh();
+
+            // Send email notification to borrower (outside transaction)
+            try {
+                Mail::to($booking->user->email)->send(new BookingRejectedMail($booking, $request->notes));
+                \Log::info('Rejection email sent to borrower: '.$booking->user->email);
+            } catch (\Exception $e) {
+                \Log::error('Mail Error (Rejection Notification Booking #'.$booking->id.'): '.$e->getMessage());
+            }
 
             return response()->json([
                 'success' => true,

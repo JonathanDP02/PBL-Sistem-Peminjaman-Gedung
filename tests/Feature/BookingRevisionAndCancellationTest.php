@@ -214,8 +214,8 @@ describe('Booking Revision Feature', function () {
             "requirement_{$this->disposisiReq->id}" => UploadedFile::fake()->create('disposisi.pdf', 300),
         ]);
 
-        // Assert email sent ke approver
-        Mail::assertSent(ApprovalNeededMail::class, function ($mail) {
+        // Assert email sent ke approver (karena menggunakan ShouldQueue)
+        Mail::assertQueued(ApprovalNeededMail::class, function ($mail) {
             return $mail->hasTo($this->approver->email);
         });
     });
@@ -574,5 +574,12 @@ describe('QR Code Validation Feature', function () {
 
         $response->assertStatus(200);
         expect(count($response->viewData('booking')->approvals))->toBe(1);
+    });
+
+    test('halaman scanner QR code bisa diakses secara publik', function () {
+        $response = $this->get('/scan');
+
+        $response->assertStatus(200);
+        $response->assertViewIs('booking.scan');
     });
 });

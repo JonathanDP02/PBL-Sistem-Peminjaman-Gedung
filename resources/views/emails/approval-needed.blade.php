@@ -1,21 +1,22 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Persetujuan Diperlukan</title>
-</head>
-<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-    <h2>Halo {{ $approver->name }},</h2>
-    <p>Ada pengajuan peminjaman ruangan baru yang membutuhkan persetujuan Anda.</p>
-    <ul>
-        <li><strong>No. Booking:</strong> #{{ $booking->id }}</li>
-        <li><strong>Kegiatan:</strong> {{ $booking->event_name }}</li>
-        <li><strong>Peminjam:</strong> {{ $booking->user->name }}</li>
-        <li><strong>Tanggal:</strong> {{ $booking->booking_date->format('d M Y') }}</li>
-        <li><strong>Ruangan:</strong> {{ $booking->room->room_name ?? 'Ruangan' }}</li>
-    </ul>
-    <p>Silakan login ke sistem Space.in untuk meninjau dan memberikan persetujuan.</p>
-    <br>
-    <p>Terima kasih,</p>
-    <p><strong>Space.in System</strong></p>
-</body>
-</html>
+<x-mail::message>
+# Persetujuan Diperlukan: Peminjaman Ruangan
+
+Halo **{{ $approver->name }}**,
+
+Ada pengajuan peminjaman ruangan baru yang membutuhkan persetujuan Anda sebagai bagian dari alur kerja (workflow) persetujuan.
+
+**Detail Pengajuan:**
+- **No. Booking:** #{{ $booking->id }}
+- **Kegiatan:** {{ $booking->event_name }}
+- **Ruangan:** {{ $booking->room->room_name }}
+- **Tanggal:** {{ \Carbon\Carbon::parse($booking->booking_date)->format('d M Y') }}
+- **Waktu:** {{ \Carbon\Carbon::parse($booking->start_time)->format('H:i') }} - {{ \Carbon\Carbon::parse($booking->end_time)->format('H:i') }}
+- **Peminjam:** {{ $booking->user->name }}
+
+<x-mail::button :url="config('app.url') . '/approver/meja-kerja'">
+Lihat Detail & Berikan Keputusan
+</x-mail::button>
+
+Terima kasih,<br>
+{{ config('app.name') }}
+</x-mail::message>
