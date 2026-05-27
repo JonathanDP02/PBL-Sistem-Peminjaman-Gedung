@@ -2,10 +2,9 @@
 
 namespace Database\Factories;
 
-use App\Models\User;
 use App\Models\Role;
 use App\Models\Unit;
-use App\Models\Position;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 
@@ -22,12 +21,12 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
-            'unit_id'     => Unit::inRandomOrder()->first()?->id ?? 1,
+            'unit_id' => Unit::inRandomOrder()->first()?->id ?? 1,
             'position_id' => null, // default null; di-override saat seeding approver
-            'role_id'     => Role::where('name', 'User')->first()?->id ?? Role::factory()->create(['name' => 'User'])->id,
-            'name'        => $this->faker->name(),
-            'email'       => $this->faker->unique()->safeEmail(),
-            'password'    => Hash::make(self::$password),
+            'role_id' => Role::where('name', 'Peminjam')->first()?->id ?? Role::factory()->create(['name' => 'Peminjam'])->id,
+            'name' => $this->faker->name(),
+            'email' => $this->faker->unique()->safeEmail(),
+            'password' => Hash::make(self::$password),
         ];
     }
 
@@ -36,8 +35,8 @@ class UserFactory extends Factory
     /** State: SuperAdmin Pusat */
     public function superAdmin(): static
     {
-        return $this->state(fn(array $attr) => [
-            'role_id'     => Role::where('name', 'SuperAdmin')->first()?->id ?? 1,
+        return $this->state(fn (array $attr) => [
+            'role_id' => Role::where('name', 'Administrator Utama')->first()?->id ?? 1,
             'position_id' => null,
         ]);
     }
@@ -45,8 +44,8 @@ class UserFactory extends Factory
     /** State: Admin Unit (Jurusan) */
     public function adminUnit(int $unitId): static
     {
-        return $this->state(fn(array $attr) => [
-            'role_id' => Role::where('name', 'Admin_Unit')->first()?->id ?? 2,
+        return $this->state(fn (array $attr) => [
+            'role_id' => Role::where('name', 'Administrator Unit')->first()?->id ?? 2,
             'unit_id' => $unitId,
         ]);
     }
@@ -54,9 +53,9 @@ class UserFactory extends Factory
     /** State: Approver dengan posisi jabatan tertentu */
     public function approver(int $unitId, int $positionId): static
     {
-        return $this->state(fn(array $attr) => [
-            'role_id'     => Role::where('name', 'Approver')->first()?->id ?? 4,
-            'unit_id'     => $unitId,
+        return $this->state(fn (array $attr) => [
+            'role_id' => Role::where('name', 'Penyetuju')->first()?->id ?? 4,
+            'unit_id' => $unitId,
             'position_id' => $positionId,
         ]);
     }
@@ -64,9 +63,9 @@ class UserFactory extends Factory
     /** State: User biasa (peminjam) */
     public function userBiasa(int $unitId): static
     {
-        return $this->state(fn(array $attr) => [
-            'role_id'     => Role::where('name', 'User')->first()?->id ?? 3,
-            'unit_id'     => $unitId,
+        return $this->state(fn (array $attr) => [
+            'role_id' => Role::where('name', 'Peminjam')->first()?->id ?? 3,
+            'unit_id' => $unitId,
             'position_id' => null,
         ]);
     }

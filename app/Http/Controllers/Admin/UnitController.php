@@ -17,7 +17,7 @@ class UnitController extends Controller
         $userUnit = $user->unit;
 
         // Logika menampilkan unit berdasarkan level dan role
-        if ($user->role->name === 'SuperAdmin') {
+        if ($user->role->name === 'Administrator Utama') {
             // SuperAdmin - tampilkan semua unit
             $units = Unit::with('parent', 'children')
                 ->orderBy('level')
@@ -59,14 +59,15 @@ class UnitController extends Controller
     {
         $user = $request->user();
 
-        if ($user->role->name !== 'SuperAdmin') {
+        if ($user->role->name !== 'Administrator Utama') {
             return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
         }
 
         $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255|unique:units,name',
+            'unit_name' => 'required|string|max:255|unique:units,unit_name',
             'level' => 'required|in:Pusat,Jurusan,Organisasi',
             'parent_id' => 'nullable|integer|exists:units,id',
+            'description' => 'nullable|string|max:255',
         ]);
 
         if ($validator->fails()) {
@@ -111,7 +112,7 @@ class UnitController extends Controller
         $user = $request->user();
 
         // Validasi akses berdasarkan role dan level
-        if ($user->role->name !== 'SuperAdmin') {
+        if ($user->role->name !== 'Administrator Utama') {
             $userUnit = $user->unit;
 
             if (! $userUnit) {
@@ -150,9 +151,10 @@ class UnitController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'name' => 'sometimes|required|string|max:255|unique:units,name,'.$id,
+            'unit_name' => 'sometimes|required|string|max:255|unique:units,unit_name,'.$id,
             'level' => 'sometimes|required|in:Pusat,Jurusan,Organisasi',
             'parent_id' => 'nullable|integer|exists:units,id',
+            'description' => 'nullable|string|max:255',
         ]);
 
         if ($validator->fails()) {
@@ -176,7 +178,7 @@ class UnitController extends Controller
     {
         $user = $request->user();
 
-        if ($user->role->name !== 'SuperAdmin') {
+        if ($user->role->name !== 'Administrator Utama') {
             return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
         }
 

@@ -3,6 +3,7 @@
 use App\Models\Role;
 use App\Models\Unit;
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\getJson;
@@ -10,10 +11,10 @@ use function Pest\Laravel\getJson;
 /** @return array{superAdmin: User, unit: Unit, adminUnit: User} */
 function setupSuperAdminAndUnit(): array
 {
-    $superAdminRole = Role::factory()->create(['name' => 'SuperAdmin']);
-    $adminUnitRole = Role::factory()->create(['name' => 'Admin_Unit']);
-    Role::factory()->create(['name' => 'User']);
-    Role::factory()->create(['name' => 'Approver']);
+    $superAdminRole = Role::factory()->create(['name' => 'Administrator Utama']);
+    $adminUnitRole = Role::factory()->create(['name' => 'Administrator Unit']);
+    Role::factory()->create(['name' => 'Peminjam']);
+    Role::factory()->create(['name' => 'Penyetuju']);
 
     $unit = Unit::factory()->create(['level' => 'Jurusan', 'unit_name' => 'Jurusan TI', 'parent_id' => null]);
 
@@ -32,7 +33,7 @@ function setupSuperAdminAndUnit(): array
     return compact('superAdmin', 'unit', 'adminUnit');
 }
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Authorization
@@ -58,7 +59,7 @@ test('authenticated SuperAdmin can list users', function () {
 test('users list is paginated to 10 items per page', function () {
     ['superAdmin' => $superAdmin, 'unit' => $unit] = setupSuperAdminAndUnit();
 
-    $userRole = Role::where('name', 'User')->first();
+    $userRole = Role::where('name', 'Peminjam')->first();
     User::factory()->count(15)->create(['unit_id' => $unit->id, 'role_id' => $userRole->id]);
 
     $response = actingAs($superAdmin)
@@ -73,7 +74,7 @@ test('users list is paginated to 10 items per page', function () {
 test('second page returns different users', function () {
     ['superAdmin' => $superAdmin, 'unit' => $unit] = setupSuperAdminAndUnit();
 
-    $userRole = Role::where('name', 'User')->first();
+    $userRole = Role::where('name', 'Peminjam')->first();
     User::factory()->count(15)->create(['unit_id' => $unit->id, 'role_id' => $userRole->id]);
 
     $page1Ids = actingAs($superAdmin)
@@ -94,7 +95,7 @@ test('second page returns different users', function () {
 test('search filters users by name', function () {
     ['superAdmin' => $superAdmin, 'unit' => $unit] = setupSuperAdminAndUnit();
 
-    $userRole = Role::where('name', 'User')->first();
+    $userRole = Role::where('name', 'Peminjam')->first();
     User::factory()->create(['name' => 'Alice Wonder', 'unit_id' => $unit->id, 'role_id' => $userRole->id]);
     User::factory()->create(['name' => 'Bob Builder', 'unit_id' => $unit->id, 'role_id' => $userRole->id]);
 
@@ -110,7 +111,7 @@ test('search filters users by name', function () {
 test('search returns empty when no match found', function () {
     ['superAdmin' => $superAdmin, 'unit' => $unit] = setupSuperAdminAndUnit();
 
-    $userRole = Role::where('name', 'User')->first();
+    $userRole = Role::where('name', 'Peminjam')->first();
     User::factory()->create(['name' => 'Charlie Delta', 'unit_id' => $unit->id, 'role_id' => $userRole->id]);
 
     $response = actingAs($superAdmin)
@@ -128,7 +129,7 @@ test('filter by unit_id returns only users in that unit', function () {
     ['superAdmin' => $superAdmin, 'unit' => $unit] = setupSuperAdminAndUnit();
 
     $otherUnit = Unit::factory()->create(['level' => 'Jurusan', 'unit_name' => 'Jurusan Sipil', 'parent_id' => null]);
-    $userRole = Role::where('name', 'User')->first();
+    $userRole = Role::where('name', 'Peminjam')->first();
 
     User::factory()->create(['name' => 'In Unit', 'unit_id' => $unit->id, 'role_id' => $userRole->id]);
     User::factory()->create(['name' => 'Other Unit', 'unit_id' => $otherUnit->id, 'role_id' => $userRole->id]);
@@ -149,7 +150,7 @@ test('filter by level returns users belonging to units of that level', function 
     ['superAdmin' => $superAdmin, 'unit' => $unit] = setupSuperAdminAndUnit();
 
     $orgUnit = Unit::factory()->create(['level' => 'Organisasi', 'parent_id' => $unit->id, 'unit_name' => 'HMTI']);
-    $userRole = Role::where('name', 'User')->first();
+    $userRole = Role::where('name', 'Peminjam')->first();
 
     User::factory()->create(['name' => 'Jurusan User', 'unit_id' => $unit->id, 'role_id' => $userRole->id]);
     User::factory()->create(['name' => 'Org User', 'unit_id' => $orgUnit->id, 'role_id' => $userRole->id]);
@@ -170,8 +171,8 @@ test('filter by level returns users belonging to units of that level', function 
 test('filter by role_id returns only users with that role', function () {
     ['superAdmin' => $superAdmin, 'unit' => $unit] = setupSuperAdminAndUnit();
 
-    $userRole = Role::where('name', 'User')->first();
-    $approverRole = Role::where('name', 'Approver')->first();
+    $userRole = Role::where('name', 'Peminjam')->first();
+    $approverRole = Role::where('name', 'Penyetuju')->first();
 
     User::factory()->create(['name' => 'Regular User', 'unit_id' => $unit->id, 'role_id' => $userRole->id]);
     User::factory()->create(['name' => 'Approver Guy', 'unit_id' => $unit->id, 'role_id' => $approverRole->id]);
@@ -192,7 +193,7 @@ test('filter by role_id returns only users with that role', function () {
 test('sort_name asc returns users sorted A to Z', function () {
     ['superAdmin' => $superAdmin, 'unit' => $unit] = setupSuperAdminAndUnit();
 
-    $userRole = Role::where('name', 'User')->first();
+    $userRole = Role::where('name', 'Peminjam')->first();
     User::factory()->create(['name' => 'Zebra', 'unit_id' => $unit->id, 'role_id' => $userRole->id]);
     User::factory()->create(['name' => 'Apple', 'unit_id' => $unit->id, 'role_id' => $userRole->id]);
     User::factory()->create(['name' => 'Mango', 'unit_id' => $unit->id, 'role_id' => $userRole->id]);
@@ -209,7 +210,7 @@ test('sort_name asc returns users sorted A to Z', function () {
 test('sort_name desc returns users sorted Z to A', function () {
     ['superAdmin' => $superAdmin, 'unit' => $unit] = setupSuperAdminAndUnit();
 
-    $userRole = Role::where('name', 'User')->first();
+    $userRole = Role::where('name', 'Peminjam')->first();
     User::factory()->create(['name' => 'Zebra', 'unit_id' => $unit->id, 'role_id' => $userRole->id]);
     User::factory()->create(['name' => 'Apple', 'unit_id' => $unit->id, 'role_id' => $userRole->id]);
     User::factory()->create(['name' => 'Mango', 'unit_id' => $unit->id, 'role_id' => $userRole->id]);
@@ -230,7 +231,7 @@ test('sort_name desc returns users sorted Z to A', function () {
 test('response always includes global stats unaffected by filters', function () {
     ['superAdmin' => $superAdmin, 'unit' => $unit] = setupSuperAdminAndUnit();
 
-    $userRole = Role::where('name', 'User')->first();
+    $userRole = Role::where('name', 'Peminjam')->first();
     User::factory()->count(3)->create(['unit_id' => $unit->id, 'role_id' => $userRole->id]);
 
     $totalBeforeFilter = actingAs($superAdmin)
@@ -249,17 +250,17 @@ test('response always includes global stats unaffected by filters', function () 
 // ──────────────────────────────────────────────────────────────────────────────
 
 test('Admin_Unit can only see users within their unit scope', function () {
-    $adminUnitRole = Role::factory()->create(['name' => 'Admin_Unit']);
-    Role::factory()->create(['name' => 'SuperAdmin']);
-    Role::factory()->create(['name' => 'User']);
-    Role::factory()->create(['name' => 'Approver']);
+    $adminUnitRole = Role::factory()->create(['name' => 'Administrator Unit']);
+    Role::factory()->create(['name' => 'Administrator Utama']);
+    Role::factory()->create(['name' => 'Peminjam']);
+    Role::factory()->create(['name' => 'Penyetuju']);
 
     $unit = Unit::factory()->create(['level' => 'Jurusan', 'unit_name' => 'Jurusan TI', 'parent_id' => null]);
     $otherUnit = Unit::factory()->create(['level' => 'Jurusan', 'unit_name' => 'Jurusan Sipil', 'parent_id' => null]);
 
     $adminUser = User::factory()->create(['role_id' => $adminUnitRole->id, 'unit_id' => $unit->id, 'name' => 'Admin TI']);
 
-    $userRole = Role::where('name', 'User')->first();
+    $userRole = Role::where('name', 'Peminjam')->first();
     User::factory()->create(['name' => 'In Scope', 'unit_id' => $unit->id, 'role_id' => $userRole->id]);
     User::factory()->create(['name' => 'Out of Scope', 'unit_id' => $otherUnit->id, 'role_id' => $userRole->id]);
 

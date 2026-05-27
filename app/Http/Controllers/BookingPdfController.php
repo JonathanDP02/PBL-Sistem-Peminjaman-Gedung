@@ -22,9 +22,9 @@ class BookingPdfController extends Controller
 
         $user = Auth::user();
         $isOwner = $user->id === $booking->user_id;
-        $isApprover = $user->role->name === 'Approver';
-        $isAdminUnit = $user->role->name === 'Admin_Unit' && $booking->room->unit_id === $user->unit_id;
-        $isSuperAdmin = $user->role->name === 'SuperAdmin';
+        $isApprover = $user->role->name === 'Penyetuju';
+        $isAdminUnit = $user->role->name === 'Administrator Unit' && $booking->room->unit_id === $user->unit_id;
+        $isSuperAdmin = $user->role->name === 'Administrator Utama';
 
         if (!$isOwner && !$isApprover && !$isAdminUnit && !$isSuperAdmin) {
             abort(403, 'Anda tidak memiliki akses ke resource ini.');
@@ -62,8 +62,8 @@ class BookingPdfController extends Controller
         if (Auth::check()) {
             $user = Auth::user();
             $isOwner = $user->id === $booking->user_id;
-            $isApprover = $user->role->name === 'Approver';
-            $isSuperAdmin = $user->role->name === 'SuperAdmin';
+            $isApprover = $user->role->name === 'Penyetuju';
+            $isSuperAdmin = $user->role->name === 'Administrator Utama';
 
             if (! $isOwner && ! $isApprover && ! $isSuperAdmin) {
                 abort(403, 'Anda tidak memiliki akses ke resource ini');

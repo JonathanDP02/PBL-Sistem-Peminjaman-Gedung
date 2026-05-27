@@ -15,7 +15,7 @@ class WorkflowStepController extends Controller
         $user = Auth::user();
         $query = Workflow::query()->withCount(['steps', 'requirements']);
 
-        if ($user->role->name === 'Admin_Unit') {
+        if ($user->role->name === 'Administrator Unit') {
             $query->where('unit_id', $user->unit_id);
         }
 
@@ -28,14 +28,14 @@ class WorkflowStepController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-        'name' => 'required|string|max:255',
-        'description' => 'nullable|string',
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
         ]);
 
         $validated['unit_id'] = Auth::user()->unit_id;
-        
+
         $workflow = Workflow::create($validated);
-        
+
         return response()->json($workflow, 201);
     }
 
@@ -46,7 +46,7 @@ class WorkflowStepController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->role->name !== 'Admin_Unit') {
+        if ($user->role->name !== 'Administrator Unit') {
             abort(403, 'Hanya Admin Unit yang dapat mengubah workflow step');
         }
 
@@ -77,7 +77,7 @@ class WorkflowStepController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->role->name !== 'Admin_Unit') {
+        if ($user->role->name !== 'Administrator Unit') {
             abort(403, 'Hanya Admin Unit yang dapat menghapus workflow step');
         }
 
