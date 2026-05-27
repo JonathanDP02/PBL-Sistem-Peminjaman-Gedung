@@ -30,8 +30,8 @@ class UserController extends Controller
         }
 
         // Hitung statistik global berdasarkan unit yang boleh diakses (sebelum filter pencarian/saringan)
-        $superAdminCount = (clone $baseQuery)->whereHas('role', fn ($q) => $q->where('name', 'SuperAdmin'))->count();
-        $unitAdminCount = (clone $baseQuery)->whereHas('role', fn ($q) => $q->where('name', 'Admin_Unit'))->count();
+        $superAdminCount = (clone $baseQuery)->whereHas('role', fn ($q) => $q->where('name', 'Administrator Utama'))->count();
+        $unitAdminCount = (clone $baseQuery)->whereHas('role', fn ($q) => $q->where('name', 'Administrator Unit'))->count();
 
         $activeNow = (clone $baseQuery)->join('sessions', 'users.id', '=', 'sessions.user_id')
             ->where('sessions.last_activity', '>=', now()->subMinutes(15)->getTimestamp())
