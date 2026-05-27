@@ -3,7 +3,7 @@
         {{ getPageTitle() }}
     </h2>
     <div class="flex items-center gap-4">
-        @if(Auth::check() && in_array(Auth::user()->role->name, ['Approver', 'User']))
+        @if(Auth::check() && in_array(Auth::user()->role->name, ['Penyetuju', 'Peminjam']))
         <!-- Notification Bell & Dropdown -->
         <div class="relative">
             <button @click="notificationsOpen = !notificationsOpen" @click.away="notificationsOpen = false" class="relative p-2 text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white transition focus:outline-none">

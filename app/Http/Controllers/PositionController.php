@@ -12,7 +12,7 @@ class PositionController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->role->name === 'Admin_Unit') {
+        if ($user->role->name === 'Administrator Unit') {
             return Position::where('unit_id', $user->unit_id)->get();
         }
 

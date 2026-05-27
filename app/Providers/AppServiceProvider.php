@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Models\Booking;
+use App\Models\BookingLog;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -24,9 +26,9 @@ class AppServiceProvider extends ServiceProvider
                 $user = auth()->user();
                 $role = $user->role?->name;
 
-                if ($role === 'Approver') {
+                if ($role === 'Penyetuju') {
                     // For Approver: Bookings waiting for their approval (Meja Kerja logic)
-                    $notifications = \App\Models\Booking::where('status', 'Pending')
+                    $notifications = Booking::where('status', 'Pending')
                         ->whereHas('workflow.steps', function ($q) use ($user) {
                             $q->where('position_id', $user->position_id)
                                 ->whereColumn('step_order', 'bookings.current_step');
@@ -42,12 +44,12 @@ class AppServiceProvider extends ServiceProvider
                                 'action' => 'PENDING REQUEST',
                                 'notes' => "Peminjaman baru dari {$b->user->name}",
                                 'created_at' => $b->created_at,
-                                'booking' => $b
+                                'booking' => $b,
                             ];
                         });
                 } else {
                     // For User (Peminjam): Updates on their own bookings
-                    $notifications = \App\Models\BookingLog::whereHas('booking', function ($query) use ($user) {
+                    $notifications = BookingLog::whereHas('booking', function ($query) use ($user) {
                         $query->where('user_id', $user->id);
                     })
                         ->with(['booking.room', 'actor'])

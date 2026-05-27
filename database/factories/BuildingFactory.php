@@ -20,14 +20,14 @@ class BuildingFactory extends Factory
             'Gedung Akuntansi',
             'Gedung Mesin',
             'Gedung Sipil',
+            'Gedung Kimia',
             'Gedung Elektro',
             'Gedung Teknologi Informasi',
             'Graha Polinema',
         ];
 
-
         return [
-            'building_name' => $this->faker->unique()->randomElement($gedung)
+            'building_name' => $this->faker->unique()->randomElement($gedung),
         ];
     }
 }

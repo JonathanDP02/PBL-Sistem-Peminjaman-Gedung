@@ -10,8 +10,8 @@ class StoreUserRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->role?->name === 'SuperAdmin' ||
-               $this->user()?->role?->name === 'Admin_Unit';
+        return $this->user()?->role?->name === 'Administrator Utama' ||
+               $this->user()?->role?->name === 'Administrator Unit';
     }
 
     public function rules(): array

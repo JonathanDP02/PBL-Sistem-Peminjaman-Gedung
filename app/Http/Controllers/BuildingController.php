@@ -76,7 +76,7 @@ class BuildingController extends Controller
 
     private function authorizeSuperAdmin()
     {
-        if (Auth::user()->role->name !== 'SuperAdmin') {
+        if (Auth::user()->role->name !== 'Administrator Utama') {
             abort(403, 'Unauthorized');
         }
     }

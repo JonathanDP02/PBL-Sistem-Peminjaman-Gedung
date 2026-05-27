@@ -19,7 +19,7 @@ class UserController extends Controller
         $user = $request->user();
         $baseQuery = User::with(['role', 'unit', 'position']);
 
-        if ($user->role->name !== 'SuperAdmin') {
+        if ($user->role->name !== 'Administrator Utama') {
             // Admin_Unit dapat melihat users dari unit mereka dan semua unit anak
             $allowedUnitIds = Unit::where('id', $user->unit_id)
                 ->orWhere('parent_id', $user->unit_id)
@@ -30,8 +30,8 @@ class UserController extends Controller
         }
 
         // Hitung statistik global berdasarkan unit yang boleh diakses (sebelum filter pencarian/saringan)
-        $superAdminCount = (clone $baseQuery)->whereHas('role', fn ($q) => $q->where('name', 'SuperAdmin'))->count();
-        $unitAdminCount = (clone $baseQuery)->whereHas('role', fn ($q) => $q->where('name', 'Admin_Unit'))->count();
+        $superAdminCount = (clone $baseQuery)->whereHas('role', fn ($q) => $q->where('name', 'Administrator Utama'))->count();
+        $unitAdminCount = (clone $baseQuery)->whereHas('role', fn ($q) => $q->where('name', 'Administrator Unit'))->count();
 
         $activeNow = (clone $baseQuery)->join('sessions', 'users.id', '=', 'sessions.user_id')
             ->where('sessions.last_activity', '>=', now()->subMinutes(15)->getTimestamp())
@@ -116,19 +116,19 @@ class UserController extends Controller
         }
 
         // Validasi role assignment untuk Admin_Unit
-        if ($authUser->role->name === 'Admin_Unit') {
+        if ($authUser->role->name === 'Administrator Unit') {
             $targetRole = Role::find($request->role_id);
 
             // Tidak boleh assign SuperAdmin
-            if ($targetRole && $targetRole->name === 'SuperAdmin') {
+            if ($targetRole && $targetRole->name === 'Administrator Utama') {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Anda tidak memiliki izin untuk menetapkan role SuperAdmin.',
+                    'message' => 'Anda tidak memiliki izin untuk menetapkan role Administrator Utama.',
                 ], 403);
             }
 
             // Admin_Unit hanya bisa assign Admin_Unit jika level Jurusan dan untuk organisasi anak
-            if ($targetRole && $targetRole->name === 'Admin_Unit') {
+            if ($targetRole && $targetRole->name === 'Administrator Unit') {
                 // Hanya Jurusan yang bisa membuat Admin_Unit
                 if ($authUser->unit->level !== 'Jurusan') {
                     return response()->json([
@@ -175,7 +175,7 @@ class UserController extends Controller
         }
 
         // Scope unit untuk Admin_Unit
-        if ($authUser->role->name !== 'SuperAdmin') {
+        if ($authUser->role->name !== 'Administrator Utama') {
             $allowedUnitIds = Unit::where('id', $authUser->unit_id)
                 ->orWhere('parent_id', $authUser->unit_id)
                 ->pluck('id')
@@ -215,14 +215,14 @@ class UserController extends Controller
         }
 
         // Admin_Unit tidak boleh mengubah akun mereka sendiri
-        if ($authUser->role->name === 'Admin_Unit' && $authUser->id === $targetUser->id) {
+        if ($authUser->role->name === 'Administrator Unit' && $authUser->id === $targetUser->id) {
             return response()->json([
                 'success' => false,
                 'message' => 'Anda tidak dapat mengubah akun Anda sendiri.',
             ], 403);
         }
 
-        if ($authUser->role->name !== 'SuperAdmin') {
+        if ($authUser->role->name !== 'Administrator Utama') {
             $allowedUnitIds = Unit::where('id', $authUser->unit_id)
                 ->orWhere('parent_id', $authUser->unit_id)
                 ->pluck('id')
@@ -274,19 +274,19 @@ class UserController extends Controller
         }
 
         // Validasi role assignment untuk Admin_Unit saat update
-        if ($request->filled('role_id') && $authUser->role->name === 'Admin_Unit') {
+        if ($request->filled('role_id') && $authUser->role->name === 'Administrator Unit') {
             $targetRole = Role::find($request->role_id);
 
             // Tidak boleh assign SuperAdmin
-            if ($targetRole && $targetRole->name === 'SuperAdmin') {
+            if ($targetRole && $targetRole->name === 'Administrator Utama') {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Anda tidak memiliki izin untuk menetapkan role SuperAdmin.',
+                    'message' => 'Anda tidak memiliki izin untuk menetapkan role Administrator Utama.',
                 ], 403);
             }
 
             // Admin_Unit hanya bisa assign Admin_Unit jika level Jurusan dan untuk organisasi anak
-            if ($targetRole && $targetRole->name === 'Admin_Unit') {
+            if ($targetRole && $targetRole->name === 'Administrator Unit') {
                 // Hanya Jurusan yang bisa membuat Admin_Unit
                 if ($authUser->unit->level !== 'Jurusan') {
                     return response()->json([
@@ -345,7 +345,7 @@ class UserController extends Controller
             ], 422);
         }
 
-        if ($authUser->role->name !== 'SuperAdmin') {
+        if ($authUser->role->name !== 'Administrator Utama') {
             $allowedUnitIds = Unit::where('id', $authUser->unit_id)
                 ->orWhere('parent_id', $authUser->unit_id)
                 ->pluck('id')
@@ -358,10 +358,10 @@ class UserController extends Controller
                 ], 403);
             }
 
-            if ($targetUser->role->name === 'SuperAdmin') {
+            if ($targetUser->role->name === 'Administrator Utama') {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Anda tidak memiliki izin untuk menghapus SuperAdmin.',
+                    'message' => 'Anda tidak memiliki izin untuk menghapus Administrator Utama.',
                 ], 403);
             }
         }
@@ -384,13 +384,13 @@ class UserController extends Controller
     {
         $authUser = $request->user();
 
-        if ($authUser->role->name === 'SuperAdmin') {
+        if ($authUser->role->name === 'Administrator Utama') {
             // SuperAdmin: semua unit
             $units = Unit::select('id', 'unit_name')
                 ->orderBy('level')
                 ->orderBy('unit_name')
                 ->get();
-        } elseif ($authUser->role->name === 'Admin_Unit') {
+        } elseif ($authUser->role->name === 'Administrator Unit') {
             $userUnit = $authUser->unit;
 
             if ($userUnit->level === 'Jurusan') {
@@ -431,23 +431,23 @@ class UserController extends Controller
     {
         $authUser = $request->user();
 
-        if ($authUser->role->name === 'SuperAdmin') {
+        if ($authUser->role->name === 'Administrator Utama') {
             // SuperAdmin: semua role
             $roles = Role::select('id', 'name')
                 ->orderBy('name')
                 ->get();
-        } elseif ($authUser->role->name === 'Admin_Unit') {
+        } elseif ($authUser->role->name === 'Administrator Unit') {
             // Admin_Unit: tergantung level unit mereka
             if ($authUser->unit && $authUser->unit->level === 'Jurusan') {
-                // Level Jurusan: bisa assign User, Approver, dan Admin_Unit (untuk organisasi anak)
+                // Level Jurusan: bisa assign Peminjam, Approver, dan Admin_Unit (untuk organisasi anak)
                 $roles = Role::select('id', 'name')
-                    ->whereIn('name', ['User', 'Approver', 'Admin_Unit'])
+                    ->whereIn('name', ['Peminjam', 'Penyetuju', 'Administrator Unit'])
                     ->orderBy('name')
                     ->get();
             } else {
-                // Level Organisasi atau lain: hanya User dan Approver
+                // Level Organisasi atau lain: hanya Peminjam dan Penyetuju
                 $roles = Role::select('id', 'name')
-                    ->whereIn('name', ['User', 'Approver'])
+                    ->whereIn('name', ['Peminjam', 'Penyetuju'])
                     ->orderBy('name')
                     ->get();
             }
@@ -471,13 +471,13 @@ class UserController extends Controller
     {
         $authUser = $request->user();
 
-        if ($authUser->role->name === 'SuperAdmin') {
+        if ($authUser->role->name === 'Administrator Utama') {
             // SuperAdmin: semua posisi
             $positions = Position::select('id', 'name', 'unit_id')
                 ->with('unit')
                 ->orderBy('name')
                 ->get();
-        } elseif ($authUser->role->name === 'Admin_Unit') {
+        } elseif ($authUser->role->name === 'Administrator Unit') {
             $userUnit = $authUser->unit;
 
             if ($userUnit->level === 'Jurusan') {

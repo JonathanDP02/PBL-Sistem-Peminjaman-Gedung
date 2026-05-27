@@ -25,19 +25,19 @@ class DatabaseSeeder extends Seeder
         // Tabel roles punya kolom: name, description
         // ═══════════════════════════════════════════════════════
         $roleSuperAdmin = Role::create([
-            'name' => 'SuperAdmin',
+            'name' => 'Administrator Utama',
             'description' => 'Administrator pusat dengan akses penuh ke seluruh sistem',
         ]);
         $roleAdminUnit = Role::create([
-            'name' => 'Admin_Unit',
+            'name' => 'Administrator Unit',
             'description' => 'Administrator unit (jurusan/organisasi) yang mengelola data di wilayahnya',
         ]);
         $roleUser = Role::create([
-            'name' => 'User',
+            'name' => 'Peminjam',
             'description' => 'Mahasiswa atau civitas akademika yang dapat mengajukan peminjaman ruangan',
         ]);
         $roleApprover = Role::create([
-            'name' => 'Approver',
+            'name' => 'Penyetuju',
             'description' => 'Pejabat berwenang yang mereview dan menyetujui/menolak pengajuan peminjaman',
         ]);
 
@@ -55,69 +55,24 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // Level 2: Jurusan (parent = Pusat)
-        $jurusanTI = Unit::create([
-            'parent_id' => $pusat->id,
-            'level' => 'Jurusan',
-            'unit_name' => 'Jurusan Teknologi Informasi',
-            'description' => 'Jurusan TI - mengelola program studi berbasis IT',
-        ]);
+        $jurusanTI = Unit::create(['parent_id' => $pusat->id, 'level' => 'Jurusan', 'unit_name' => 'Jurusan Teknologi Informasi', 'description' => 'Jurusan TI']);
+        $jurusanSipil = Unit::create(['parent_id' => $pusat->id, 'level' => 'Jurusan', 'unit_name' => 'Jurusan Teknik Sipil', 'description' => 'Jurusan Sipil']);
+        $jurusanElektro = Unit::create(['parent_id' => $pusat->id, 'level' => 'Jurusan', 'unit_name' => 'Jurusan Teknik Elektro', 'description' => 'Jurusan Elektro']);
+        $jurusanMesin = Unit::create(['parent_id' => $pusat->id, 'level' => 'Jurusan', 'unit_name' => 'Jurusan Teknik Mesin', 'description' => 'Jurusan Mesin']);
+        $jurusanKimia = Unit::create(['parent_id' => $pusat->id, 'level' => 'Jurusan', 'unit_name' => 'Jurusan Teknik Kimia', 'description' => 'Jurusan Kimia']);
+        $jurusanAkuntansi = Unit::create(['parent_id' => $pusat->id, 'level' => 'Jurusan', 'unit_name' => 'Jurusan Akuntansi', 'description' => 'Jurusan Akuntansi']);
+        $jurusanAN = Unit::create(['parent_id' => $pusat->id, 'level' => 'Jurusan', 'unit_name' => 'Jurusan Administrasi Niaga', 'description' => 'Jurusan Administrasi Niaga']);
 
-        $jurusanSipil = Unit::create([
-            'parent_id' => $pusat->id,
-            'level' => 'Jurusan',
-            'unit_name' => 'Jurusan Teknik Sipil',
-            'description' => 'Jurusan Sipil - infrastruktur dan konstruksi',
-        ]);
+        // Level 3: Organisasi (parent = masing-masing Jurusan atau Pusat)
+        $bemPusat = Unit::create(['parent_id' => $pusat->id, 'level' => 'Organisasi', 'unit_name' => 'BEM Polinema', 'description' => 'Badan Eksekutif Mahasiswa Pusat']);
 
-        $jurusanElektro = Unit::create([
-            'parent_id' => $pusat->id,
-            'level' => 'Jurusan',
-            'unit_name' => 'Jurusan Teknik Elektro',
-            'description' => 'Jurusan Elektro - sistem ketenagaan dan elektronika',
-        ]);
-
-        // Level 3: Organisasi (parent = masing-masing Jurusan)
-        // Organisasi di bawah Jurusan TI
-        $hmti = Unit::create([
-            'parent_id' => $jurusanTI->id,
-            'level' => 'Organisasi',
-            'unit_name' => 'HMTI - Himpunan Mahasiswa TI',
-            'description' => 'Organisasi kemahasiswaan Jurusan TI',
-        ]);
-        $bemti = Unit::create([
-            'parent_id' => $jurusanTI->id,
-            'level' => 'Organisasi',
-            'unit_name' => 'BEM TI',
-            'description' => 'Badan Eksekutif Mahasiswa Jurusan TI',
-        ]);
-
-        // Organisasi di bawah Jurusan Sipil
-        $hmSipil = Unit::create([
-            'parent_id' => $jurusanSipil->id,
-            'level' => 'Organisasi',
-            'unit_name' => 'HM Sipil',
-            'description' => 'Himpunan Mahasiswa Teknik Sipil',
-        ]);
-        $bemSipil = Unit::create([
-            'parent_id' => $jurusanSipil->id,
-            'level' => 'Organisasi',
-            'unit_name' => 'BEM Sipil',
-            'description' => 'Badan Eksekutif Mahasiswa Sipil',
-        ]);
-
-        // Organisasi di bawah Jurusan Elektro
-        $hmElektro = Unit::create([
-            'parent_id' => $jurusanElektro->id,
-            'level' => 'Organisasi',
-            'unit_name' => 'HM Elektro',
-            'description' => 'Himpunan Mahasiswa Teknik Elektro',
-        ]);
-        $bemElektro = Unit::create([
-            'parent_id' => $jurusanElektro->id,
-            'level' => 'Organisasi',
-            'unit_name' => 'BEM Elektro',
-            'description' => 'Badan Eksekutif Mahasiswa Elektro',
-        ]);
+        $hmti = Unit::create(['parent_id' => $jurusanTI->id, 'level' => 'Organisasi', 'unit_name' => 'HMTI', 'description' => 'Himpunan Mahasiswa TI']);
+        $hms = Unit::create(['parent_id' => $jurusanSipil->id, 'level' => 'Organisasi', 'unit_name' => 'HMS', 'description' => 'Himpunan Mahasiswa Sipil']);
+        $hme = Unit::create(['parent_id' => $jurusanElektro->id, 'level' => 'Organisasi', 'unit_name' => 'HME', 'description' => 'Himpunan Mahasiswa Elektro']);
+        $hmm = Unit::create(['parent_id' => $jurusanMesin->id, 'level' => 'Organisasi', 'unit_name' => 'HMM', 'description' => 'Himpunan Mahasiswa Mesin']);
+        $hmk = Unit::create(['parent_id' => $jurusanKimia->id, 'level' => 'Organisasi', 'unit_name' => 'HMK', 'description' => 'Himpunan Mahasiswa Kimia']);
+        $hma = Unit::create(['parent_id' => $jurusanAkuntansi->id, 'level' => 'Organisasi', 'unit_name' => 'HMA', 'description' => 'Himpunan Mahasiswa Akuntansi']);
+        $hman = Unit::create(['parent_id' => $jurusanAN->id, 'level' => 'Organisasi', 'unit_name' => 'HMAN', 'description' => 'Himpunan Mahasiswa Administrasi Niaga']);
 
         // ═══════════════════════════════════════════════════════
         // STEP 3: SEED POSITIONS (jabatan per unit)
@@ -131,49 +86,39 @@ class DatabaseSeeder extends Seeder
         $posKajurTI = Position::create(['unit_id' => $jurusanTI->id,    'name' => 'Ketua Jurusan TI']);
         $posKaprodiTI = Position::create(['unit_id' => $jurusanTI->id,   'name' => 'Kaprodi TI']);
 
-        // Jabatan di Jurusan Sipil
+        // Jabatan di Jurusan Lainnya
         $posKajurSipil = Position::create(['unit_id' => $jurusanSipil->id, 'name' => 'Ketua Jurusan Sipil']);
-
-        // Jabatan di Jurusan Elektro
         $posKajurElektro = Position::create(['unit_id' => $jurusanElektro->id, 'name' => 'Ketua Jurusan Elektro']);
+        $posKajurMesin = Position::create(['unit_id' => $jurusanMesin->id, 'name' => 'Ketua Jurusan Mesin']);
+        $posKajurKimia = Position::create(['unit_id' => $jurusanKimia->id, 'name' => 'Ketua Jurusan Kimia']);
+        $posKajurAkuntansi = Position::create(['unit_id' => $jurusanAkuntansi->id, 'name' => 'Ketua Jurusan Akuntansi']);
+        $posKajurAN = Position::create(['unit_id' => $jurusanAN->id, 'name' => 'Ketua Jurusan Administrasi Niaga']);
 
         // Jabatan organisasi (untuk kelola data lokal)
+        $posPresBEM = Position::create(['unit_id' => $bemPusat->id, 'name' => 'Presiden BEM Polinema']);
         $posKetHMTI = Position::create(['unit_id' => $hmti->id, 'name' => 'Ketua HMTI']);
+        $posKetHMS = Position::create(['unit_id' => $hms->id, 'name' => 'Ketua HMS']);
+        $posKetHME = Position::create(['unit_id' => $hme->id, 'name' => 'Ketua HME']);
+        $posKetHMM = Position::create(['unit_id' => $hmm->id, 'name' => 'Ketua HMM']);
+        $posKetHMK = Position::create(['unit_id' => $hmk->id, 'name' => 'Ketua HMK']);
+        $posKetHMA = Position::create(['unit_id' => $hma->id, 'name' => 'Ketua HMA']);
+        $posKetHMAN = Position::create(['unit_id' => $hman->id, 'name' => 'Ketua HMAN']);
 
         // ═══════════════════════════════════════════════════════
         // STEP 4: SEED BUILDINGS & ROOMS
         // ═══════════════════════════════════════════════════════
 
-        $gedungAN = Building::create([
-            'building_name' => 'Gedung Administrasi Niaga',
+        // Daftar Gedung
+        $gedungTI = Building::create(['building_name' => 'Gedung Teknologi Informasi']);
+        $gedungSipil = Building::create(['building_name' => 'Gedung Teknik Sipil']);
+        $gedungElektro = Building::create(['building_name' => 'Gedung Teknik Elektro']);
+        $gedungMesin = Building::create(['building_name' => 'Gedung Teknik Mesin']);
+        $gedungKimia = Building::create(['building_name' => 'Gedung Teknik Kimia']);
+        $gedungAkuntansi = Building::create(['building_name' => 'Gedung Akuntansi']);
+        $gedungAN = Building::create(['building_name' => 'Gedung Administrasi Niaga']);
+        $graha = Building::create(['building_name' => 'Graha Polinema']);
 
-        ]);
-        $gedungTI = Building::create([
-            'building_name' => 'Gedung Teknologi Informasi',
-
-        ]);
-        $auditorium = Building::create([
-            'building_name' => 'Auditorium Utama',
-
-        ]);
-
-        // Ruangan di Gedung A (milik Pusat)
-        Room::create([
-            'building_id' => $gedungAN->id,
-            'unit_id' => $pusat->id,
-            'room_name' => 'Ruang Rapat',
-            'capacity' => 30,
-            'description' => 'Ruang rapat resmi untuk pimpinan institusi',
-        ]);
-        Room::create([
-            'building_id' => $gedungAN->id,
-            'unit_id' => $pusat->id,
-            'room_name' => 'Aula',
-            'capacity' => 100,
-            'description' => 'Aula besar untuk kegiatan kampus',
-        ]);
-
-        // Ruangan di Gedung TI (milik Jurusan TI)
+        // Ruangan di Gedung TI
         Room::create([
             'building_id' => $gedungTI->id,
             'unit_id' => $jurusanTI->id,
@@ -189,13 +134,57 @@ class DatabaseSeeder extends Seeder
             'description' => 'Ruang kelas reguler Jurusan TI',
         ]);
 
-        // Auditorium (milik Pusat)
+        // Ruangan 1 untuk Gedung lainnya
         Room::create([
-            'building_id' => $auditorium->id,
+            'building_id' => $gedungSipil->id,
+            'unit_id' => $jurusanSipil->id,
+            'room_name' => 'Ruang Kelas Sipil-101',
+            'capacity' => 40,
+            'description' => 'Ruang kelas reguler Sipil',
+        ]);
+        Room::create([
+            'building_id' => $gedungElektro->id,
+            'unit_id' => $jurusanElektro->id,
+            'room_name' => 'Ruang Kelas Elektro-101',
+            'capacity' => 40,
+            'description' => 'Ruang kelas reguler Elektro',
+        ]);
+        Room::create([
+            'building_id' => $gedungMesin->id,
+            'unit_id' => $jurusanMesin->id,
+            'room_name' => 'Ruang Kelas Mesin-101',
+            'capacity' => 40,
+            'description' => 'Ruang kelas reguler Mesin',
+        ]);
+        Room::create([
+            'building_id' => $gedungKimia->id,
+            'unit_id' => $jurusanKimia->id,
+            'room_name' => 'Ruang Kelas Kimia-101',
+            'capacity' => 40,
+            'description' => 'Ruang kelas reguler Kimia',
+        ]);
+        Room::create([
+            'building_id' => $gedungAkuntansi->id,
+            'unit_id' => $jurusanAkuntansi->id,
+            'room_name' => 'Ruang Kelas Akuntansi-101',
+            'capacity' => 40,
+            'description' => 'Ruang kelas reguler Akuntansi',
+        ]);
+        Room::create([
+            'building_id' => $gedungAN->id,
+            'unit_id' => $jurusanAN->id,
+            'room_name' => 'Ruang Kelas AN-101',
+            'capacity' => 40,
+            'description' => 'Ruang kelas reguler Administrasi Niaga',
+        ]);
+
+        // Graha Polinema (milik Pusat)
+        Room::create([
+            'building_id' => $graha->id,
             'unit_id' => $pusat->id,
-            'room_name' => 'Auditorium Lantai 8',
-            'capacity' => 200,
-            'description' => 'Ruang auditorium utama kampus',
+            'room_name' => 'Graha Polinema',
+            'capacity' => 1000,
+            'description' => 'Gedung Graha Polinema untuk kegiatan besar',
         ]);
 
         // ═══════════════════════════════════════════════════════
@@ -213,28 +202,55 @@ class DatabaseSeeder extends Seeder
             'password' => Hash::make('12345'),
         ]);
 
-        // 2 Admin Unit (beda jurusan: TI dan Sipil)
-        User::create([
-            'unit_id' => $jurusanTI->id,
-            'position_id' => null,
-            'role_id' => $roleAdminUnit->id,
-            'name' => 'Admin Jurusan TI',
-            'email' => 'admin.ti@spacein.test',
-            'password' => Hash::make('12345'),
-        ]);
-        User::create([
-            'unit_id' => $jurusanSipil->id,
-            'position_id' => null,
-            'role_id' => $roleAdminUnit->id,
-            'name' => 'Admin Jurusan Sipil',
-            'email' => 'admin.sipil@spacein.test',
-            'password' => Hash::make('12345'),
-        ]);
+        // 2 Admin Unit (masing-masing jurusan)
+        $jurusans = [
+            ['unit' => $jurusanTI, 'name' => 'TI', 'email' => 'admin.ti'],
+            ['unit' => $jurusanSipil, 'name' => 'Sipil', 'email' => 'admin.sipil'],
+            ['unit' => $jurusanElektro, 'name' => 'Elektro', 'email' => 'admin.elektro'],
+            ['unit' => $jurusanMesin, 'name' => 'Mesin', 'email' => 'admin.mesin'],
+            ['unit' => $jurusanKimia, 'name' => 'Kimia', 'email' => 'admin.kimia'],
+            ['unit' => $jurusanAkuntansi, 'name' => 'Akuntansi', 'email' => 'admin.akuntansi'],
+            ['unit' => $jurusanAN, 'name' => 'Administrasi Niaga', 'email' => 'admin.an'],
+        ];
 
-        // 3 Approver (beda posisi: Kajur TI, Wadir, Kaprodi TI)
+        foreach ($jurusans as $j) {
+            User::create([
+                'unit_id' => $j['unit']->id,
+                'position_id' => null,
+                'role_id' => $roleAdminUnit->id,
+                'name' => 'Admin Jurusan '.$j['name'],
+                'email' => $j['email'].'@spacein.test',
+                'password' => Hash::make('12345'),
+            ]);
+        }
+
+        // Admin Unit untuk masing-masing Organisasi
+        $orgs = [
+            ['unit' => $bemPusat, 'name' => 'BEM Polinema', 'email' => 'admin.bem'],
+            ['unit' => $hmti, 'name' => 'HMTI', 'email' => 'admin.hmti'],
+            ['unit' => $hms, 'name' => 'HMS', 'email' => 'admin.hms'],
+            ['unit' => $hme, 'name' => 'HME', 'email' => 'admin.hme'],
+            ['unit' => $hmm, 'name' => 'HMM', 'email' => 'admin.hmm'],
+            ['unit' => $hmk, 'name' => 'HMK', 'email' => 'admin.hmk'],
+            ['unit' => $hma, 'name' => 'HMA', 'email' => 'admin.hma'],
+            ['unit' => $hman, 'name' => 'HMAN', 'email' => 'admin.hman'],
+        ];
+
+        foreach ($orgs as $o) {
+            User::create([
+                'unit_id' => $o['unit']->id,
+                'position_id' => null,
+                'role_id' => $roleAdminUnit->id,
+                'name' => 'Admin '.$o['name'],
+                'email' => $o['email'].'@spacein.test',
+                'password' => Hash::make('12345'),
+            ]);
+        }
+
+        // 3 Approver Utama (Digunakan di testing)
         User::create([
             'unit_id' => $jurusanTI->id,
-            'position_id' => $posKajurTI->id,  // Ketua Jurusan TI
+            'position_id' => $posKajurTI->id,
             'role_id' => $roleApprover->id,
             'name' => 'Dr. Budi Santoso',
             'email' => 'kajur.ti@spacein.test',
@@ -242,7 +258,7 @@ class DatabaseSeeder extends Seeder
         ]);
         User::create([
             'unit_id' => $pusat->id,
-            'position_id' => $posWadir->id,    // Wakil Direktur
+            'position_id' => $posWadir->id,
             'role_id' => $roleApprover->id,
             'name' => 'Dr. Siti Rahayu',
             'email' => 'wadir@spacein.test',
@@ -250,14 +266,56 @@ class DatabaseSeeder extends Seeder
         ]);
         User::create([
             'unit_id' => $jurusanTI->id,
-            'position_id' => $posKaprodiTI->id, // Kaprodi TI
+            'position_id' => $posKaprodiTI->id,
             'role_id' => $roleApprover->id,
             'name' => 'Ir. Agus Wijaya',
             'email' => 'kaprodi.ti@spacein.test',
             'password' => Hash::make('12345'),
         ]);
 
-        // 3 User biasa (peminjam) — dari berbagai unit organisasi
+        // Approver Tambahan untuk masing-masing Jurusan
+        $kajurs = [
+            ['unit' => $jurusanSipil, 'pos' => $posKajurSipil, 'name' => 'Sipil', 'email' => 'sipil'],
+            ['unit' => $jurusanElektro, 'pos' => $posKajurElektro, 'name' => 'Elektro', 'email' => 'elektro'],
+            ['unit' => $jurusanMesin, 'pos' => $posKajurMesin, 'name' => 'Mesin', 'email' => 'mesin'],
+            ['unit' => $jurusanKimia, 'pos' => $posKajurKimia, 'name' => 'Kimia', 'email' => 'kimia'],
+            ['unit' => $jurusanAkuntansi, 'pos' => $posKajurAkuntansi, 'name' => 'Akuntansi', 'email' => 'akuntansi'],
+            ['unit' => $jurusanAN, 'pos' => $posKajurAN, 'name' => 'Administrasi Niaga', 'email' => 'an'],
+        ];
+        foreach ($kajurs as $k) {
+            User::create([
+                'unit_id' => $k['unit']->id,
+                'position_id' => $k['pos']->id,
+                'role_id' => $roleApprover->id,
+                'name' => 'Ketua Jurusan '.$k['name'],
+                'email' => 'kajur.'.$k['email'].'@spacein.test',
+                'password' => Hash::make('12345'),
+            ]);
+        }
+
+        // Approver Tambahan untuk masing-masing Organisasi
+        $ketuas = [
+            ['unit' => $bemPusat, 'pos' => $posPresBEM, 'name' => 'BEM Polinema', 'email' => 'bem'],
+            ['unit' => $hmti, 'pos' => $posKetHMTI, 'name' => 'HMTI', 'email' => 'hmti'],
+            ['unit' => $hms, 'pos' => $posKetHMS, 'name' => 'HMS', 'email' => 'hms'],
+            ['unit' => $hme, 'pos' => $posKetHME, 'name' => 'HME', 'email' => 'hme'],
+            ['unit' => $hmm, 'pos' => $posKetHMM, 'name' => 'HMM', 'email' => 'hmm'],
+            ['unit' => $hmk, 'pos' => $posKetHMK, 'name' => 'HMK', 'email' => 'hmk'],
+            ['unit' => $hma, 'pos' => $posKetHMA, 'name' => 'HMA', 'email' => 'hma'],
+            ['unit' => $hman, 'pos' => $posKetHMAN, 'name' => 'HMAN', 'email' => 'hman'],
+        ];
+        foreach ($ketuas as $k) {
+            User::create([
+                'unit_id' => $k['unit']->id,
+                'position_id' => $k['pos']->id,
+                'role_id' => $roleApprover->id,
+                'name' => 'Ketua '.$k['name'],
+                'email' => 'ketua.'.$k['email'].'@spacein.test',
+                'password' => Hash::make('12345'),
+            ]);
+        }
+
+        // User biasa (peminjam) — Main Test Accounts
         User::create([
             'unit_id' => $hmti->id,
             'position_id' => null,
@@ -267,7 +325,7 @@ class DatabaseSeeder extends Seeder
             'password' => Hash::make('12345'),
         ]);
         User::create([
-            'unit_id' => $bemSipil->id,
+            'unit_id' => $hms->id,
             'position_id' => null,
             'role_id' => $roleUser->id,
             'name' => 'Budi Mahasiswa Sipil',
@@ -275,13 +333,37 @@ class DatabaseSeeder extends Seeder
             'password' => Hash::make('12345'),
         ]);
         User::create([
-            'unit_id' => $hmElektro->id,
+            'unit_id' => $hme->id,
             'position_id' => null,
             'role_id' => $roleUser->id,
             'name' => 'Citra Mahasiswi Elektro',
             'email' => 'citra@spacein.test',
             'password' => Hash::make('12345'),
         ]);
+
+        // User biasa tambahan untuk Organisasi dan Jurusan
+        foreach ($jurusans as $j) {
+            User::create([
+                'unit_id' => $j['unit']->id,
+                'position_id' => null,
+                'role_id' => $roleUser->id,
+                'name' => 'Staf Jurusan '.$j['name'],
+                'email' => 'staf.'.$j['email'].'@spacein.test',
+                'password' => Hash::make('12345'),
+            ]);
+        }
+        foreach ($ketuas as $k) {
+            if (! in_array($k['name'], ['HMTI', 'HMS', 'HME'])) {
+                User::create([
+                    'unit_id' => $k['unit']->id,
+                    'position_id' => null,
+                    'role_id' => $roleUser->id,
+                    'name' => 'Mahasiswa '.$k['name'],
+                    'email' => 'mhs.'.$k['email'].'@spacein.test',
+                    'password' => Hash::make('12345'),
+                ]);
+            }
+        }
 
         // ═══════════════════════════════════════════════════════
         // STEP 6: SEED WORKFLOWS & WORKFLOW STEPS
@@ -329,11 +411,11 @@ class DatabaseSeeder extends Seeder
             'is_mandatory' => true,
         ]);
 
-        // Workflow untuk peminjaman Auditorium (milik Pusat)
+        // Workflow untuk peminjaman Graha Polinema (milik Pusat)
         $wfAuditorium = Workflow::create([
             'unit_id' => $pusat->id,
-            'name' => 'Peminjaman Auditorium',
-            'description' => 'Alur persetujuan peminjaman Auditorium Utama',
+            'name' => 'Peminjaman Graha Polinema',
+            'description' => 'Alur persetujuan peminjaman Graha Polinema',
         ]);
 
         // Urutan: Kajur TI (Jurusan) -> Wadir (Pusat)
@@ -364,8 +446,16 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // Hubungkan ruangan ke alur persetujuan (workflow) yang sesuai
-        Room::where('unit_id', $jurusanTI->id)->update(['workflow_id' => $wfJTI->id]);
-        Room::where('unit_id', $pusat->id)->update(['workflow_id' => $wfAuditorium->id]);
+        // Assign Workflow to Rooms via workflows.room_id
+        $jtiRoom = Room::where('unit_id', $jurusanTI->id)->first();
+        if ($jtiRoom) {
+            $wfJTI->update(['room_id' => $jtiRoom->id]);
+        }
+        
+        $pusatRoom = Room::where('unit_id', $pusat->id)->first();
+        if ($pusatRoom) {
+            $wfAuditorium->update(['room_id' => $pusatRoom->id]);
+        }
 
         // ═══════════════════════════════════════════════════════
         // STEP 7: SEED TEST DATA MENGGUNAKAN FACTORIES
