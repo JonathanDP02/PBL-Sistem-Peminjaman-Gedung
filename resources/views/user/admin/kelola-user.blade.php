@@ -436,10 +436,10 @@ function renderUsersTable(users) {
 // Get role color class
 function getRoleColor(roleName) {
     const colors = {
-        'SuperAdmin': 'text-teal-600 dark:text-kinetic-primary',
-        'Admin_Unit': 'text-cyan-600 dark:text-kinetic-tertiary',
-        'Approver': 'text-purple-600 dark:text-purple-400',
-        'User': 'text-slate-500 dark:text-gray-500'
+        'Administrator Utama': 'text-teal-600 dark:text-kinetic-primary',
+        'Administrator Unit': 'text-cyan-600 dark:text-kinetic-tertiary',
+        'Penyetuju': 'text-purple-600 dark:text-purple-400',
+        'Peminjam': 'text-slate-500 dark:text-gray-500'
     };
     return colors[roleName] || 'text-slate-500 dark:text-gray-500';
 }
@@ -772,11 +772,11 @@ function viewUser(userId) {
             // Apply role colors classes dynamically
             roleEl.className = 'px-3 py-1 rounded-full text-xs font-medium border border-slate-200 dark:border-[#333]'; // reset base
             
-            if (user.role?.name === 'SuperAdmin') {
+            if (user.role?.name === 'Administrator Utama') {
                 roleEl.classList.add('bg-teal-50', 'dark:bg-[#0D2A27]', 'text-teal-700', 'dark:text-kinetic-primary');
-            } else if (user.role?.name === 'Admin_Unit') {
+            } else if (user.role?.name === 'Administrator Unit') {
                 roleEl.classList.add('bg-cyan-50', 'dark:bg-cyan-900/20', 'text-cyan-700', 'dark:text-cyan-400');
-            } else if (user.role?.name === 'Approver') {
+            } else if (user.role?.name === 'Penyetuju') {
                 roleEl.classList.add('bg-purple-50', 'dark:bg-purple-900/20', 'text-purple-700', 'dark:text-purple-400');
             } else {
                 roleEl.classList.add('bg-slate-100', 'dark:bg-[#222]', 'text-slate-600', 'dark:text-gray-300');

@@ -204,7 +204,7 @@
                         }
                     @endphp
                     
-                    <div class="flex items-center justify-between py-4 border-b border-slate-100 dark:border-[#222] transition-colors duration-300 hover:bg-slate-50 dark:hover:bg-[#151515] -mx-4 px-4 rounded-xl cursor-pointer">
+                    <a href="{{ route('detail', $aktivitas->id) }}" class="flex items-center justify-between py-4 border-b border-slate-100 dark:border-[#222] transition-colors duration-300 hover:bg-slate-50 dark:hover:bg-[#151515] -mx-4 px-4 rounded-xl cursor-pointer">
                         <div class="flex items-center gap-4">
                             <div class="w-10 h-10 rounded-full {{ $colorClass }} flex items-center justify-center shrink-0 transition-colors duration-300">
                                 <i class="ph-bold {{ $icon }} text-lg"></i>
@@ -219,7 +219,7 @@
                         <span class="text-[9px] font-bold px-3 py-1 rounded-full uppercase tracking-wider transition-colors duration-300 border {{ $badgeClass }}">
                             {{ $statusText }}
                         </span>
-                    </div>
+                    </a>
                 @empty
                     <div class="py-8 text-center">
                         <p class="text-slate-500 text-sm">Belum ada aktivitas peminjaman di unit ini.</p>

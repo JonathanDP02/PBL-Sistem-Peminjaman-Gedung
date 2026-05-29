@@ -5,13 +5,8 @@
             <div>
                 <nav class="flex items-center gap-2 text-xs font-medium text-slate-400 mb-2">
                     @php
-                        $userRole = Auth::user()?->role?->name;
-                        $backRoute = route('dashboard');
-                        $backText = 'Dashboard';
-                        if ($userRole === 'Peminjam') {
-                            $backRoute = route('riwayat');
-                            $backText = 'Riwayat';
-                        }
+                        $backRoute = route('riwayat');
+                        $backText = 'Kembali';
                     @endphp
                     <a href="{{ $backRoute }}" class="hover:text-kinetic-primary transition">{{ $backText }}</a>
                     <i class="ph ph-caret-right text-[10px]"></i>
@@ -51,12 +46,6 @@
                     <i class="ph ph-printer text-lg"></i> Cetak Bukti
                 </a>
                 @endif
-                
-                @if(in_array($booking->status, ['Pending', 'Revising', 'Draft']) && Auth::user()?->role?->name === 'Peminjam')
-                <button onclick="cancelBooking({{ $booking->id }})" class="flex items-center gap-2 px-5 py-2.5 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-500 border border-red-200 dark:border-red-500/20 rounded-xl text-sm font-bold hover:bg-red-100 dark:hover:bg-red-500/20 transition">
-                    <i class="ph ph-x-circle text-lg"></i> Batalkan
-                </button>
-                @endif
             </div>
         </div>
 
@@ -74,24 +63,8 @@
                             @php
                                 $lastRejectLog = $booking->logs->where('action', 'REJECTED')->last();
                             @endphp
-                            <p class="text-[11px] text-red-400 leading-relaxed">{{ $lastRejectLog ? $lastRejectLog->notes : 'Dokumen Anda perlu diperbaiki. Silakan unggah ulang dokumen yang sesuai.' }}</p>
+                            <p class="text-[11px] text-red-400 leading-relaxed">{{ $lastRejectLog ? $lastRejectLog->notes : 'Dokumen perlu diperbaiki oleh peminjam.' }}</p>
                         </div>
-                    </div>
-                    
-                    {{-- Form Revisi --}}
-                    <div class="mt-2 border-t border-red-500/20 pt-4">
-                        <form action="{{ route('booking.revise', $booking->id) }}" method="POST" enctype="multipart/form-data" class="space-y-4" id="form-revisi">
-                            @csrf
-                            @foreach($booking->workflow->requirements->where('is_mandatory', true) as $req)
-                            <div>
-                                <label class="block text-xs font-bold text-red-400 mb-1">{{ $req->document_name }} <span class="text-red-500">*</span></label>
-                                <input type="file" name="requirement_{{ $req->id }}" required class="block w-full text-xs text-slate-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100 dark:file:bg-red-900/30 dark:file:text-red-400 dark:hover:file:bg-red-900/50 transition-colors">
-                            </div>
-                            @endforeach
-                            <button type="button" onclick="submitRevisi()" class="w-full py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-bold shadow-md transition-colors flex justify-center items-center gap-2">
-                                <i class="ph ph-upload-simple"></i> Kirim Revisi
-                            </button>
-                        </form>
                     </div>
                 </div>
                 @endif
@@ -270,72 +243,3 @@
 
     </div>
 </x-app-layout>
-
-<script>
-    async function cancelBooking(id) {
-        if (!confirm('Apakah Anda yakin ingin membatalkan peminjaman ini?')) return;
-        
-        try {
-            const response = await fetch(`/user/bookings/${id}/cancel`, {
-                method: 'PATCH',
-                headers: {
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                    'Accept': 'application/json'
-                }
-            });
-            
-            const data = await response.json();
-            if (response.ok) {
-                alert('Berhasil dibatalkan!');
-                window.location.reload();
-            } else {
-                alert(data.error || 'Terjadi kesalahan.');
-            }
-        } catch (e) {
-            alert('Gagal terhubung ke server.');
-        }
-    }
-
-    async function submitRevisi() {
-        const form = document.getElementById('form-revisi');
-        if (!form.checkValidity()) {
-            form.reportValidity();
-            return;
-        }
-
-        const formData = new FormData(form);
-        const btn = form.querySelector('button');
-        const originalText = btn.innerHTML;
-        btn.innerHTML = '<i class="ph ph-spinner animate-spin"></i> Mengirim...';
-        btn.disabled = true;
-
-        try {
-            const response = await fetch(form.action, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json'
-                }
-            });
-
-            const data = await response.json();
-            if (response.ok) {
-                alert('Berhasil mengirim revisi!');
-                window.location.reload();
-            } else {
-                if (data.errors) {
-                    alert(Object.values(data.errors).flat().join('\n'));
-                } else {
-                    alert(data.error || 'Terjadi kesalahan.');
-                }
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-            }
-        } catch (e) {
-            alert('Gagal mengirim data.');
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-        }
-    }
-</script>

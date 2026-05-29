@@ -175,7 +175,8 @@
 
         if (!selectedRoom) return;
 
-        const workflow = selectedRoom.workflow;
+        // Cari workflow dari daftar workflowsData yang memiliki room_id sesuai ruangan yang dipilih
+        const workflow = workflowsData.find(w => w.room_id == selectedRoom.id);
 
         if (!workflow) {
             workflowContainer.innerHTML = `
@@ -183,7 +184,7 @@
                     <i class="ph-fill ph-warning-circle text-rose-500 text-xl mt-0.5"></i>
                     <div>
                         <h4 class="text-sm font-bold text-rose-800 dark:text-rose-300">SOP Belum Dikonfigurasi</h4>
-                        <p class="text-[11px] text-rose-600 dark:text-rose-400 mt-1">Ruangan ini belum memiliki alur persetujuan yang aktif. Silakan hubungi Admin Unit pengelola ruangan untuk melakukan setup workflow agar ruangan ini dapat dipinjam.</p>
+                        <p class="text-[11px] text-rose-600 dark:text-rose-400 mt-1">Unit Anda belum memiliki alur persetujuan (workflow) yang dikonfigurasi untuk ruangan ini. Silakan hubungi Admin Unit Anda untuk melakukan setup workflow agar ruangan ini dapat dipinjam.</p>
                     </div>
                 </div>`;
             documentsContainer.innerHTML = '';

@@ -44,16 +44,6 @@
                 </div>
             </div>
 
-            <div>
-                <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">Alur Persetujuan (SOP)</label>
-                <select name="workflow_id" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-kinetic-primary transition-colors appearance-none">
-                    <option value="">-- Tidak Ada Alur (Ruangan Tidak Dapat Dipinjam) --</option>
-                    @foreach(App\Models\Workflow::where('unit_id', auth()->user()->unit_id)->get() as $workflow)
-                        <option value="{{ $workflow->id }}">{{ $workflow->name }}</option>
-                    @endforeach
-                </select>
-                <p class="text-[10px] text-slate-500 mt-1">Jika kosong, peminjam tidak akan bisa mengajukan peminjaman untuk ruangan ini.</p>
-            </div>
 
             <div>
                 <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">Deskripsi Ruangan</label>

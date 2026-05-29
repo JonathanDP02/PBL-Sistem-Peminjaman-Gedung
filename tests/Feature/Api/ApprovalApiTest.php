@@ -31,8 +31,8 @@ class ApprovalApiTest extends TestCase
         parent::setUp();
 
         // Create roles
-        $userRole = Role::factory()->create(['name' => 'User']);
-        $approverRole = Role::factory()->create(['name' => 'Approver']);
+        $userRole = Role::factory()->create(['name' => 'Peminjam']);
+        $approverRole = Role::factory()->create(['name' => 'Penyetuju']);
 
         // Create position
         $position = Position::factory()->create(['name' => 'Kaprodi']);
@@ -296,7 +296,7 @@ class ApprovalApiTest extends TestCase
      */
     public function test_approver_without_position_cannot_access(): void
     {
-        $approverRole = Role::where('name', 'Approver')->firstOrFail();
+        $approverRole = Role::where('name', 'Penyetuju')->firstOrFail();
         /* @var User $userWithoutPosition */
         $userWithoutPosition = User::factory()->create([
             'role_id' => $approverRole->id,

@@ -13,6 +13,7 @@ class Workflow extends Model
 
     protected $fillable = [
         'unit_id',
+        'room_id',
         'name',
         'description',
     ];
@@ -20,6 +21,11 @@ class Workflow extends Model
     public function unit(): BelongsTo
     {
         return $this->belongsTo(Unit::class);
+    }
+
+    public function room(): BelongsTo
+    {
+        return $this->belongsTo(Room::class);
     }
 
     public function steps(): HasMany

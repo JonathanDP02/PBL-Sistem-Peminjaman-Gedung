@@ -29,7 +29,7 @@
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-2">
             <div>
                 <h2 class="font-heading text-5xl font-extrabold text-teal-600 dark:text-[#5EEAD4] tracking-tight transition-colors duration-300">Pusat Kendali</h2>
-                <p class="text-sm text-slate-500 dark:text-slate-400 mt-2 max-w-md transition-colors duration-300">Selamat datang kembali, SuperAdmin. Berikut adalah ringkasan operasional seluruh infrastruktur hari ini.</p>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mt-2 max-w-md transition-colors duration-300">Selamat datang kembali, Administrator Utama. Berikut adalah ringkasan operasional seluruh infrastruktur hari ini.</p>
             </div>
             
             <div class="flex gap-3">
@@ -160,7 +160,7 @@
             
             <div class="flex flex-col">
                 @forelse($aktivitasTerbaru as $log)
-                <div class="flex items-center justify-between py-4 border-b border-slate-100 dark:border-[#222]">
+                <a href="{{ route('detail', $log->id) }}" class="flex items-center justify-between py-4 border-b border-slate-100 dark:border-[#222] transition-colors duration-300 hover:bg-slate-50 dark:hover:bg-[#151515] -mx-4 px-4 rounded-xl">
                     <div class="flex items-center gap-4">
                         <div class="w-10 h-10 rounded-full bg-teal-50 dark:bg-[#082a20] border border-teal-100 dark:border-[#1a4a3a] text-teal-600 dark:text-[#5EEAD4] flex items-center justify-center shrink-0">
                             <i class="ph-bold ph-activity text-lg"></i>
@@ -168,12 +168,12 @@
                         <div>
                             <h4 class="text-slate-800 dark:text-white font-bold text-sm">{{ $log->event_name }}</h4>
                             <p class="text-slate-500 dark:text-[#888] text-xs mt-0.5">
-                                {{ $log->room->room_name }} ({{ $log->room->building->building_name }}) • Oleh: {{ $log->user->name }}
+                                {{ $log->room->room_name }} ({{ $log->room->building->building_name ?? '-' }}) • Oleh: {{ $log->user->name ?? 'User' }}
                             </p>
                         </div>
                     </div>
                     <span class="text-[10px] text-slate-400">{{ $log->created_at->diffForHumans() }}</span>
-                </div>
+                </a>
                 @empty
                     <p class="text-sm text-slate-500 text-center py-6">Belum ada aktivitas sistem terdeteksi.</p>
                 @endforelse
@@ -181,7 +181,7 @@
         </div>
             
         <footer class="mt-auto pt-8 pb-4 text-center">
-            <p class="text-[9px] font-bold tracking-[0.2em] text-slate-400 dark:text-[#bbb] uppercase transition-colors duration-300">© 2026 SPACE.IN GLOBAL INFRASTRUCTURE • V2.4.0 SUPERADMIN EDITION</p>
+            <p class="text-[9px] font-bold tracking-[0.2em] text-slate-400 dark:text-[#bbb] uppercase transition-colors duration-300">© 2026 SPACE.IN GLOBAL INFRASTRUCTURE • V2.4.0 ADMINISTRATOR UTAMA EDITION</p>
         </footer>
     </div>
 </x-app-layout>
