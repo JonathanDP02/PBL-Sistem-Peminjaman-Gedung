@@ -5,7 +5,11 @@
             <p class="text-[10px] font-bold tracking-widest text-teal-600 dark:text-kinetic-primary uppercase mb-2">Ringkasan Eksekutif</p>
             <h2 class="font-heading text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white mb-2">Selamat Pagi, {{ Auth::user()->name }}.</h2>
             <p class="text-sm text-slate-500 dark:text-gray-400">
-                Ada <span class="text-teal-600 dark:text-kinetic-primary font-bold">{{ $stats['pending_count'] }} permintaan tertunda</span> yang memerlukan keputusan Anda segera untuk menjaga kelancaran operasional fakultas.
+                @if($stats['pending_count'] > 0)
+                    Ada <span class="text-teal-600 dark:text-kinetic-primary font-bold">{{ $stats['pending_count'] }} permintaan tertunda</span> yang memerlukan keputusan Anda segera untuk menjaga kelancaran operasional fakultas.
+                @else
+                    Tidak ada permintaan persetujuan yang tertunda saat ini. Terima kasih telah menjaga kelancaran operasional fakultas.
+                @endif
             </p>
         </div>
 

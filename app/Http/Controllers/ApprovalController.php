@@ -543,7 +543,14 @@ class ApprovalController extends Controller
             });
         }
 
-        $bookings = $query->orderBy('created_at', 'desc')->get();
+        $mode = $request->input('mode');
+        if ($mode === 'satset') {
+            $bookings = $query->orderBy('booking_date', 'asc')
+                ->orderBy('start_time', 'asc')
+                ->get();
+        } else {
+            $bookings = $query->orderBy('created_at', 'desc')->get();
+        }
 
         // 5. Transformasi data ke format yang dibutuhkan Blade
         $approvals = $bookings->map(function ($booking) use ($positionId) {
@@ -551,11 +558,53 @@ class ApprovalController extends Controller
         });
 
         // 6. Hitung Statistik untuk Dashboard Meja Kerja
+        $reviewedCount = \App\Models\Approval::where('approver_id', $approver->id)->count();
         $stats = [
             'pending_count' => $approvals->count(),
             'urgent_count' => $approvals->filter(fn ($a) => $a['priority_indicator'] === 'urgent')->count(),
             'high_count' => $approvals->filter(fn ($a) => $a['priority_indicator'] === 'high')->count(),
+            'reviewed_count' => $reviewedCount,
+            'total_count' => $approvals->count() + $reviewedCount,
         ];
+
+        // 6a. Hitung Rata-rata Durasi Penyelesaian Per-Berkas
+        $approvedBookings = Booking::where('status', 'Approved')
+            ->withCount('approvals')
+            ->get();
+
+        $totalMinutesPerStep = 0;
+        $validBookingsCount = 0;
+
+        foreach ($approvedBookings as $b) {
+            if ($b->approvals_count > 0) {
+                $duration = $b->created_at->diffInMinutes($b->updated_at);
+                $totalMinutesPerStep += ($duration / $b->approvals_count);
+                $validBookingsCount++;
+            }
+        }
+
+        $avgMinutes = $validBookingsCount > 0 ? (int) round($totalMinutesPerStep / $validBookingsCount) : 12;
+
+        if ($avgMinutes < 1) {
+            $estimationTime = 'Kurang dari 1 Menit';
+        } else {
+            $days = floor($avgMinutes / 1440);
+            $hours = floor(($avgMinutes % 1440) / 60);
+            $remainingMinutes = $avgMinutes % 60;
+            
+            $parts = [];
+            if ($days > 0) {
+                $parts[] = $days . ' Hari';
+            }
+            if ($hours > 0) {
+                $parts[] = $hours . ' Jam';
+            }
+            if ($remainingMinutes > 0 || empty($parts)) {
+                $parts[] = $remainingMinutes . ' Menit';
+            }
+            
+            $estimationTime = implode(' ', $parts);
+        }
 
         // 7. Ambil daftar unit untuk Dropdown (FIX: Pakai unit_name)
         $units = Unit::orderBy('unit_name', 'asc')->get();
@@ -565,6 +614,7 @@ class ApprovalController extends Controller
             'stats' => $stats,
             'approver' => $approver,
             'units' => $units,
+            'estimation_time' => $estimationTime,
         ]);
     }
 
