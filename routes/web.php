@@ -250,7 +250,7 @@ Route::middleware('auth')->group(function () {
         // Views
         Route::get('/bookings/bulk-pdf', [BookingPdfController::class, 'bulkDownload'])->name('booking.pdf.bulk');
         Route::get('/manajemen-ruangan', function () {
-            $rooms = Room::where('unit_id', Auth::user()->unit_id)->with(['building', 'workflow'])->get();
+            $rooms = Room::where('unit_id', Auth::user()->unit_id)->with(['building', 'workflows'])->get();
             $workflows = Workflow::where('unit_id', Auth::user()->unit_id)->get();
 
             return view('user.admin_unit.manajemenRuangan', compact('rooms', 'workflows'));
