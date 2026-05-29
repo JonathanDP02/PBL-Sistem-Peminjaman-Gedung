@@ -355,8 +355,8 @@
                 </div>
                 <h3 class="font-heading text-xl font-bold text-slate-900 dark:text-white mb-2 text-center">Hapus Unit?</h3>
                 <p class="text-sm text-slate-500 dark:text-gray-400 mb-6 text-center leading-relaxed">
-                    Unit "<span x-text="deletingUnit ? deletingUnit.unit_name : ''" class="font-bold text-slate-800 dark:text-white"></span>" akan dihapus permanen.
-                    Unit tidak bisa dihapus jika masih memiliki sub-unit atau pengguna terdaftar.
+                    Unit "<span x-text="deletingUnit ? deletingUnit.unit_name : ''" class="font-bold text-slate-800 dark:text-white"></span>" akan dihapus secara permanen. 
+                    <span class="text-red-500 font-medium block mt-2">Peringatan: Seluruh data yang berkaitan dengan unit ini (pengguna, posisi, ruangan, alur kerja, dan pemesanan) akan ikut terhapus secara permanen. Hal ini dapat merusak jalannya sistem jika terdapat keterkaitan penting.</span>
                 </p>
                 <div class="flex gap-3">
                     <button @click="showDeleteModal = false"

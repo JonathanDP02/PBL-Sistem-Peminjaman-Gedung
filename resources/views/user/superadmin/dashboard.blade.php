@@ -4,7 +4,7 @@
         // 1. Statistik Utama (Hitungan Global)
         $totalGedung = \App\Models\Building::count();
         $totalRooms = \App\Models\Room::count();
-        $bookingAktif = \App\Models\Booking::whereIn('status', ['Pending', 'Approved'])->count();
+        $bookingAktif = \App\Models\Booking::count();
 
         // 2. Distribusi Lokasi (Top 4 Gedung dengan ruangan terbanyak secara Global)
         $distribusiLokasi = \App\Models\Building::withCount('rooms')
@@ -18,10 +18,30 @@
             ->take(3)
             ->get();
             
-        // 4. Hitung tren sederhana (perbandingan booking bulan ini vs bulan lalu)
-        $bulanIni = \App\Models\Booking::whereMonth('created_at', now()->month)->count();
-        $bulanLalu = \App\Models\Booking::whereMonth('created_at', now()->subMonth()->month)->count();
+        // 4. Hitung tren sederhana (perbandingan pemesanan bulan ini vs bulan lalu)
+        $bulanIni = \App\Models\Booking::whereMonth('booking_date', now()->month)->whereYear('booking_date', now()->year)->count();
+        $bulanLalu = \App\Models\Booking::whereMonth('booking_date', now()->subMonth()->month)->whereYear('booking_date', now()->subMonth()->year)->count();
         $kenaikan = $bulanLalu > 0 ? round((($bulanIni - $bulanLalu) / $bulanLalu) * 100) : 100;
+
+        // 4a. Tren Pemesanan Global Bulanan (5 Bulan terakhir + Bulan Ini + 1 Bulan ke depan)
+        $months = collect();
+        for ($i = 5; $i >= 1; $i--) {
+            $months->push(now()->subMonths($i));
+        }
+        $months->push(now());
+        $months->push(now()->addMonth());
+
+        $monthlyBookings = $months->map(function ($date) {
+            $count = \App\Models\Booking::whereMonth('booking_date', $date->month)
+                ->whereYear('booking_date', $date->year)
+                ->count();
+            return [
+                'label' => $date->translatedFormat('F'),
+                'count' => $count,
+            ];
+        });
+
+        $maxMonthlyCount = $monthlyBookings->max('count');
     @endphp
 
     <div class="relative px-8 pt-6 pb-8 space-y-6 flex flex-col min-h-full bg-slate-50 dark:bg-[#0A0A0A] transition-colors duration-300">
@@ -64,9 +84,9 @@
                     
                     <div class="flex items-center gap-3 mt-8">
                         <div class="flex -space-x-2">
-                            <div class="w-6 h-6 rounded-full bg-slate-100 dark:bg-[#1A1A1A] border border-white dark:border-[#333] flex items-center justify-center text-[8px] text-slate-600 dark:text-[#ddd] font-bold z-30 transition-colors duration-300">A1</div>
-                            <div class="w-6 h-6 rounded-full bg-slate-100 dark:bg-[#1A1A1A] border border-white dark:border-[#333] flex items-center justify-center text-[8px] text-slate-600 dark:text-[#ddd] font-bold z-20 transition-colors duration-300">A2</div>
-                            <div class="w-6 h-6 rounded-full bg-slate-100 dark:bg-[#1A1A1A] border border-white dark:border-[#333] flex items-center justify-center text-[8px] text-slate-600 dark:text-[#ddd] font-bold z-10 transition-colors duration-300">A3</div>
+                            <div class="w-6 h-6 rounded-full bg-slate-100 dark:bg-[#1A2624] border border-white dark:border-[#333] flex items-center justify-center text-[8px] text-slate-600 dark:text-[#ddd] font-bold z-30 transition-colors duration-300">A1</div>
+                            <div class="w-6 h-6 rounded-full bg-slate-100 dark:bg-[#1A2624] border border-white dark:border-[#333] flex items-center justify-center text-[8px] text-slate-600 dark:text-[#ddd] font-bold z-20 transition-colors duration-300">A2</div>
+                            <div class="w-6 h-6 rounded-full bg-slate-100 dark:bg-[#1A2624] border border-white dark:border-[#333] flex items-center justify-center text-[8px] text-slate-600 dark:text-[#ddd] font-bold z-10 transition-colors duration-300">A3</div>
                         </div>
                         <span class="text-xs font-medium text-slate-500 dark:text-[#888] transition-colors duration-300">Semua Fasilitas</span>
                     </div>
@@ -75,7 +95,7 @@
 
             <div class="bg-gradient-to-br from-teal-50 to-cyan-50 dark:from-teal-900/20 dark:to-cyan-900/10 rounded-[24px] p-6 flex flex-col justify-between relative border border-teal-100 dark:border-teal-900/30 transition-colors duration-300">
                 <div class="absolute top-6 right-6 w-2 h-2 rounded-full bg-teal-500 dark:bg-[#5EEAD4] animate-pulse shadow-[0_0_8px_rgba(20,184,166,0.6)] dark:shadow-[0_0_8px_#5EEAD4] transition-colors duration-300"></div>
-                <h3 class="text-teal-600 dark:text-[#5EEAD4] text-[10px] font-bold tracking-[0.2em] uppercase mb-4 transition-colors duration-300">BOOKING AKTIF GLOBAL</h3>
+                <h3 class="text-teal-600 dark:text-[#5EEAD4] text-[10px] font-bold tracking-[0.2em] uppercase mb-4 transition-colors duration-300">PEMESANAN AKTIF GLOBAL</h3>
                 <div class="relative">
                     <div class="flex items-baseline gap-2 relative mt-2">
                         <span class="text-7xl font-black text-slate-300/30 dark:text-white absolute -top-4 -left-2 opacity-80" style="text-shadow: 0 4px 20px rgba(0,0,0,0.05); -webkit-text-stroke: 1px currentColor;">{{ $bookingAktif }}</span>
@@ -93,35 +113,19 @@
             <div class="bg-white dark:bg-[#111111] rounded-[24px] p-6 shadow-sm border border-slate-200 dark:border-transparent lg:col-span-2 flex flex-col transition-colors duration-300">
                 <div class="flex justify-between items-start mb-8">
                     <div>
-                        <h3 class="text-slate-800 dark:text-white text-lg font-bold font-heading transition-colors duration-300">Tren Booking Global</h3>
+                        <h3 class="text-slate-800 dark:text-white text-lg font-bold font-heading transition-colors duration-300">Tren Pemesanan Global</h3>
                         <p class="text-slate-500 dark:text-[#888] text-xs mt-1 transition-colors duration-300">Statistik penggunaan di seluruh unit</p>
                     </div>
                 </div>
                 
-                <div class="flex-grow flex flex-col justify-end pt-4">
-                    <div class="h-40 flex items-end justify-between gap-2 md:gap-3 lg:gap-4 px-2">
-                        <div class="w-full bg-slate-100 dark:bg-[#1A2624] hover:bg-teal-300 rounded-t-md h-[40%] transition-all"></div>
-                        <div class="w-full bg-slate-100 dark:bg-[#1A2624] hover:bg-teal-300 rounded-t-md h-[60%] transition-all"></div>
-                        <div class="w-full bg-teal-400 dark:bg-[#5EEAD4] rounded-t-md h-[100%] transition-all shadow-lg relative"></div>
-                        <div class="w-full bg-slate-100 dark:bg-[#1A2624] hover:bg-teal-300 rounded-t-md h-[45%] transition-all"></div>
-                        <div class="w-full bg-slate-100 dark:bg-[#1A2624] hover:bg-teal-300 rounded-t-md h-[70%] transition-all"></div>
-                        <div class="w-full bg-slate-100 dark:bg-[#1A2624] hover:bg-teal-300 rounded-t-md h-[55%] transition-all"></div>
-                        <div class="w-full bg-slate-100 dark:bg-[#1A2624] hover:bg-teal-300 rounded-t-md h-[80%] transition-all"></div>
-                    </div>
-                    <div class="flex justify-between mt-4 px-2 text-[9px] font-bold text-slate-400 dark:text-[#666] tracking-[0.15em] uppercase">
-                        <span>Januari</span>
-                        <span>Maret</span>
-                        <span>Mei</span>
-                        <span>Juli</span>
-                        <span>September</span>
-                        <span>November</span>
-                    </div>
+                <div class="flex-grow pt-4 relative w-full h-[180px]">
+                    <canvas id="bookingTrendChart" class="w-full h-full"></canvas>
                 </div>
             </div>
 
             <div class="bg-white dark:bg-[#111111] rounded-[24px] p-6 shadow-sm border border-slate-200 dark:border-transparent flex flex-col justify-between transition-colors duration-300">
                 <div>
-                    <h3 class="text-slate-800 dark:text-white text-lg font-bold font-heading mb-8 transition-colors duration-300">Distribusi Gedung</h3>
+                    <h3 class="text-slate-800 dark:text-white text-lg font-bold font-heading mb-8 transition-colors duration-300">Distribusi Peminjaman Gedung</h3>
                     <div class="space-y-6">
                         @foreach($distribusiLokasi as $index => $gedung)
                             @php
@@ -184,4 +188,118 @@
             <p class="text-[9px] font-bold tracking-[0.2em] text-slate-400 dark:text-[#bbb] uppercase transition-colors duration-300">© 2026 SPACE.IN GLOBAL INFRASTRUCTURE • V2.4.0 ADMINISTRATOR UTAMA EDITION</p>
         </footer>
     </div>
+
+    @push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const ctx = document.getElementById('bookingTrendChart').getContext('2d');
+            const isDark = document.documentElement.classList.contains('dark');
+            
+            const labelColor = isDark ? '#94a3b8' : '#64748b';
+            const gridColor = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
+            
+            // Gradient background
+            const gradient = ctx.createLinearGradient(0, 0, 0, 180);
+            gradient.addColorStop(0, 'rgba(20, 184, 166, 0.3)');
+            gradient.addColorStop(1, 'rgba(20, 184, 166, 0.0)');
+            
+            const chartData = {
+                labels: {!! json_encode($monthlyBookings->pluck('label')->toArray()) !!},
+                datasets: [{
+                    label: 'Total Booking',
+                    data: {!! json_encode($monthlyBookings->pluck('count')->toArray()) !!},
+                    borderColor: '#14b8a6',
+                    borderWidth: 3,
+                    backgroundColor: gradient,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#14b8a6',
+                    pointBorderColor: isDark ? '#111' : '#fff',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                }]
+            };
+            
+            const config = {
+                type: 'line',
+                data: chartData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: isDark ? '#1e293b' : '#fff',
+                            titleColor: isDark ? '#fff' : '#1e293b',
+                            bodyColor: isDark ? '#cbd5e1' : '#64748b',
+                            borderColor: '#14b8a6',
+                            borderWidth: 1,
+                            padding: 10,
+                            displayColors: false,
+                            callbacks: {
+                                label: function(context) {
+                                    return context.raw + ' Booking';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: labelColor,
+                                font: {
+                                    family: 'Inter',
+                                    size: 10,
+                                    weight: 'bold'
+                                }
+                            }
+                        },
+                        y: {
+                            grid: {
+                                color: gridColor
+                            },
+                            ticks: {
+                                color: labelColor,
+                                font: {
+                                    family: 'Inter',
+                                    size: 10,
+                                    weight: 'bold'
+                                },
+                                stepSize: 1
+                            },
+                            min: 0
+                        }
+                    }
+                }
+            };
+            
+            window.bookingTrendChart = new Chart(ctx, config);
+            
+            // Sync theme changes if dark mode toggled without reload
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.attributeName === 'class') {
+                        const isDarkNow = document.documentElement.classList.contains('dark');
+                        const newLabelColor = isDarkNow ? '#94a3b8' : '#64748b';
+                        const newGridColor = isDarkNow ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
+                        
+                        window.bookingTrendChart.options.scales.x.ticks.color = newLabelColor;
+                        window.bookingTrendChart.options.scales.y.ticks.color = newLabelColor;
+                        window.bookingTrendChart.options.scales.y.grid.color = newGridColor;
+                        window.bookingTrendChart.data.datasets[0].pointBorderColor = isDarkNow ? '#111' : '#fff';
+                        window.bookingTrendChart.update();
+                    }
+                });
+            });
+            observer.observe(document.documentElement, { attributes: true });
+        });
+    </script>
+    @endpush
 </x-app-layout>
