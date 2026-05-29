@@ -24,25 +24,25 @@ if (! function_exists('getPageTitle')) {
     function getPageTitle(): string
     {
         $titles = [
-            'dashboard' => 'Dashboard',
+            'dashboard' => 'Dasbor',
             'ruangan' => 'Daftar Ruangan',
-            'booking' => 'Booking Ruangan',
+            'booking' => 'Pesan Ruangan',
             'jadwal-saya' => 'Jadwal Saya',
-            'riwayat' => (Auth::user()?->role?->name ?? '') === 'Peminjam' ? 'Riwayat Peminjaman' : 'Laporan Peminjaman',
+            'riwayat' => (Auth::user()?->role?->name ?? '') === 'Peminjam' ? 'Riwayat Peminjaman' : 'Riwayat Persetujuan',
             'peminjaman' => 'Permohonan Peminjaman',
             'meja-kerja' => 'Meja Kerja',
             'manajemenRuangan' => 'Manajemen Ruangan',
             'pemblokiranRuangan' => 'Pemblokiran Ruangan',
-            'workflowsBuilder' => 'Workflow Builder',
-            'workflowsIndex' => 'Daftar Workflow',
+            'workflowsBuilder' => 'Kelola Alur Kerja',
+            'workflowsIndex' => 'Kelola Alur Kerja',
             'laporan' => 'Laporan Peminjaman',
             'fasilitas' => 'Kelola Fasilitas',
             'unit' => 'Kelola Unit',
-            'kelola-user' => 'Manajemen Pengguna',
+            'kelola-user' => 'Kelola Pengguna',
             'profile.edit' => 'Profil Saya',
             'approvals.show' => 'Detail Persetujuan',
             'booking.show' => 'Detail Peminjaman',
-            'detail' => 'Detail Booking',
+            'detail' => 'Detail Peminjaman',
             'booking.validate' => 'Validasi Dokumen',
         ];
 
