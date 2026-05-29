@@ -14,7 +14,6 @@ class Room extends Model
     protected $fillable = [
         'building_id',
         'unit_id',
-        'workflow_id',
         'room_name',
         'capacity',
         'description',
@@ -31,9 +30,9 @@ class Room extends Model
         return $this->belongsTo(Unit::class);
     }
 
-    public function workflow(): BelongsTo
+    public function workflows(): HasMany
     {
-        return $this->belongsTo(Workflow::class);
+        return $this->hasMany(Workflow::class);
     }
 
     public function bookings(): HasMany

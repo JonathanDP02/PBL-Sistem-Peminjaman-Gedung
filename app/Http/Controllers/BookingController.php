@@ -40,15 +40,16 @@ class BookingController extends Controller
 
     public function showBookingForm()
     {
-        // Mengambil data gedung beserta relasi ruangan, unit, dan alur kerjanya
+        // Mengambil data gedung beserta relasinya (tanpa memuat workflow dari ruangan karena sudah dihapus)
         $buildings = Building::with([
             'rooms.unit',
-            'rooms.workflow.steps.position',
-            'rooms.workflow.requirements',
         ])->get();
 
-        // Mengambil data alur (workflow) beserta langkah dan syaratnya
-        $workflows = Workflow::with(['steps.position', 'requirements'])->get();
+        // Mengambil data alur (workflow) beserta langkah dan syaratnya khusus untuk unit user ini
+        $workflows = Workflow::with(['steps.position', 'requirements'])
+            ->where('unit_id', Auth::user()->unit_id)
+            ->whereNotNull('room_id')
+            ->get();
 
         // Mengirimkan variabel $buildings dan $workflows ke halaman view
         return view('user.peminjam.booking', compact('buildings', 'workflows'));
@@ -73,13 +74,19 @@ class BookingController extends Controller
         ]);
 
         $room = Room::findOrFail($validated['room_id']);
-        if (! $room->workflow_id) {
+
+        // Cari workflow milik unit peminjam yang terhubung ke ruangan ini
+        $workflow = Workflow::where('unit_id', Auth::user()->unit_id)
+            ->where('room_id', $room->id)
+            ->first();
+
+        if (! $workflow) {
             return response()->json([
-                'error' => "Ruangan '{$room->room_name}' belum memiliki alur persetujuan (workflow) yang dikonfigurasi. Silakan hubungi pengelola unit.",
+                'error' => "Unit Anda belum memiliki alur persetujuan (workflow) yang dikonfigurasi untuk ruangan '{$room->room_name}'. Silakan hubungi pengelola unit Anda.",
             ], 422);
         }
 
-        $validated['workflow_id'] = $room->workflow_id;
+        $validated['workflow_id'] = $workflow->id;
 
         // Cek mandatory requirements sebelum transaksi
         $mandatoryRequirements = WorkflowRequirement::where('workflow_id', $validated['workflow_id'])
@@ -385,7 +392,8 @@ class BookingController extends Controller
 
     public function detail($id)
     {
-        $booking = Booking::with([
+        $user = Auth::user();
+        $query = Booking::with([
             'room.building',
             'user',
             'workflow.requirements',
@@ -393,9 +401,29 @@ class BookingController extends Controller
             'approvals',
             'logs.actor',
             'attachments',
-        ])
-            ->where('user_id', Auth::id())
-            ->findOrFail($id);
+        ]);
+
+        if ($user->role->name === 'Administrator Utama') {
+            // SuperAdmin can access any booking detail
+            $booking = $query->findOrFail($id);
+        } elseif ($user->role->name === 'Administrator Unit') {
+            // Admin_Unit can access details of bookings under their unit or their parent unit
+            $unitIds = [$user->unit_id];
+            if ($user->unit && $user->unit->parent_id) {
+                $unitIds[] = $user->unit->parent_id;
+            }
+            
+            $booking = $query->whereHas('room', function ($q) use ($unitIds) {
+                $q->whereIn('unit_id', $unitIds);
+            })->findOrFail($id);
+        } else {
+            // Regular User can only access their own bookings
+            $booking = $query->where('user_id', $user->id)->findOrFail($id);
+        }
+
+        if (in_array($user->role->name, ['Administrator Utama', 'Administrator Unit'])) {
+            return view('user.admin.detail', compact('booking'));
+        }
 
         return view('user.peminjam.detail', compact('booking'));
     }

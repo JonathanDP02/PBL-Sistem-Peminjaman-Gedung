@@ -17,11 +17,32 @@ class RoomController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->role->name === 'Admin_Unit') {
-            return response()->json(Room::where('unit_id', $user->unit_id)->get());
+        $query = Room::with(['building', 'workflows' => function ($q) use ($user) {
+            $q->where('unit_id', $user->unit_id);
+        }]);
+
+        if ($user->role->name === 'Administrator Unit') {
+            $unitIds = [$user->unit_id];
+            if ($user->unit && $user->unit->parent_id) {
+                $unitIds[] = $user->unit->parent_id;
+            }
+            $query->whereIn('unit_id', $unitIds);
         }
 
-        return response()->json(Room::all());
+        $rooms = $query->get()->map(function ($room) {
+            return [
+                'id' => $room->id,
+                'room_name' => $room->room_name,
+                'capacity' => $room->capacity,
+                'description' => $room->description,
+                'workflow_id' => $room->workflows->first()?->id,
+                'building_id' => $room->building_id,
+                'building_name' => $room->building?->building_name,
+                'unit_id' => $room->unit_id,
+            ];
+        });
+
+        return response()->json($rooms);
     }
 
     public function store(Request $request)
@@ -34,12 +55,12 @@ class RoomController extends Controller
             'room_name' => 'required',
             'capacity' => 'required|integer',
             'description' => 'nullable',
-            'unit_id' => $user->role->name === 'Admin_Unit' ? 'nullable' : 'required',
+            'unit_id' => $user->role->name === 'Administrator Unit' ? 'nullable' : 'required',
             'workflow_id' => 'nullable|exists:workflows,id',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ]);
 
-        if ($user->role->name === 'Admin_Unit') {
+        if ($user->role->name === 'Administrator Unit') {
             $validated['unit_id'] = $user->unit_id;
         }
 
@@ -66,7 +87,7 @@ class RoomController extends Controller
             'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ];
 
-        if (Auth::user()->role->name === 'SuperAdmin') {
+        if (Auth::user()->role->name === 'Administrator Utama') {
             $validationRules['unit_id'] = 'required|exists:units,id';
         }
 
@@ -83,7 +104,59 @@ class RoomController extends Controller
 
         $room->update($validated);
 
+        // If JSON request (API), return JSON response
+        if (request()->expectsJson() || request()->is('admin_unit/api/*')) {
+            return response()->json(['message' => 'Ruangan berhasil diperbarui', 'room' => $room]);
+        }
+
         return redirect()->back()->with('success', 'Data ruangan berhasil diperbarui');
+    }
+
+    /**
+     * Assign or unassign a workflow from a room via JSON API.
+     */
+    public function assignWorkflow(Request $request, $id)
+    {
+        $room = Room::findOrFail($id);
+
+        $request->validate([
+            'workflow_id' => 'nullable|exists:workflows,id',
+        ]);
+
+        $workflowId = $request->input('workflow_id');
+        $user = Auth::user();
+
+        if ($workflowId) {
+            $workflow = \App\Models\Workflow::findOrFail($workflowId);
+
+            // Validasi: 1 unit = 1 workflow per ruangan
+            $existingWorkflow = \App\Models\Workflow::where('unit_id', $workflow->unit_id)
+                ->where('room_id', $id)
+                ->where('id', '!=', $workflow->id)
+                ->first();
+
+            if ($existingWorkflow) {
+                return response()->json(['message' => 'Unit Anda sudah memiliki workflow lain yang terhubung ke ruangan ini. Lepas hubungan workflow tersebut terlebih dahulu.'], 422);
+            }
+
+            // Validasi: 1 workflow hanya bisa terhubung maksimal ke 1 ruangan
+            if ($workflow->room_id && $workflow->room_id != $id) {
+                return response()->json(['message' => 'Workflow ini sudah terhubung dengan ruangan lain. Lepas hubungan ruangan sebelumnya terlebih dahulu.'], 422);
+            }
+
+            $workflow->update(['room_id' => $id]);
+        } else {
+            // Jika workflow_id null (unassign), temukan workflow milik unit ini yang terhubung ke ruangan ini
+            $workflowToUnassign = \App\Models\Workflow::where('unit_id', $user->unit_id)
+                ->where('room_id', $id)
+                ->first();
+                
+            if ($workflowToUnassign) {
+                $workflowToUnassign->update(['room_id' => null]);
+            }
+        }
+
+        return response()->json(['message' => 'Penugasan ruangan untuk workflow berhasil diperbarui']);
     }
 
     public function show($id)
@@ -99,7 +172,7 @@ class RoomController extends Controller
         $room = Room::findOrFail($id);
 
         // Authorization check
-        if ($user->role->name === 'Admin_Unit') {
+        if ($user->role->name === 'Administrator Unit') {
             if ($room->unit_id != $user->unit_id) {
                 return response()->json(['message' => 'Unauthorized'], 403);
             }

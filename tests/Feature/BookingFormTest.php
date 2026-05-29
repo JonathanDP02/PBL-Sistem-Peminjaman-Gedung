@@ -18,7 +18,7 @@ it('displays booking form with buildings and workflows for authenticated user', 
 
     $building = Building::factory()->create();
     $room = Room::factory()->create(['building_id' => $building->id, 'unit_id' => $unit->id]);
-    $workflow = Workflow::factory()->create(['unit_id' => $unit->id]);
+    $workflow = Workflow::factory()->create(['unit_id' => $unit->id, 'room_id' => $room->id]);
 
     $response = $this->actingAs($user)->get(route('booking'));
 

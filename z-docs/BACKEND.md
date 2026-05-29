@@ -131,13 +131,13 @@ CACHE_STORE=database
 roles ──< users >── units ──< positions
                        │
                        └──< rooms >── buildings
-                       │
-                       └──< workflows >──< workflow_steps >── positions
-                                    └──< workflow_requirements
+                             │
+                             └──< workflows >──< workflow_steps >── positions
+                                           └──< workflow_requirements
                        │
                        └──< bookings >──< approvals >── workflow_steps
-                                    └──< booking_attachments >── workflow_requirements
-                                    └──< booking_logs
+                                     └──< booking_attachments >── workflow_requirements
+                                     └──< booking_logs
 ```
 
 ### Tables
@@ -204,9 +204,12 @@ roles ──< users >── units ──< positions
 |---|---|---|
 | id | bigint PK | Kunci utama |
 | unit_id | bigint FK → units | Unit tempat alur kerja ini berlaku |
+| room_id | bigint FK → rooms nullable | Ruangan tempat alur kerja ini berlaku |
 | name | string(255) | Nama alur kerja |
 | description | text nullable | Deskripsi |
 | created_at / updated_at | timestamp | Cap waktu |
+
+> **Indeks & Keunikan:** `unique(['unit_id', 'room_id'])` memastikan satu ruangan hanya memiliki maksimal 1 workflow per unit.
 
 #### `workflow_steps`
 | Kolom | Tipe | Deskripsi |
@@ -358,6 +361,7 @@ Building hasMany Room
 ```
 Room belongsTo Building
 Room belongsTo Unit
+Room hasMany Workflow
 Room hasMany Booking
 ```
 
@@ -369,12 +373,13 @@ Room hasMany Booking
 
 ```
 Workflow belongsTo Unit
+Workflow belongsTo Room
 Workflow hasMany WorkflowStep (diurutkan berdasarkan step_order ASC)
 Workflow hasMany WorkflowRequirement
 Workflow hasMany Booking
 ```
 
-**Dapat Diisi:** `unit_id`, `name`, `description`
+**Dapat Diisi:** `unit_id`, `room_id`, `name`, `description`
 
 ---
 

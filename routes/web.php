@@ -70,7 +70,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', function () {
         $user = Auth::user();
 
-        if ($user->role->name === 'Approver') {
+        if ($user->role->name === 'Penyetuju') {
             return app(ApprovalController::class)->dashboard(request());
         }
 
@@ -78,7 +78,7 @@ Route::middleware('auth')->group(function () {
         $recentBookings = collect();
         $notifications = collect();
 
-        if ($user->role->name === 'User') {
+        if ($user->role->name === 'Peminjam') {
             // Statistik
             $stats['approved'] = Booking::where('user_id', $user->id)->where('status', 'Approved')->count();
             $stats['pending'] = Booking::where('user_id', $user->id)->where('status', 'Pending')->count();
@@ -101,25 +101,28 @@ Route::middleware('auth')->group(function () {
         }
 
         $view = match ($user->role->name) {
-            'SuperAdmin' => 'user.superadmin.dashboard',
-            'Admin_Unit' => 'user.admin_unit.dashboard',
-            'User' => 'user.peminjam.dashboard',
+            'Administrator Utama' => 'user.superadmin.dashboard',
+            'Administrator Unit' => 'user.admin_unit.dashboard',
+            'Peminjam' => 'user.peminjam.dashboard',
             default => 'user.peminjam.dashboard',
         };
 
         return view($view, compact('stats', 'recentBookings', 'notifications'));
     })->name('dashboard');
 
-    // Riwayat (Shared between Approver & User)
+    // Riwayat (Shared between all authenticated roles)
     Route::get('/riwayat', function () {
         $user = Auth::user();
 
-        if ($user->role->name === 'Approver') {
+        if ($user->role->name === 'Penyetuju') {
             return app(ApprovalController::class)->history(request());
         }
 
-        // Ambil data dari database untuk User (Peminjam)
-        $bookings = Booking::with(['room.building'])
+        if (in_array($user->role->name, ['Administrator Utama', 'Administrator Unit'])) {
+            return redirect()->route('laporan');
+        }
+
+        $bookings = Booking::with(['room.building', 'user'])
             ->where('user_id', $user->id)
             ->orderBy('created_at', 'desc')
             ->get();
@@ -128,16 +131,50 @@ Route::middleware('auth')->group(function () {
         $statusCounts = [
             'Approved' => $bookings->where('status', 'Approved')->count(),
             'Pending' => $bookings->where('status', 'Pending')->count(),
-            'Rejected' => $bookings->whereIn('status', ['Rejected', 'Cancelled'])->count(),
+            'Rejected' => $bookings->whereIn('status', ['Rejected', 'Cancelled', 'Revising'])->count(),
         ];
 
         return view('user.peminjam.riwayat', compact('bookings', 'statusCounts'));
     })->name('riwayat');
 
+    // Laporan Peminjaman (Shared between SuperAdmin & Admin_Unit)
+    Route::middleware('checkRole:Administrator Utama,Administrator Unit')->group(function () {
+        Route::get('/laporan', function () {
+            $user = Auth::user();
+
+            $query = Booking::with(['room.building', 'user'])
+                ->orderBy('created_at', 'desc');
+
+            if ($user->role->name === 'Administrator Utama') {
+                // SuperAdmin can see all bookings
+                $bookings = $query->get();
+            } elseif ($user->role->name === 'Administrator Unit') {
+                // Admin_Unit can see bookings belonging to their unit's rooms or parent's rooms
+                $unitIds = [$user->unit_id];
+                if ($user->unit && $user->unit->parent_id) {
+                    $unitIds[] = $user->unit->parent_id;
+                }
+                
+                $bookings = $query->whereHas('room', function ($q) use ($unitIds) {
+                    $q->whereIn('unit_id', $unitIds);
+                })->get();
+            }
+
+            // Hitung statistik untuk sidebar
+            $statusCounts = [
+                'Approved' => $bookings->where('status', 'Approved')->count(),
+                'Pending' => $bookings->where('status', 'Pending')->count(),
+                'Rejected' => $bookings->whereIn('status', ['Rejected', 'Cancelled', 'Revising'])->count(),
+            ];
+
+            return view('user.admin.laporan_peminjaman', compact('bookings', 'statusCounts'));
+        })->name('laporan');
+    });
+
     // Kelola User (Shared between SuperAdmin & Admin_Unit)
     Route::get('/kelola-user', function () {
         $view = match (Auth::user()->role->name) {
-            'SuperAdmin', 'Admin_Unit' => 'user.admin.kelola-user',
+            'Administrator Utama', 'Administrator Unit' => 'user.admin.kelola-user',
             default => 'user.peminjam.kelola-user',
         };
 
@@ -181,18 +218,12 @@ Route::middleware('auth')->group(function () {
     });
 
     // --- SHARED FILE ACCESS (All Auth Roles with Internal Auth Logic) ---
-    Route::get('/user/bookings/{id}/attachments/{attachmentId}', [BookingAttachmentController::class, 'show'])->name('booking.attachment.show');
-    Route::get('/user/bookings/{id}/download-pdf', [BookingPdfController::class, 'generate'])->name('booking.pdf');
-
-    // --- SUPER ADMIN SECTION ---
-    Route::middleware('checkRole:SuperAdmin')->prefix('superadmin')->group(function () {
-        Route::get('/fasilitas', fn () => view('user.superadmin.fasilitas'))->name('fasilitas');
-        Route::get('/unit', fn () => view('user.superadmin.unit'))->name('unit');
-        Route::post('/user', [UserController::class, 'store'])->name('tambah-user.store');
-    });
+    Route::get('/peminjam/bookings/{id}/attachments/{attachmentId}', [BookingAttachmentController::class, 'show'])->name('booking.attachment.show');
+    Route::get('/peminjam/bookings/{id}/download-pdf', [BookingPdfController::class, 'generate'])->name('booking.pdf');
+    Route::get('/peminjam/detail/{id}', [BookingController::class, 'detail'])->name('detail');
 
     // --- SHARED ADMIN API (SuperAdmin & Admin_Unit) ---
-    Route::middleware('checkRole:SuperAdmin')->prefix('superadmin')->group(function () {
+    Route::middleware('checkRole:Administrator Utama')->prefix('superadmin')->group(function () {
         Route::get('/fasilitas', [FacilityController::class, 'index'])->name('fasilitas');
         Route::post('/fasilitas', [FacilityController::class, 'store'])->name('fasilitas.store');
 
@@ -214,13 +245,12 @@ Route::middleware('auth')->group(function () {
     });
 
     // --- ADMIN UNIT SECTION ---
-    Route::middleware('checkRole:Admin_Unit')->prefix('admin_unit')->group(function () {
+    Route::middleware('checkRole:Administrator Unit')->prefix('admin_unit')->group(function () {
 
         // Views
-        Route::get('/laporan', fn () => view('user.admin_unit.laporan'))->name('laporan');
         Route::get('/bookings/bulk-pdf', [BookingPdfController::class, 'bulkDownload'])->name('booking.pdf.bulk');
         Route::get('/manajemen-ruangan', function () {
-            $rooms = Room::where('unit_id', Auth::user()->unit_id)->with(['building', 'workflow'])->get();
+            $rooms = Room::where('unit_id', Auth::user()->unit_id)->with(['building', 'workflows'])->get();
             $workflows = Workflow::where('unit_id', Auth::user()->unit_id)->get();
 
             return view('user.admin_unit.manajemenRuangan', compact('rooms', 'workflows'));
@@ -272,6 +302,7 @@ Route::middleware('auth')->group(function () {
             // Rooms API
             Route::get('/rooms', [RoomController::class, 'index']);
             Route::delete('/rooms/{room}', [RoomController::class, 'destroy']);
+            Route::patch('/rooms/{id}/assign-workflow', [RoomController::class, 'assignWorkflow']);
 
             // Workflow API
             Route::get('/workflows', [WorkflowController::class, 'index']);
@@ -290,7 +321,7 @@ Route::middleware('auth')->group(function () {
 
     // --- APPROVER SECTION ---
     // --- APPROVER SECTION ---
-    Route::middleware('checkRole:Approver')->prefix('approver')->group(function () {
+    Route::middleware('checkRole:Penyetuju')->prefix('approver')->group(function () {
 
         Route::get('/meja-kerja', [ApprovalController::class, 'mejaKerja'])->name('meja-kerja');
         Route::get('/approvals/{id}', [ApprovalController::class, 'show'])->name('approvals.show');
@@ -299,12 +330,11 @@ Route::middleware('auth')->group(function () {
         Route::post('/approvals/{booking_id}/reject', [ApprovalController::class, 'reject'])->name('approval.reject');
     });
 
-    // --- USER / PEMINJAM SECTION ---
-    Route::middleware('checkRole:User')->prefix('user')->group(function () {
+    // --- PEMINJAM SECTION ---
+    Route::middleware('checkRole:Peminjam')->prefix('peminjam')->group(function () {
         Route::get('/booking', [BookingController::class, 'showBookingForm'])->name('booking');
         Route::get('/jadwal-saya', [BookingController::class, 'showJadwalSaya'])->name('jadwal-saya');
         Route::get('/peminjaman', fn () => view('user.peminjam.peminjaman'))->name('peminjaman');
-        Route::get('/detail/{id}', [BookingController::class, 'detail'])->name('detail');
 
         Route::get('/bookings', [BookingController::class, 'index'])->name('booking.index');
         Route::get('/bookings/create', [BookingController::class, 'create'])->name('booking.create');
