@@ -204,8 +204,8 @@ class RoomController extends Controller
         $room = Room::with([
             'building',
             'unit',
-            'workflow.steps.position',
-            'workflow.requirements',
+            'workflows.steps.position',
+            'workflows.requirements',
         ])->findOrFail($id);
 
         return response()->json($room);

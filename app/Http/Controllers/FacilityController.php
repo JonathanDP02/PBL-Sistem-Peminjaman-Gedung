@@ -22,7 +22,7 @@ class FacilityController extends Controller
      */
     public function index(Request $request)
     {
-        $rooms = Room::with(['building', 'unit', 'workflow'])->get();
+        $rooms = Room::with(['building', 'unit', 'workflows'])->get();
         $buildings = Building::withCount('rooms')->get();
         $workflows = Workflow::all();
         $units = Unit::all();
