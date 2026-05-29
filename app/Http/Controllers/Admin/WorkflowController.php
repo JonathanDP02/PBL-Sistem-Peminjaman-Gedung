@@ -185,6 +185,12 @@ class WorkflowController extends Controller
                 $unitIds[] = $unit->parent_id;
                 $unit = Unit::find($unit->parent_id);
             }
+
+            // Tambahkan BEM Polinema secara otomatis agar posisinya bisa dipilih oleh ormawa (seperti HMTI)
+            $bemUnit = Unit::where('unit_name', 'like', '%BEM%')->first();
+            if ($bemUnit) {
+                $unitIds[] = $bemUnit->id;
+            }
         }
 
         $positions = Position::query()

@@ -1,43 +1,136 @@
 <x-app-layout>  
     @php
-        // LOGIKA PENARIKAN DATA DINAMIS KHUSUS ADMIN UNIT
+        // LOGIKA PENARIKAN DATA DINAMIS KHUSUS ADMIN UNIT DENGAN REKURSif CHILD & PUSAT SCOPING
         $user = auth()->user();
         $unitId = $user->unit_id ?? null;
 
-        // 1. Total Ruangan di Unit Ini
-        $totalRuangan = \App\Models\Room::where('unit_id', $unitId)->count();
+        // Tentukan apakah admin unit ini berada di tingkat Pusat atau tidak memiliki unit (maka bisa melihat global)
+        $isGlobal = false;
+        if (!$unitId) {
+            $isGlobal = true;
+        } else {
+            $unit = \App\Models\Unit::find($unitId);
+            if ($unit && ($unit->level === 'Pusat' || is_null($unit->parent_id))) {
+                $isGlobal = true;
+            }
+        }
 
-        // 2. Total Gedung (Menghitung jumlah gedung berbeda yang memiliki ruangan unit ini)
-        $totalGedung = \App\Models\Room::where('unit_id', $unitId)->distinct('building_id')->count('building_id');
+        if ($isGlobal) {
+            $allowedUnitIds = \App\Models\Unit::pluck('id')->toArray();
+        } else {
+            // Ambil unit sendiri dan semua child unit di bawahnya
+            $childIds = \App\Models\Unit::where('parent_id', $unitId)->pluck('id')->toArray();
+            $allowedUnitIds = array_merge([$unitId], $childIds);
+        }
 
-        // 3. Booking Aktif Bulan Ini (Pending & Approved)
-        $currentMonth = now()->month;
-        $currentYear = now()->year;
-        $bookingAktif = \App\Models\Booking::whereHas('room', function($q) use ($unitId) {
-                $q->where('unit_id', $unitId);
+        // 1. Total Ruangan di Unit Ini (dan child units)
+        $totalRuangan = \App\Models\Room::whereIn('unit_id', $allowedUnitIds)->count();
+
+        // 2. Total Gedung (Menghitung jumlah gedung berbeda yang memiliki ruangan unit ini dan child units)
+        $totalGedung = \App\Models\Room::whereIn('unit_id', $allowedUnitIds)->distinct('building_id')->count('building_id');
+
+        // 3. Booking Aktif (Total Booking dari unit sendiri / child units ATAU dipinjam oleh user dari unit ini)
+        $bookingAktif = \App\Models\Booking::where(function($query) use ($allowedUnitIds) {
+                $query->whereHas('room', function($q) use ($allowedUnitIds) {
+                    $q->whereIn('unit_id', $allowedUnitIds);
+                })
+                ->orWhereHas('user', function($q) use ($allowedUnitIds) {
+                    $q->whereIn('unit_id', $allowedUnitIds);
+                });
             })
-            ->whereIn('status', ['Pending', 'Approved'])
-            ->whereMonth('booking_date', $currentMonth)
-            ->whereYear('booking_date', $currentYear)
             ->count();
 
-        // 4. Distribusi Lokasi (Top 4 Gedung dengan ruangan terbanyak di unit ini)
-        $distribusiLokasi = \App\Models\Room::where('unit_id', $unitId)
-            ->with('building')
-            ->selectRaw('building_id, count(*) as total')
-            ->groupBy('building_id')
+        // 4. Distribusi Peminjaman Ruangan (Top 4 Gedung berdasarkan jumlah pemesanan oleh anggota unit ini / untuk ruangan unit ini)
+        $distribusiPemesananGedung = \App\Models\Booking::where(function($query) use ($allowedUnitIds) {
+                $query->whereHas('room', function($q) use ($allowedUnitIds) {
+                    $q->whereIn('unit_id', $allowedUnitIds);
+                })
+                ->orWhereHas('user', function($q) use ($allowedUnitIds) {
+                    $q->whereIn('unit_id', $allowedUnitIds);
+                });
+            })
+            ->join('rooms', 'bookings.room_id', '=', 'rooms.id')
+            ->join('buildings', 'rooms.building_id', '=', 'buildings.id')
+            ->selectRaw('rooms.building_id, buildings.building_name, count(bookings.id) as total')
+            ->groupBy('rooms.building_id', 'buildings.building_name')
             ->orderByDesc('total')
             ->take(4)
             ->get();
 
         // 5. Aktivitas Terbaru (3 Peminjaman Terakhir)
-        $aktivitasTerbaru = \App\Models\Booking::whereHas('room', function($q) use ($unitId) {
-                $q->where('unit_id', $unitId);
+        $aktivitasTerbaru = \App\Models\Booking::where(function($query) use ($allowedUnitIds) {
+                $query->whereHas('room', function($q) use ($allowedUnitIds) {
+                    $q->whereIn('unit_id', $allowedUnitIds);
+                })
+                ->orWhereHas('user', function($q) use ($allowedUnitIds) {
+                    $q->whereIn('unit_id', $allowedUnitIds);
+                });
             })
             ->with(['room', 'user'])
             ->orderBy('created_at', 'desc')
             ->take(3)
             ->get();
+
+        // 6. Tren Pemesanan Unit Bulanan (9 segmen waktu untuk bulan target)
+        // Cari bulan yang memiliki pemesanan terdekat agar grafik terisi dinamis
+        $targetDate = now();
+        $hasBookingsThisMonth = \App\Models\Booking::where(function($query) use ($allowedUnitIds) {
+                $query->whereHas('room', function($q) use ($allowedUnitIds) {
+                    $q->whereIn('unit_id', $allowedUnitIds);
+                })
+                ->orWhereHas('user', function($q) use ($allowedUnitIds) {
+                    $q->whereIn('unit_id', $allowedUnitIds);
+                });
+            })
+            ->whereMonth('booking_date', now()->month)
+            ->whereYear('booking_date', now()->year)
+            ->exists();
+            
+        if (!$hasBookingsThisMonth) {
+            $nextBooking = \App\Models\Booking::where(function($query) use ($allowedUnitIds) {
+                    $query->whereHas('room', function($q) use ($allowedUnitIds) {
+                        $q->whereIn('unit_id', $allowedUnitIds);
+                    })
+                    ->orWhereHas('user', function($q) use ($allowedUnitIds) {
+                        $q->whereIn('unit_id', $allowedUnitIds);
+                    });
+                })
+                ->where('booking_date', '>=', now()->startOfMonth())
+                ->orderBy('booking_date', 'asc')
+                ->first();
+            if ($nextBooking) {
+                $targetDate = \Carbon\Carbon::parse($nextBooking->booking_date);
+            }
+        }
+
+        $daysInMonth = $targetDate->daysInMonth;
+        $segmentDays = ceil($daysInMonth / 9);
+        $unitTrend = collect();
+        for ($i = 0; $i < 9; $i++) {
+            $startDay = ($i * $segmentDays) + 1;
+            $endDay = min((($i + 1) * $segmentDays), $daysInMonth);
+            
+            $startDate = $targetDate->clone()->startOfMonth()->addDays($startDay - 1)->startOfDay();
+            $endDate = $targetDate->clone()->startOfMonth()->addDays($endDay - 1)->endOfDay();
+            
+            $count = \App\Models\Booking::where(function($query) use ($allowedUnitIds) {
+                    $query->whereHas('room', function($q) use ($allowedUnitIds) {
+                        $q->whereIn('unit_id', $allowedUnitIds);
+                    })
+                    ->orWhereHas('user', function($q) use ($allowedUnitIds) {
+                        $q->whereIn('unit_id', $allowedUnitIds);
+                    });
+                })
+                ->whereBetween('booking_date', [$startDate, $endDate])
+                ->count();
+                
+            $unitTrend->push([
+                'label' => 'Seg ' . ($i + 1),
+                'range' => $startDay . '-' . $endDay,
+                'count' => $count,
+            ]);
+        }
+        $maxTrendCount = $unitTrend->max('count');
     @endphp
 
     <div class="relative px-8 pt-6 pb-8 space-y-6 flex flex-col min-h-full bg-slate-50 dark:bg-[#0A0A0A] transition-colors duration-300">
@@ -91,15 +184,15 @@
 
             <div class="bg-gradient-to-br from-teal-50 to-cyan-50 dark:from-teal-900/20 dark:to-cyan-900/10 rounded-[24px] p-6 flex flex-col justify-between relative border border-teal-100 dark:border-teal-900/30 transition-colors duration-300">
                 <div class="absolute top-6 right-6 w-2 h-2 rounded-full bg-teal-500 dark:bg-[#5EEAD4] animate-pulse shadow-[0_0_8px_rgba(20,184,166,0.6)] dark:shadow-[0_0_8px_#5EEAD4] transition-colors duration-300"></div>
-                <h3 class="text-teal-600 dark:text-[#5EEAD4] text-[10px] font-bold tracking-[0.2em] uppercase mb-4 transition-colors duration-300">BOOKING AKTIF BULAN INI</h3>
+                <h3 class="text-teal-600 dark:text-[#5EEAD4] text-[10px] font-bold tracking-[0.2em] uppercase mb-4 transition-colors duration-300">PEMESANAN AKTIF UNIT</h3>
                 <div class="relative">
                     <div class="flex items-baseline gap-2 relative mt-2">
                         <span class="text-7xl font-black text-slate-300/30 dark:text-white absolute -top-4 -left-2 opacity-80" style="text-shadow: 0 4px 20px rgba(0,0,0,0.05); -webkit-text-stroke: 1px currentColor;">{{ $bookingAktif }}</span>
                         <span class="text-5xl font-black text-transparent bg-clip-text bg-white opacity-0">{{ $bookingAktif }}</span>
-                        <span class="text-teal-600 dark:text-[#5EEAD4] text-xs font-bold z-10 absolute bottom-1 left-24 transition-colors duration-300">Reservasi</span>
+                        <span class="text-teal-600 dark:text-[#5EEAD4] text-xs font-bold z-10 absolute bottom-1 left-24 transition-colors duration-300">Pemesanan</span>
                     </div>
                     <p class="text-slate-600 dark:text-slate-400 text-xs mt-6 max-w-[240px] relative z-10 leading-relaxed font-medium transition-colors duration-300">
-                        Total pengajuan masuk dan disetujui pada periode <span class="font-bold text-slate-800 dark:text-slate-200">{{ now()->translatedFormat('F Y') }}</span>.
+                        Total pengajuan pemesanan masuk dan disetujui pada unit Anda.
                     </p>
                 </div>
             </div>
@@ -109,39 +202,24 @@
             <div class="bg-white dark:bg-[#111111] rounded-[24px] p-6 shadow-sm border border-slate-200 dark:border-transparent lg:col-span-2 flex flex-col transition-colors duration-300">
                 <div class="flex justify-between items-start mb-8">
                     <div>
-                        <h3 class="text-slate-800 dark:text-white text-lg font-bold font-heading transition-colors duration-300">Tren Booking Unit</h3>
-                        <p class="text-slate-500 dark:text-[#888] text-xs mt-1 transition-colors duration-300">Ilustrasi kepadatan jadwal bulan ini</p>
+                        <h3 class="text-slate-800 dark:text-white text-lg font-bold font-heading transition-colors duration-300">Tren Pemesanan Unit</h3>
+                        <p class="text-slate-500 dark:text-[#888] text-xs mt-1 transition-colors duration-300">Ilustrasi kepadatan jadwal bulan {{ $targetDate->translatedFormat('F Y') }}</p>
                     </div>
                 </div>
                 
-                <div class="flex-grow flex flex-col justify-end pt-4">
-                    <div class="h-40 flex items-end justify-between gap-2 md:gap-3 lg:gap-4 px-2">
-                        <div class="w-full bg-slate-100 dark:bg-[#1A2624] hover:bg-teal-300 dark:hover:bg-[#5EEAD4] rounded-t-md h-[40%] transition-colors duration-300"></div>
-                        <div class="w-full bg-slate-100 dark:bg-[#1A2624] hover:bg-teal-300 dark:hover:bg-[#5EEAD4] rounded-t-md h-[50%] transition-colors duration-300"></div>
-                        <div class="w-full bg-slate-100 dark:bg-[#1A2624] hover:bg-teal-300 dark:hover:bg-[#5EEAD4] rounded-t-md h-[65%] transition-colors duration-300"></div>
-                        <div class="w-full bg-slate-100 dark:bg-[#1A2624] hover:bg-teal-300 dark:hover:bg-[#5EEAD4] rounded-t-md h-[45%] transition-colors duration-300"></div>
-                        <div class="w-full bg-slate-100 dark:bg-[#1A2624] hover:bg-teal-300 dark:hover:bg-[#5EEAD4] rounded-t-md h-[80%] transition-colors duration-300"></div>
-                        <div class="w-full bg-teal-400 dark:bg-[#5EEAD4] rounded-t-md h-[100%] transition-colors duration-300 relative shadow-[0_0_15px_rgba(20,184,166,0.3)]"></div>
-                        <div class="w-full bg-slate-100 dark:bg-[#1A2624] hover:bg-teal-300 dark:hover:bg-[#5EEAD4] rounded-t-md h-[70%] transition-colors duration-300"></div>
-                        <div class="w-full bg-slate-100 dark:bg-[#1A2624] hover:bg-teal-300 dark:hover:bg-[#5EEAD4] rounded-t-md h-[55%] transition-colors duration-300"></div>
-                        <div class="w-full bg-slate-100 dark:bg-[#1A2624] hover:bg-teal-300 dark:hover:bg-[#5EEAD4] rounded-t-md h-[40%] transition-colors duration-300"></div>
-                    </div>
-                    <div class="flex justify-between mt-4 px-2 text-[9px] font-bold text-slate-400 dark:text-[#666] tracking-[0.15em] uppercase transition-colors duration-300">
-                        <span>Awal Bulan</span>
-                        <span>Pertengahan Bulan</span>
-                        <span>Akhir Bulan</span>
-                    </div>
+                <div class="flex-grow pt-4 relative w-full h-[180px]">
+                    <canvas id="unitTrendChart" class="w-full h-full"></canvas>
                 </div>
             </div>
 
             <div class="bg-white dark:bg-[#111111] rounded-[24px] p-6 shadow-sm border border-slate-200 dark:border-transparent flex flex-col justify-between transition-colors duration-300">
                 <div>
-                    <h3 class="text-slate-800 dark:text-white text-lg font-bold font-heading mb-8 transition-colors duration-300">Distribusi Ruangan</h3>
+                    <h3 class="text-slate-800 dark:text-white text-lg font-bold font-heading mb-8 transition-colors duration-300">Distribusi Peminjaman Ruangan</h3>
                     <div class="space-y-6">
-                        @forelse ($distribusiLokasi as $index => $dist)
+                        @forelse ($distribusiPemesananGedung as $index => $dist)
                             @php
-                                // Hitung persentase ruangan di gedung tsb terhadap total ruangan
-                                $percentage = $totalRuangan > 0 ? round(($dist->total / $totalRuangan) * 100) : 0;
+                                // Hitung persentase pemesanan di gedung tsb terhadap total pemesanan aktif unit
+                                $percentage = $bookingAktif > 0 ? round(($dist->total / $bookingAktif) * 100) : 0;
                                 // Variasi warna bar
                                 $colors = [
                                     'bg-teal-500 dark:bg-[#5EEAD4]', 
@@ -153,7 +231,7 @@
                             @endphp
                             <div>
                                 <div class="flex justify-between text-xs font-bold mb-2">
-                                    <span class="text-slate-700 dark:text-white transition-colors duration-300">{{ $dist->building->building_name ?? 'Gedung Unknown' }}</span>
+                                    <span class="text-slate-700 dark:text-white transition-colors duration-300">{{ $dist->building_name ?? 'Gedung Unknown' }}</span>
                                     <span class="text-teal-600 dark:text-[#5EEAD4] transition-colors duration-300">{{ $percentage }}% ({{ $dist->total }})</span>
                                 </div>
                                 <div class="w-full bg-slate-100 dark:bg-[#222] h-1.5 rounded-full overflow-hidden transition-colors duration-300">
@@ -161,7 +239,7 @@
                                 </div>
                             </div>
                         @empty
-                            <p class="text-xs text-slate-500 italic text-center py-4">Belum ada data ruangan di unit ini.</p>
+                            <p class="text-xs text-slate-500 italic text-center py-4">Belum ada aktivitas peminjaman oleh anggota unit ini.</p>
                         @endforelse
                     </div>
                 </div>
@@ -234,6 +312,7 @@
     </div>
 
     @push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         function openModal() {
             const modal = document.getElementById('modalTambahRuang');
@@ -256,6 +335,115 @@
                 }, 300);
             }
         }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const ctx = document.getElementById('unitTrendChart').getContext('2d');
+            const isDark = document.documentElement.classList.contains('dark');
+            
+            const labelColor = isDark ? '#94a3b8' : '#64748b';
+            const gridColor = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
+            
+            // Gradient background
+            const gradient = ctx.createLinearGradient(0, 0, 0, 180);
+            gradient.addColorStop(0, 'rgba(20, 184, 166, 0.3)');
+            gradient.addColorStop(1, 'rgba(20, 184, 166, 0.0)');
+            
+            const chartData = {
+                labels: {!! json_encode($unitTrend->pluck('range')->map(fn($r) => 'Tgl ' . $r)->toArray()) !!},
+                datasets: [{
+                    label: 'Total Booking',
+                    data: {!! json_encode($unitTrend->pluck('count')->toArray()) !!},
+                    borderColor: '#14b8a6',
+                    borderWidth: 3,
+                    backgroundColor: gradient,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#14b8a6',
+                    pointBorderColor: isDark ? '#111' : '#fff',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                }]
+            };
+            
+            const config = {
+                type: 'line',
+                data: chartData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: isDark ? '#1e293b' : '#fff',
+                            titleColor: isDark ? '#fff' : '#1e293b',
+                            bodyColor: isDark ? '#cbd5e1' : '#64748b',
+                            borderColor: '#14b8a6',
+                            borderWidth: 1,
+                            padding: 10,
+                            displayColors: false,
+                            callbacks: {
+                                label: function(context) {
+                                    return context.raw + ' Booking';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: labelColor,
+                                font: {
+                                    family: 'Inter',
+                                    size: 9,
+                                    weight: 'bold'
+                                }
+                            }
+                        },
+                        y: {
+                            grid: {
+                                color: gridColor
+                            },
+                            ticks: {
+                                color: labelColor,
+                                font: {
+                                    family: 'Inter',
+                                    size: 10,
+                                    weight: 'bold'
+                                },
+                                stepSize: 1
+                            },
+                            min: 0
+                        }
+                    }
+                }
+            };
+            
+            window.unitTrendChart = new Chart(ctx, config);
+            
+            // Sync theme changes if dark mode toggled without reload
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.attributeName === 'class') {
+                        const isDarkNow = document.documentElement.classList.contains('dark');
+                        const newLabelColor = isDarkNow ? '#94a3b8' : '#64748b';
+                        const newGridColor = isDarkNow ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
+                        
+                        window.unitTrendChart.options.scales.x.ticks.color = newLabelColor;
+                        window.unitTrendChart.options.scales.y.ticks.color = newLabelColor;
+                        window.unitTrendChart.options.scales.y.grid.color = newGridColor;
+                        window.unitTrendChart.data.datasets[0].pointBorderColor = isDarkNow ? '#111' : '#fff';
+                        window.unitTrendChart.update();
+                    }
+                });
+            });
+            observer.observe(document.documentElement, { attributes: true });
+        });
     </script>
     @endpush
 </x-app-layout>
