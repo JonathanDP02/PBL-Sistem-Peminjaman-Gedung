@@ -62,10 +62,10 @@
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-slate-700 dark:text-slate-300">
-                                    {{ $room->capacity }} org
+                                    {{ $room->capacity }} orang
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="text-sm text-teal-600 dark:text-teal-400 font-medium">{{ $room->unit->name ?? 'Pusat' }}</span>
+                                    <span class="text-sm text-teal-600 dark:text-teal-400 font-medium">{{ $room->unit->unit_name }}</span>
                                 </td>
 
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
