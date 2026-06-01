@@ -36,7 +36,7 @@
 
                 <div class="bg-[#111] border border-white/5 hover:border-[#14B8A6]/20 transition rounded-3xl p-6 sm:p-8 lg:p-10 shadow-[0_0_50px_rgba(0,0,0,0.4)] backdrop-blur-sm">
                     <div class="text-left mb-6 lg:mb-8 flex flex-col">
-                        <h2 class="text-2xl lg:text-3xl font-extrabold text-white mb-1 lg:mb-2 tracking-tight">Login Integrasi</h2>
+                        <h2 class="text-2xl lg:text-3xl font-extrabold text-white mb-1 lg:mb-2 tracking-tight">Masuk Terintegrasi</h2>
                         <p class="text-xs lg:text-sm text-slate-400">Masuk sistem dengan SSO.</p>
                     </div>
 
@@ -62,7 +62,7 @@
 
                         <!-- Password -->
                         <div>
-                            <label for="password" class="block text-[10px] lg:text-[11px] uppercase tracking-wider font-bold text-[#14B8A6] mb-1.5 hover:text-[#10ECE8] transition-colors cursor-pointer">Password</label>
+                            <label for="password" class="block text-[10px] lg:text-[11px] uppercase tracking-wider font-bold text-[#14B8A6] mb-1.5 hover:text-[#10ECE8] transition-colors cursor-pointer">Kata Sandi</label>
                             <input 
                                 id="password" 
                                 type="password" 
@@ -86,7 +86,7 @@
                                     href="{{ route('password.request') }}" 
                                     class="text-xs lg:text-sm font-semibold text-[#14B8A6] hover:text-[#10ECE8] transition"
                                 >
-                                    Lupa Password?
+                                    Lupa Kata Sandi?
                                 </a>
                             @endif
                         </div>
@@ -106,7 +106,7 @@
                             type="submit"
                             class="w-full mt-2 bg-[#14B8A6] text-black font-bold py-3.5 px-4 rounded-xl hover:bg-[#10ECE8] transition-all duration-200 active:scale-[0.98] shadow-[0_0_20px_rgba(20,184,166,0.2)] hover:shadow-[0_0_25px_rgba(20,184,166,0.4)]"
                         >
-                            Masuk ke Portal
+                            Masuk
                         </button>
                     </form>
                 </div>

@@ -7,7 +7,8 @@
         </div>
         <div class="flex items-center gap-5">
             <a href="{{ route('welcome') }}" class="text-white hover:text-[#5EEAD4] font-semibold text-sm px-4 py-2 transition-colors">
-                Home
+                <!-- Home -->
+                Beranda
             </a>
             <a href="{{ route('ruangan') }}" class="text-white hover:text-[#5EEAD4] font-semibold text-sm px-4 py-2 transition-colors">
                 Ruangan
