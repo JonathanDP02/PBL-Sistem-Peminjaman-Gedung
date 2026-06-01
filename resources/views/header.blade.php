@@ -14,7 +14,7 @@
                 Ruangan
             </a>
             <a href="{{ route('booking.scan') }}" class="text-slate-700 dark:text-white hover:text-[#14B8A6] dark:hover:text-[#5EEAD4] font-semibold text-sm px-3 py-2 transition-colors">
-                Scan Surat
+                Pindai Surat
             </a>
 
             <!-- Theme Toggle Button -->
