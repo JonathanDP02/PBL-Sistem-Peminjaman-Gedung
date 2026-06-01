@@ -12,7 +12,7 @@
         </div>
 
         <!-- 1. Tambahkan action URL dan method POST -->
-        <form action="/admin_unit/rooms" method="POST" class="space-y-5">
+        <form action="/admin_unit/rooms" method="POST" enctype="multipart/form-data" class="space-y-5">
             
             <!-- 2. Wajib tambahkan CSRF token untuk keamanan Laravel -->
             @csrf
@@ -44,10 +44,27 @@
                 </div>
             </div>
 
+
             <div>
-                <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">Fasilitas (Pisahkan dengan koma)</label>
-                <!-- 6. Tambahkan name="description" -->
-                <input type="text" name="description" placeholder="Contoh: Proyektor, AC, Papan Tulis" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-kinetic-primary transition-colors">
+                <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">Deskripsi Ruangan</label>
+                <input type="text" name="description" placeholder="Contoh: Ruang kelas khusus pascasarjana" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-kinetic-primary transition-colors">
+            </div>
+
+            <div>
+                <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">Gambar Ruangan</label>
+                <input type="file" name="image" accept="image/*" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-[#14B8A6] transition-colors">
+            </div>
+
+            <div class="pt-2">
+                <div class="flex justify-between items-center mb-2">
+                    <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest">Detail Fasilitas (Inventaris)</label>
+                    <button type="button" onclick="addFacilityRow('tambah')" class="text-xs font-bold text-teal-600 dark:text-teal-400 hover:underline flex items-center gap-1">
+                        <i class="ph-bold ph-plus"></i> Tambah Item
+                    </button>
+                </div>
+                
+                <div id="container-fasilitas-tambah" class="space-y-3 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
+                    </div>
             </div>
 
             <div class="flex gap-3 pt-4 border-t border-slate-200 dark:border-[#2A2A2A] mt-6">

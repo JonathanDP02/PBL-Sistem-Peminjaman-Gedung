@@ -11,9 +11,9 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class ApprovalNeededMail extends Mailable
+class ApprovalNeededMail extends Mailable implements ShouldQueue
 {
-    use SerializesModels;
+    use Queueable, SerializesModels;
 
     public function __construct(
         public Booking $booking,
@@ -30,7 +30,7 @@ class ApprovalNeededMail extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'emails.approval-needed',
+            markdown: 'emails.approval-needed',
         );
     }
 }

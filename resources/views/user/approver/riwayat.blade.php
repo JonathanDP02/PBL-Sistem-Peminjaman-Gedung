@@ -22,11 +22,11 @@
                                 </option>
                             @endforeach
                         </select>
-                        <i class="ph ph-caret-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
+                        <i class="ph-caret-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
                     </div>
 
                     <div class="relative w-full md:w-72">
-                        <i class="ph ph-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <i class="ph ph-magnifying-glass absolute left-4 top-1/2 -translate-y-1 text-slate-400"></i>
                         <input type="text" name="search" value="{{ request('search') }}" 
                             placeholder="Cari riwayat event/ruang..." 
                             class="w-full pl-11 pr-4 py-2.5 bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] rounded-xl text-sm text-slate-900 dark:text-white focus:ring-teal-500 focus:border-teal-500 transition-colors placeholder:text-slate-400 dark:placeholder:text-gray-600">

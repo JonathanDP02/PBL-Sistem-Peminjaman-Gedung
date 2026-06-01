@@ -27,8 +27,8 @@ uses(RefreshDatabase::class);
  * Test Suite untuk fitur Revisi Booking, Cancel Booking, Bulk PDF Download, dan QR Validation
  *
  * Fitur yang ditest:
- * 1. POST /user/bookings/{id}/revise - Revise booking dengan upload dokumen ulang
- * 2. PATCH /user/bookings/{id}/cancel - Cancel booking
+ * 1. POST /peminjam/bookings/{id}/revise - Revise booking dengan upload dokumen ulang
+ * 2. PATCH /peminjam/bookings/{id}/cancel - Cancel booking
  * 3. GET /admin_unit/bookings/bulk-pdf - Bulk download PDF
  * 4. GET /validate/{bookingId} - QR Code validation
  */
@@ -36,10 +36,10 @@ describe('Booking Revision Feature', function () {
 
     beforeEach(function () {
         // Setup roles
-        Role::create(['name' => 'SuperAdmin']);
-        Role::create(['name' => 'Admin_Unit']);
-        Role::create(['name' => 'Approver']);
-        Role::create(['name' => 'User']);
+        Role::create(['name' => 'Administrator Utama']);
+        Role::create(['name' => 'Administrator Unit']);
+        Role::create(['name' => 'Penyetuju']);
+        Role::create(['name' => 'Peminjam']);
 
         // Setup unit & positions
         $this->unit = Unit::create(['unit_name' => 'Pusat', 'level' => 'Pusat']);
@@ -51,11 +51,11 @@ describe('Booking Revision Feature', function () {
 
         // Create test users
         $this->user = User::factory()
-            ->create(['role_id' => Role::where('name', 'User')->first()->id, 'unit_id' => $this->unit->id]);
+            ->create(['role_id' => Role::where('name', 'Peminjam')->first()->id, 'unit_id' => $this->unit->id]);
 
         $this->approver = User::factory()
             ->create([
-                'role_id' => Role::where('name', 'Approver')->first()->id,
+                'role_id' => Role::where('name', 'Penyetuju')->first()->id,
                 'position_id' => $this->position1->id,
                 'unit_id' => $this->unit->id,
             ]);
@@ -127,7 +127,7 @@ describe('Booking Revision Feature', function () {
         $newDisposisi = UploadedFile::fake()->create('disposisi-v2.pdf', 300);
 
         // Submit revise request
-        $response = $this->postJson("/user/bookings/{$booking->id}/revise", [
+        $response = $this->postJson("/peminjam/bookings/{$booking->id}/revise", [
             "requirement_{$this->proposalReq->id}" => $newProposal,
             "requirement_{$this->disposisiReq->id}" => $newDisposisi,
         ]);
@@ -164,7 +164,7 @@ describe('Booking Revision Feature', function () {
 
         $this->actingAs($this->user);
 
-        $response = $this->postJson("/user/bookings/{$booking->id}/revise", [
+        $response = $this->postJson("/peminjam/bookings/{$booking->id}/revise", [
             "requirement_{$this->proposalReq->id}" => UploadedFile::fake()->create('proposal.pdf', 500),
         ]);
 
@@ -186,7 +186,7 @@ describe('Booking Revision Feature', function () {
         $this->actingAs($this->user);
 
         // Hanya upload 1 dari 2 dokumen mandatory
-        $response = $this->postJson("/user/bookings/{$booking->id}/revise", [
+        $response = $this->postJson("/peminjam/bookings/{$booking->id}/revise", [
             "requirement_{$this->proposalReq->id}" => UploadedFile::fake()->create('proposal.pdf', 500),
         ]);
 
@@ -209,12 +209,12 @@ describe('Booking Revision Feature', function () {
 
         $this->actingAs($this->user);
 
-        $this->postJson("/user/bookings/{$booking->id}/revise", [
+        $this->postJson("/peminjam/bookings/{$booking->id}/revise", [
             "requirement_{$this->proposalReq->id}" => UploadedFile::fake()->create('proposal.pdf', 500),
             "requirement_{$this->disposisiReq->id}" => UploadedFile::fake()->create('disposisi.pdf', 300),
         ]);
 
-        // Assert email queued ke approver
+        // Assert email sent ke approver (karena menggunakan ShouldQueue)
         Mail::assertQueued(ApprovalNeededMail::class, function ($mail) {
             return $mail->hasTo($this->approver->email);
         });
@@ -225,15 +225,15 @@ describe('Booking Cancellation Feature', function () {
 
     beforeEach(function () {
         // Setup roles
-        Role::create(['name' => 'SuperAdmin']);
-        Role::create(['name' => 'Admin_Unit']);
-        Role::create(['name' => 'Approver']);
-        Role::create(['name' => 'User']);
+        Role::create(['name' => 'Administrator Utama']);
+        Role::create(['name' => 'Administrator Unit']);
+        Role::create(['name' => 'Penyetuju']);
+        Role::create(['name' => 'Peminjam']);
 
         $this->unit = Unit::create(['unit_name' => 'Pusat', 'level' => 'Pusat']);
         $this->building = Building::factory()->create();
         $this->user = User::factory()
-            ->create(['role_id' => Role::where('name', 'User')->first()->id, 'unit_id' => $this->unit->id]);
+            ->create(['role_id' => Role::where('name', 'Peminjam')->first()->id, 'unit_id' => $this->unit->id]);
 
         $this->room = Room::factory()->create(['unit_id' => $this->unit->id, 'building_id' => $this->building->id]);
         $this->workflow = Workflow::factory()->create(['unit_id' => $this->unit->id]);
@@ -250,7 +250,7 @@ describe('Booking Cancellation Feature', function () {
 
         $this->actingAs($this->user);
 
-        $response = $this->patchJson("/user/bookings/{$booking->id}/cancel");
+        $response = $this->patchJson("/peminjam/bookings/{$booking->id}/cancel");
 
         $response->assertStatus(200);
         expect(Booking::find($booking->id)->status)->toBe('Cancelled');
@@ -267,7 +267,7 @@ describe('Booking Cancellation Feature', function () {
 
         $this->actingAs($this->user);
 
-        $response = $this->patchJson("/user/bookings/{$booking->id}/cancel");
+        $response = $this->patchJson("/peminjam/bookings/{$booking->id}/cancel");
 
         $response->assertStatus(200);
         expect(Booking::find($booking->id)->status)->toBe('Cancelled');
@@ -284,7 +284,7 @@ describe('Booking Cancellation Feature', function () {
 
         $this->actingAs($this->user);
 
-        $response = $this->patchJson("/user/bookings/{$booking->id}/cancel");
+        $response = $this->patchJson("/peminjam/bookings/{$booking->id}/cancel");
 
         $response->assertStatus(200);
         expect(Booking::find($booking->id)->status)->toBe('Cancelled');
@@ -301,7 +301,7 @@ describe('Booking Cancellation Feature', function () {
 
         $this->actingAs($this->user);
 
-        $response = $this->patchJson("/user/bookings/{$booking->id}/cancel");
+        $response = $this->patchJson("/peminjam/bookings/{$booking->id}/cancel");
 
         $response->assertStatus(422);
         $response->assertJsonFragment(['error' => "Booking tidak dapat dibatalkan karena statusnya 'Approved'."]);
@@ -309,7 +309,7 @@ describe('Booking Cancellation Feature', function () {
 
     test('mahasiswa tidak bisa cancel booking milik pengguna lain', function () {
         $otherUser = User::factory()
-            ->create(['role_id' => Role::where('name', 'User')->first()->id, 'unit_id' => $this->unit->id]);
+            ->create(['role_id' => Role::where('name', 'Peminjam')->first()->id, 'unit_id' => $this->unit->id]);
 
         $booking = Booking::factory()
             ->create([
@@ -321,7 +321,7 @@ describe('Booking Cancellation Feature', function () {
 
         $this->actingAs($this->user);
 
-        $response = $this->patchJson("/user/bookings/{$booking->id}/cancel");
+        $response = $this->patchJson("/peminjam/bookings/{$booking->id}/cancel");
 
         $response->assertStatus(404);
     });
@@ -337,7 +337,7 @@ describe('Booking Cancellation Feature', function () {
 
         $this->actingAs($this->user);
 
-        $this->patchJson("/user/bookings/{$booking->id}/cancel");
+        $this->patchJson("/peminjam/bookings/{$booking->id}/cancel");
 
         // Assert log entry created
         expect(BookingLog::where('booking_id', $booking->id)
@@ -348,22 +348,22 @@ describe('Booking Cancellation Feature', function () {
 describe('Bulk PDF Download Feature', function () {
 
     beforeEach(function () {
-        Role::create(['name' => 'SuperAdmin']);
-        Role::create(['name' => 'Admin_Unit']);
-        Role::create(['name' => 'Approver']);
-        Role::create(['name' => 'User']);
+        Role::create(['name' => 'Administrator Utama']);
+        Role::create(['name' => 'Administrator Unit']);
+        Role::create(['name' => 'Penyetuju']);
+        Role::create(['name' => 'Peminjam']);
 
         $this->unit = Unit::create(['unit_name' => 'Jurusan TI', 'level' => 'Jurusan']);
         $this->building = Building::factory()->create();
 
         $this->adminUnit = User::factory()
             ->create([
-                'role_id' => Role::where('name', 'Admin_Unit')->first()->id,
+                'role_id' => Role::where('name', 'Administrator Unit')->first()->id,
                 'unit_id' => $this->unit->id,
             ]);
 
         $this->user = User::factory()
-            ->create(['role_id' => Role::where('name', 'User')->first()->id, 'unit_id' => $this->unit->id]);
+            ->create(['role_id' => Role::where('name', 'Peminjam')->first()->id, 'unit_id' => $this->unit->id]);
     });
 
     test('admin unit bisa download semua PDF approved milik unitnya', function () {
@@ -405,7 +405,7 @@ describe('Bulk PDF Download Feature', function () {
         $otherRoom = Room::factory()->create(['unit_id' => $otherUnit->id, 'building_id' => $otherBuilding->id]);
         $otherWorkflow = Workflow::factory()->create(['unit_id' => $otherUnit->id]);
         $otherUser = User::factory()
-            ->create(['role_id' => Role::where('name', 'User')->first()->id, 'unit_id' => $otherUnit->id]);
+            ->create(['role_id' => Role::where('name', 'Peminjam')->first()->id, 'unit_id' => $otherUnit->id]);
 
         // Booking dari unit lain
         Booking::factory()
@@ -463,21 +463,21 @@ describe('Bulk PDF Download Feature', function () {
 describe('QR Code Validation Feature', function () {
 
     beforeEach(function () {
-        Role::create(['name' => 'SuperAdmin']);
-        Role::create(['name' => 'Admin_Unit']);
-        Role::create(['name' => 'Approver']);
-        Role::create(['name' => 'User']);
+        Role::create(['name' => 'Administrator Utama']);
+        Role::create(['name' => 'Administrator Unit']);
+        Role::create(['name' => 'Penyetuju']);
+        Role::create(['name' => 'Peminjam']);
 
         $this->unit = Unit::create(['unit_name' => 'Pusat', 'level' => 'Pusat']);
         $this->building = Building::factory()->create();
         $this->position = Position::create(['name' => 'Wadir', 'unit_id' => $this->unit->id]);
 
         $this->user = User::factory()
-            ->create(['role_id' => Role::where('name', 'User')->first()->id, 'unit_id' => $this->unit->id]);
+            ->create(['role_id' => Role::where('name', 'Peminjam')->first()->id, 'unit_id' => $this->unit->id]);
 
         $this->approver = User::factory()
             ->create([
-                'role_id' => Role::where('name', 'Approver')->first()->id,
+                'role_id' => Role::where('name', 'Penyetuju')->first()->id,
                 'position_id' => $this->position->id,
                 'unit_id' => $this->unit->id,
             ]);
@@ -574,5 +574,12 @@ describe('QR Code Validation Feature', function () {
 
         $response->assertStatus(200);
         expect(count($response->viewData('booking')->approvals))->toBe(1);
+    });
+
+    test('halaman scanner QR code bisa diakses secara publik', function () {
+        $response = $this->get('/scan');
+
+        $response->assertStatus(200);
+        $response->assertViewIs('booking.scan');
     });
 });

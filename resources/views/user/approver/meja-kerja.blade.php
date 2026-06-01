@@ -22,11 +22,11 @@
                                 </option>
                             @endforeach
                         </select>
-                        <i class="ph ph-caret-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
+                        <i class="ph-caret-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
                     </div>
 
                     <div class="relative w-full md:w-72">
-                        <i class="ph ph-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <i class="ph ph-magnifying-glass absolute left-4 top-1/2 -translate-y-1 text-slate-400"></i>
                         <input type="text" name="search" value="{{ request('search') }}" 
                             placeholder="Cari pemohon atau ruangan..." 
                             class="w-full pl-11 pr-4 py-2.5 bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] rounded-xl text-sm text-slate-900 dark:text-white focus:ring-teal-500 focus:border-teal-500 transition-colors placeholder:text-slate-400 dark:placeholder:text-gray-600">
@@ -38,11 +38,6 @@
                         </a>
                     @endif
                 </form>
-
-                <button class="w-11 h-11 shrink-0 flex items-center justify-center bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] hover:bg-slate-50 dark:hover:bg-[#1A1A1A] rounded-xl text-slate-600 dark:text-gray-400 transition-colors relative">
-                    <i class="ph ph-bell text-xl"></i>
-                    <span class="absolute top-3 right-3 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-[#151515]"></span>
-                </button>
             </div>
         </div>
 
@@ -51,7 +46,7 @@
             <div class="md:col-span-2 bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] rounded-3xl p-6 md:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-sm dark:shadow-none transition-colors">
                 <div>
                     <p class="text-[10px] font-bold tracking-widest text-slate-400 dark:text-gray-500 uppercase mb-2">ESTIMASI WAKTU</p>
-                    <h2 class="font-heading text-4xl font-extrabold text-slate-900 dark:text-white mb-2">~12 Menit</h2>
+                    <h2 class="font-heading text-4xl font-extrabold text-slate-900 dark:text-white mb-2">~{{ $estimation_time }}</h2>
                     <p class="text-sm text-slate-500 dark:text-gray-400">Rata-rata penyelesaian per-berkas.</p>
                 </div>
                 
@@ -63,11 +58,16 @@
                 </div>
             </div>
 
-            <div class="bg-teal-400 dark:bg-teal-400 hover:bg-teal-500 dark:hover:bg-teal-400 border border-slate-200 dark:border-[#2A2A2A] rounded-3xl p-6 md:p-8 text-white  dark:text-black flex flex-col justify-center cursor-pointer hover:scale-[1.02] hover:shadow-[0_10px_30px_rgba(45,212,191,0.3)] transition-all relative overflow-hidden group">
+            <div onclick="toggleSatSetMode()" class="border-slate-200 dark:border-[#2A2A2A] rounded-3xl p-6 md:p-8 flex flex-col justify-center cursor-pointer hover:scale-[1.02] transition-all relative overflow-hidden group border {{ request()->input('mode') === 'satset' ? 'bg-teal-600 dark:bg-teal-500 text-white shadow-[0_10px_30px_rgba(20,184,166,0.3)] ring-4 ring-teal-300 dark:ring-teal-900/50' : 'bg-teal-400 dark:bg-teal-400 hover:bg-teal-500 dark:hover:bg-teal-400 text-white dark:text-black shadow-sm' }}">
                 <div class="absolute top-0 right-0 w-32 h-32 bg-white/20 rounded-full blur-3xl -mr-10 -mt-10 group-hover:bg-white/30 transition-all"></div>
                 
-                <i class="ph-bold ph-lightning dark:text-yellow-400 text-3xl mb-3"></i>
-                <h3 class="font-heading text-2xl font-extrabold mb-1">SatSet Mode</h3>
+                <i class="ph-bold ph-lightning {{ request()->input('mode') === 'satset' ? 'text-yellow-300' : 'dark:text-yellow-400' }} text-3xl mb-3"></i>
+                <h3 class="font-heading text-2xl font-extrabold mb-1 flex items-center gap-2">
+                    SatSet Mode
+                    @if(request()->input('mode') === 'satset')
+                        <span class="text-[10px] bg-yellow-300 text-teal-950 font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider animate-pulse">Aktif</span>
+                    @endif
+                </h3>
                 <p class="text-sm font-medium opacity-90">Fokus pada pengajuan prioritas.</p>
             </div>
 
@@ -142,12 +142,16 @@
             </table>
         </div>
 
+        @php
+            $percentage = $stats['total_count'] > 0 ? round(($stats['reviewed_count'] / $stats['total_count']) * 100) : 0;
+        @endphp
         <div id="summaryCard" class="fixed bottom-8 right-8 w-80 bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] rounded-2xl p-6 shadow-[0_20px_40px_rgba(0,0,0,0.2)] dark:shadow-[0_20px_40px_rgba(0,0,0,0.5)] z-50 transition-all duration-300">
             
             <div class="flex justify-between items-start mb-6">
                 <div class="flex items-center gap-2">
                     <h4 class="text-sm font-bold text-slate-900 dark:text-white">Ringkasan Hari Ini</h4>
                     <i class="ph-fill ph-magic-wand text-teal-500 dark:text-kinetic-primary text-lg"></i>
+                    <span id="countdownTimer" class="text-xs font-bold text-rose-500 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/30 px-2 py-0.5 rounded-full ml-1">60s</span>
                 </div>
                 <button onclick="document.getElementById('summaryCard').classList.add('hidden')" class="text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors">
                     <i class="ph-bold ph-x text-lg"></i>
@@ -157,20 +161,54 @@
             <div class="space-y-4 mb-6">
                 <div class="flex justify-between items-center">
                     <span class="text-sm text-slate-500 dark:text-gray-400">Total Pengajuan</span>
-                    <span class="text-sm font-bold text-slate-900 dark:text-white">24</span>    
+                    <span class="text-sm font-bold text-slate-900 dark:text-white">{{ $stats['total_count'] }}</span>    
                 </div>
                 <div class="flex justify-between items-center">
                     <span class="text-sm text-slate-500 dark:text-gray-400">Selesai Review</span>
-                    <span class="text-sm font-bold text-slate-900 dark:text-white">20</span>
+                    <span class="text-sm font-bold text-slate-900 dark:text-white">{{ $stats['reviewed_count'] }}</span>
                 </div>
             </div>
 
             <div class="w-full bg-slate-100 dark:bg-[#2A2A2A] h-2 rounded-full mb-3 overflow-hidden">
-                <div class="bg-teal-500 dark:bg-[#4ade80] h-full rounded-full transition-all duration-1000 ease-out" style="width: 83%"></div>
+                <div class="bg-teal-500 dark:bg-[#4ade80] h-full rounded-full transition-all duration-1000 ease-out" style="width: {{ $percentage }}%"></div>
             </div>
 
-            <p class="text-[10px] font-bold tracking-widest text-slate-400 dark:text-gray-500 uppercase text-center">83% TARGET TERCAPAI</p>
+            <p class="text-[10px] font-bold tracking-widest text-slate-400 dark:text-gray-500 uppercase text-center">{{ $percentage }}% TARGET TERCAPAI</p>
         </div>
     </div>
 </div>
+
+<script>
+    function toggleSatSetMode() {
+        const url = new URL(window.location.href);
+        if (url.searchParams.get('mode') === 'satset') {
+            url.searchParams.delete('mode');
+        } else {
+            url.searchParams.set('mode', 'satset');
+        }
+        window.location.href = url.toString();
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        let timeLeft = 60;
+        const timerElement = document.getElementById('countdownTimer');
+        const cardElement = document.getElementById('summaryCard');
+
+        const countdown = setInterval(() => {
+            timeLeft--;
+            if (timerElement) {
+                timerElement.textContent = timeLeft + 's';
+            }
+            if (timeLeft <= 0) {
+                clearInterval(countdown);
+                if (cardElement) {
+                    cardElement.classList.add('opacity-0', 'translate-y-4');
+                    setTimeout(() => {
+                        cardElement.classList.add('hidden');
+                    }, 300);
+                }
+            }
+        }, 1000);
+    });
+</script>
 </x-app-layout>

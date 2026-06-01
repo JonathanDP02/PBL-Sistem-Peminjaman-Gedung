@@ -1,4 +1,4 @@
-﻿<x-app-layout>
+<x-app-layout>
     <div class="relative px-8 py-8 space-y-8 min-h-full">
         <div class="absolute top-0 right-0 w-96 h-96 bg-teal-100/30 dark:bg-kinetic-primary/10 rounded-full blur-[100px] pointer-events-none"></div>
 
@@ -47,6 +47,20 @@
                                     {{ $room->description ?? 'Tidak ada deskripsi' }}
                                 </div>
                             </div>
+
+                            <div class="space-y-2">
+                                <p class="text-xs uppercase tracking-[0.24em] text-slate-500">Fasilitas Ruang</p>
+                                <div class="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-slate-700">
+                                    @forelse($room->facilities ?? [] as $fac)
+                                        <div class="inline-flex items-center gap-1.5 rounded-xl bg-teal-500/10 border border-teal-500/20 px-2.5 py-1 text-xs text-teal-300">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-teal-400"></span>
+                                            <span>{{ $fac->name }} <strong class="text-white">x{{ $fac->quantity }}</strong></span>
+                                        </div>
+                                    @empty
+                                        <p class="text-xs text-slate-500 italic pl-1">Belum ada inventaris fasilitas.</p>
+                                    @endforelse
+                                </div>
+                            </div>
                         </div>
 
                         <div class="flex gap-2 justify-end pt-2">
@@ -59,6 +73,8 @@
                                 data-room-capacity="{{ $room->capacity }}" 
                                 data-room-building="{{ $room->building->building_name }}" 
                                 data-room-description="{{ $room->description }}" 
+                                data-room-workflow="{{ $room->workflow_id }}"
+                                data-room-facilities="{{ json_encode($room->facilities ?? []) }}"
                                 class="edit-btn inline-flex items-center justify-center rounded-full border border-teal-500/20 bg-teal-500/10 px-4 py-2 text-sm font-semibold text-teal-200 transition hover:bg-teal-500/20">
                                 Edit
                             </button>
@@ -84,10 +100,56 @@
     <script>
         let roomToDelete = null;
         let roomNameToDelete = null;
+        let facIndex = 0;
+
+        const facilityOptions = `
+            <option value="">-- Pilih Fasilitas --</option>
+            <option value="AC">AC (Air Conditioner)</option>
+            <option value="Proyektor Laser">Proyektor Laser</option>
+            <option value="Layar Proyektor">Layar Proyektor</option>
+            <option value="Kursi Lipat">Kursi Lipat</option>
+            <option value="Meja">Meja</option>
+            <option value="Papan Tulis">Papan Tulis (Whiteboard)</option>
+            <option value="Microphone Wireless">Microphone Wireless</option>
+            <option value="Speaker Portable">Speaker Portable</option>
+            <option value="PC Lab">PC / Komputer Lab</option>
+            <option value="Laptop Presenter">Laptop Presenter</option>
+        `;
+
+        function addFacilityRow(modalType, name = '', qty = 1) {
+            const container = document.getElementById(`container-fasilitas-${modalType}`);
+            if (!container) return;
+            
+            facIndex++;
+            
+            const html = `
+                <div class="flex gap-2 items-center facility-row">
+                    <div class="relative w-2/3">
+                        <select name="facilities[${facIndex}][name]" required class="w-full bg-slate-50 dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] rounded-xl pl-4 pr-8 py-3 text-sm text-slate-900 dark:text-white appearance-none outline-none focus:border-teal-500">
+                            ${facilityOptions}
+                        </select>
+                        <i class="ph ph-caret-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
+                    </div>
+                    <div class="w-1/3 flex items-center gap-2">
+                        <input type="number" name="facilities[${facIndex}][quantity]" value="${qty}" min="1" required placeholder="Jml" class="w-full bg-slate-50 dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] rounded-xl px-3 py-3 text-sm text-slate-900 dark:text-white outline-none focus:border-teal-500">
+                        <button type="button" onclick="this.closest('.facility-row').remove()" class="text-red-500 hover:text-red-600 p-2 transition-colors">
+                            <i class="ph-bold ph-trash text-lg"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', html);
+            
+            if(name) {
+                const selects = container.querySelectorAll('select');
+                selects[selects.length - 1].value = name;
+            }
+        }
 
         document.addEventListener('DOMContentLoaded', function() {
-            const deleteButtons = document.querySelectorAll('.delete-btn');
+            addFacilityRow('tambah');
 
+            const deleteButtons = document.querySelectorAll('.delete-btn');
             deleteButtons.forEach(btn => {
                 btn.addEventListener('click', function() {
                     const roomId = this.getAttribute('data-room-id');
@@ -97,16 +159,24 @@
             });
 
             const editButtons = document.querySelectorAll('.edit-btn');
-
             editButtons.forEach(btn => {
                 btn.addEventListener('click', function() {
                     const roomId = this.getAttribute('data-room-id');
                     const roomName = this.getAttribute('data-room-name');
                     const capacity = this.getAttribute('data-room-capacity');
                     const building = this.getAttribute('data-room-building');
-                    const description = this.getAttribute('data-room-description'); // PERBAIKAN: Tangkap deskripsi
+                    const description = this.getAttribute('data-room-description');
+                    const workflowId = this.getAttribute('data-room-workflow');
                     
-                    openEditModal(roomId, roomName, capacity, building, description);
+                    const facilitiesRaw = this.getAttribute('data-room-facilities');
+                    let facilities = [];
+                    try {
+                        facilities = JSON.parse(facilitiesRaw);
+                    } catch(e) {
+                        console.error("Gagal parsing fasilitas", e);
+                    }
+                    
+                    openEditModal(roomId, roomName, capacity, building, description, facilities, workflowId);
                 });
             });
         });
@@ -129,8 +199,7 @@
             }, 300);
         }
 
-        // PERBAIKAN: Tambahkan parameter description
-        function openEditModal(roomId, roomName, capacity, building, description) {
+        function openEditModal(roomId, roomName, capacity, building, description, facilities = [], workflowId = '') {
             const modal = document.getElementById('modalEditRuang');
             
             const formEdit = document.getElementById('formEditRuangan');
@@ -142,10 +211,9 @@
             document.getElementById('editNamaRuangan').value = roomName;
             document.getElementById('editKapasitas').value = capacity;
             
-            // PERBAIKAN: Masukkan nilai deskripsi ke input id="editFasilitas"
-            const editFasilitas = document.getElementById('editFasilitas');
-            if(editFasilitas) {
-                editFasilitas.value = description || '';
+            const inputDeskripsi = document.getElementById('editDeskripsi');
+            if(inputDeskripsi) {
+                inputDeskripsi.value = description || '';
             }
             
             const gedungSelect = document.getElementById('editLokasiGedung');
@@ -155,6 +223,24 @@
                         gedungSelect.selectedIndex = i;
                         break;
                     }
+                }
+            }
+            
+            const workflowSelect = document.getElementById('editWorkflowId');
+            if(workflowSelect) {
+                workflowSelect.value = workflowId || '';
+            }
+
+            const containerEdit = document.getElementById('container-fasilitas-edit');
+            if(containerEdit) {
+                containerEdit.innerHTML = '';
+                
+                if (facilities && facilities.length > 0) {
+                    facilities.forEach(fac => {
+                        addFacilityRow('edit', fac.name, fac.quantity);
+                    });
+                } else {
+                    addFacilityRow('edit');
                 }
             }
 

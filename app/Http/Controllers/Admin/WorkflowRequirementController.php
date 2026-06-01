@@ -17,7 +17,7 @@ class WorkflowRequirementController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->role->name !== 'Admin_Unit') {
+        if ($user->role->name !== 'Administrator Unit') {
             abort(403, 'Hanya Admin Unit yang dapat menambah syarat dokumen');
         }
 
@@ -46,7 +46,7 @@ class WorkflowRequirementController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->role->name !== 'Admin_Unit') {
+        if ($user->role->name !== 'Administrator Unit') {
             abort(403, 'Hanya Admin Unit yang dapat mengubah syarat dokumen');
         }
 
@@ -76,7 +76,7 @@ class WorkflowRequirementController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->role->name !== 'Admin_Unit') {
+        if ($user->role->name !== 'Administrator Unit') {
             abort(403, 'Hanya Admin Unit yang dapat menghapus syarat dokumen');
         }
 

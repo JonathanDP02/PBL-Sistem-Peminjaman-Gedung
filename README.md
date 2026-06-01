@@ -86,32 +86,77 @@ Semua akun menggunakan password: **`12345`**
 |-----------------------|-------------------------|------------|----------------------------|
 | Admin Jurusan TI      | admin.ti@spacein.test   | Admin_Unit | Jurusan Teknologi Informasi|
 | Admin Jurusan Sipil   | admin.sipil@spacein.test| Admin_Unit | Jurusan Teknik Sipil       |
+| Admin Jurusan Elektro | admin.elektro@spacein.test| Admin_Unit | Jurusan Teknik Elektro     |
+| Admin Jurusan Mesin   | admin.mesin@spacein.test| Admin_Unit | Jurusan Teknik Mesin       |
+| Admin Jurusan Kimia   | admin.kimia@spacein.test| Admin_Unit | Jurusan Teknik Kimia       |
+| Admin Jurusan Akuntansi| admin.akuntansi@spacein.test| Admin_Unit | Jurusan Akuntansi        |
+| Admin Jurusan Administrasi Niaga| admin.an@spacein.test| Admin_Unit | Jurusan Administrasi Niaga|
+| Admin BEM Polinema    | admin.bem@spacein.test  | Admin_Unit | BEM Polinema               |
+| Admin HMTI            | admin.hmti@spacein.test | Admin_Unit | HMTI                       |
+| Admin HMS             | admin.hms@spacein.test  | Admin_Unit | HMS                        |
+| Admin HME             | admin.hme@spacein.test  | Admin_Unit | HME                        |
+| Admin HMM             | admin.hmm@spacein.test  | Admin_Unit | HMM                        |
+| Admin HMK             | admin.hmk@spacein.test  | Admin_Unit | HMK                        |
+| Admin HMA             | admin.hma@spacein.test  | Admin_Unit | HMA                        |
+| Admin HMAN            | admin.hman@spacein.test | Admin_Unit | HMAN                       |
 
 ### Approver
 | Nama              | Email                   | Role     | Posisi          | Unit           |
 |-------------------|-------------------------|----------|-----------------|----------------|
-| Dr. Budi Santoso  | kajur.ti@spacein.test   | Approver | Ketua Jurusan TI| Jurusan TI     |
 | Dr. Siti Rahayu   | wadir@spacein.test      | Approver | Wakil Direktur  | Pusat          |
+| Dr. Budi Santoso  | kajur.ti@spacein.test   | Approver | Ketua Jurusan TI| Jurusan TI     |
 | Ir. Agus Wijaya   | kaprodi.ti@spacein.test | Approver | Kaprodi TI      | Jurusan TI     |
+| Ketua Jurusan Sipil | kajur.sipil@spacein.test | Approver | Ketua Jurusan Sipil | Jurusan Teknik Sipil |
+| Ketua Jurusan Elektro | kajur.elektro@spacein.test | Approver | Ketua Jurusan Elektro | Jurusan Teknik Elektro |
+| Ketua Jurusan Mesin | kajur.mesin@spacein.test | Approver | Ketua Jurusan Mesin | Jurusan Teknik Mesin |
+| Ketua Jurusan Kimia | kajur.kimia@spacein.test | Approver | Ketua Jurusan Kimia | Jurusan Teknik Kimia |
+| Ketua Jurusan Akuntansi | kajur.akuntansi@spacein.test | Approver | Ketua Jurusan Akuntansi | Jurusan Akuntansi |
+| Ketua Jurusan Administrasi Niaga | kajur.an@spacein.test | Approver | Ketua Jurusan Administrasi Niaga | Jurusan Administrasi Niaga |
+| Ketua BEM Polinema| ketua.bem@spacein.test  | Approver | Presiden BEM Polinema | BEM Polinema |
+| Ketua HMTI        | ketua.hmti@spacein.test | Approver | Ketua HMTI      | HMTI           |
+| Ketua HMS         | ketua.hms@spacein.test  | Approver | Ketua HMS       | HMS            |
+| Ketua HME         | ketua.hme@spacein.test  | Approver | Ketua HME       | HME            |
+| Ketua HMM         | ketua.hmm@spacein.test  | Approver | Ketua HMM       | HMM            |
+| Ketua HMK         | ketua.hmk@spacein.test  | Approver | Ketua HMK       | HMK            |
+| Ketua HMA         | ketua.hma@spacein.test  | Approver | Ketua HMA       | HMA            |
+| Ketua HMAN        | ketua.hman@spacein.test | Approver | Ketua HMAN      | HMAN           |
 
 ### User Biasa (Peminjam)
 | Nama                    | Email              | Role | Unit         |
 |-------------------------|--------------------|------|--------------|
 | Andi Mahasiswa TI       | user@spacein.test  | User | HMTI         |
-| Budi Mahasiswa Sipil    | budi@spacein.test  | User | BEM Sipil    |
-| Citra Mahasiswi Elektro | citra@spacein.test | User | HM Elektro   |
+| Budi Mahasiswa Sipil    | budi@spacein.test  | User | HMS          |
+| Citra Mahasiswi Elektro | citra@spacein.test | User | HME          |
+| Staf Jurusan TI         | staf.ti@spacein.test | User | Jurusan Teknologi Informasi |
+| Staf Jurusan Sipil      | staf.sipil@spacein.test | User | Jurusan Teknik Sipil |
+| Staf Jurusan Elektro    | staf.elektro@spacein.test | User | Jurusan Teknik Elektro |
+| Staf Jurusan Mesin      | staf.mesin@spacein.test | User | Jurusan Teknik Mesin |
+| Staf Jurusan Kimia      | staf.kimia@spacein.test | User | Jurusan Teknik Kimia |
+| Staf Jurusan Akuntansi  | staf.akuntansi@spacein.test | User | Jurusan Akuntansi |
+| Staf Jurusan Administrasi Niaga | staf.an@spacein.test | User | Jurusan Administrasi Niaga |
+| Mahasiswa BEM Polinema  | mhs.bem@spacein.test | User | BEM Polinema |
+| Mahasiswa HMM           | mhs.hmm@spacein.test | User | HMM          |
+| Mahasiswa HMK           | mhs.hmk@spacein.test | User | HMK          |
+| Mahasiswa HMA           | mhs.hma@spacein.test | User | HMA          |
+| Mahasiswa HMAN          | mhs.hman@spacein.test | User | HMAN         |
 
 ## Hierarki Unit
 Pusat (Politeknik Negeri Malang)
+├── BEM Polinema
 ├── Jurusan Teknologi Informasi
-│   ├── HMTI
-│   └── BEM TI
+│   └── HMTI
 ├── Jurusan Teknik Sipil
-│   ├── HM Sipil
-│   └── BEM Sipil
-└── Jurusan Teknik Elektro
-├── HM Elektro
-└── BEM Elektro
+│   └── HMS
+├── Jurusan Teknik Elektro
+│   └── HME
+├── Jurusan Teknik Mesin
+│   └── HMM
+├── Jurusan Teknik Kimia
+│   └── HMK
+├── Jurusan Akuntansi
+│   └── HMA
+└── Jurusan Administrasi Niaga
+    └── HMAN
 
 ---
 

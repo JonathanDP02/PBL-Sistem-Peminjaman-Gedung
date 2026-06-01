@@ -17,6 +17,7 @@ class Room extends Model
         'room_name',
         'capacity',
         'description',
+        'image',
     ];
 
     public function building(): BelongsTo
@@ -27,6 +28,11 @@ class Room extends Model
     public function unit(): BelongsTo
     {
         return $this->belongsTo(Unit::class);
+    }
+
+    public function workflows(): HasMany
+    {
+        return $this->hasMany(Workflow::class);
     }
 
     public function bookings(): HasMany

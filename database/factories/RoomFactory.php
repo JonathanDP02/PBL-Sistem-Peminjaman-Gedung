@@ -2,8 +2,8 @@
 
 namespace Database\Factories;
 
-use App\Models\Room;
 use App\Models\Building;
+use App\Models\Room;
 use App\Models\Unit;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -17,7 +17,7 @@ class RoomFactory extends Factory
     public function definition(): array
     {
         $tipeRuang = [
-            'Lab Komputer',
+            'Lab',
             'Ruang Rapat',
             'Aula',
             'Auditorium',
@@ -30,9 +30,9 @@ class RoomFactory extends Factory
             // FK ke buildings — pastikan building sudah di-seed lebih dulu
             'building_id' => Building::inRandomOrder()->first()?->id ?? 1,
             // FK ke units — ruangan dimiliki oleh unit tertentu
-            'unit_id'     => Unit::inRandomOrder()->first()?->id ?? 1,
-            'room_name'   => $this->faker->randomElement($tipeRuang) . ' ' . $nomorRuang,
-            'capacity'    => $this->faker->randomElement([30, 40, 50, 60, 100, 200]),
+            'unit_id' => Unit::inRandomOrder()->first()?->id ?? 1,
+            'room_name' => $this->faker->randomElement($tipeRuang).' '.$nomorRuang,
+            'capacity' => $this->faker->randomElement([30, 40, 50, 60, 100, 200]),
             'description' => $this->faker->optional()->sentence(),
         ];
     }

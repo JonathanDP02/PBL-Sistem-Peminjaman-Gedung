@@ -4,8 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Booking;
 use App\Models\Room;
+use App\Models\Workflow;
+use Carbon\Carbon;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class RoomController extends Controller
 {
@@ -13,68 +17,153 @@ class RoomController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->role->name === 'Admin_Unit') {
-            return response()->json(Room::where('unit_id', $user->unit_id)->get());
+        $query = Room::with(['building', 'workflows' => function ($q) use ($user) {
+            $q->where('unit_id', $user->unit_id);
+        }]);
+
+        if ($user->role->name === 'Administrator Unit') {
+            $unitIds = [$user->unit_id];
+            if ($user->unit && $user->unit->parent_id) {
+                $unitIds[] = $user->unit->parent_id;
+            }
+            $query->whereIn('unit_id', $unitIds);
         }
 
-        return response()->json(Room::all());
+        $rooms = $query->get()->map(function ($room) {
+            return [
+                'id' => $room->id,
+                'room_name' => $room->room_name,
+                'capacity' => $room->capacity,
+                'description' => $room->description,
+                'workflow_id' => $room->workflows->first()?->id,
+                'building_id' => $room->building_id,
+                'building_name' => $room->building?->building_name,
+                'unit_id' => $room->unit_id,
+            ];
+        });
+
+        return response()->json($rooms);
     }
 
     public function store(Request $request)
     {
         $user = Auth::user();
 
-        // Validasi input
+        // Validasi input (description tetap dipertahankan, tambah image)
         $validated = $request->validate([
             'building_id' => 'required',
             'room_name' => 'required',
             'capacity' => 'required|integer',
             'description' => 'nullable',
-            // unit_id must be provided unless the user is Admin_Unit (we'll auto-assign their unit)
-            'unit_id' => $user->role->name === 'Admin_Unit' ? 'nullable' : 'required',
+            'unit_id' => $user->role->name === 'Administrator Unit' ? 'nullable' : 'required',
+            'workflow_id' => 'nullable|exists:workflows,id',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ]);
 
-        // Atur unit_id sesuai role
-        if ($user->role->name === 'Admin_Unit') {
+        if ($user->role->name === 'Administrator Unit') {
             $validated['unit_id'] = $user->unit_id;
         }
 
-        if ($user->role->name === 'SuperAdmin' && ! $request->unit_id) {
-            return redirect()->back()->withErrors(['unit_id' => 'unit_id wajib untuk SuperAdmin']);
+        // Proses upload gambar
+        if ($request->hasFile('image')) {
+            $validated['image'] = $request->file('image')->store('rooms', 'public');
         }
 
-        // Buat ruangan
-        Room::create($validated);
+        $room = Room::create($validated);
 
-        // Kembali ke halaman sebelumnya karena disubmit via form HTML
-        return redirect()->back()->with('success', 'Ruangan berhasil ditambahkan!');
+        return redirect()->back()->with('success', 'Ruangan berhasil ditambahkan');
     }
 
     public function update(Request $request, $id)
     {
-        $user = Auth::user();
         $room = Room::findOrFail($id);
 
-        // Authorization check
-        if ($user->role->name === 'Admin_Unit') {
-            if ($room->unit_id != $user->unit_id) {
-                abort(403, 'Unauthorized');
+        $validationRules = [
+            'building_id' => 'required',
+            'room_name' => 'required',
+            'capacity' => 'required|integer',
+            'description' => 'nullable',
+            'workflow_id' => 'nullable|exists:workflows,id',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+        ];
+
+        if (Auth::user()->role->name === 'Administrator Utama') {
+            $validationRules['unit_id'] = 'required|exists:units,id';
+        }
+
+        $validated = $request->validate($validationRules);
+
+        // Proses upload gambar baru
+        if ($request->hasFile('image')) {
+            // Hapus gambar lama jika ada
+            if ($room->image) {
+                Storage::disk('public')->delete($room->image);
+            }
+            $validated['image'] = $request->file('image')->store('rooms', 'public');
+        }
+
+        $room->update($validated);
+
+        // If JSON request (API), return JSON response
+        if (request()->expectsJson() || request()->is('admin_unit/api/*')) {
+            return response()->json(['message' => 'Ruangan berhasil diperbarui', 'room' => $room]);
+        }
+
+        return redirect()->back()->with('success', 'Data ruangan berhasil diperbarui');
+    }
+
+    /**
+     * Assign or unassign a workflow from a room via JSON API.
+     */
+    public function assignWorkflow(Request $request, $id)
+    {
+        $room = Room::findOrFail($id);
+
+        $request->validate([
+            'workflow_id' => 'nullable|exists:workflows,id',
+        ]);
+
+        $workflowId = $request->input('workflow_id');
+        $user = Auth::user();
+
+        if ($workflowId) {
+            $workflow = \App\Models\Workflow::findOrFail($workflowId);
+
+            // Validasi: 1 unit = 1 workflow per ruangan
+            $existingWorkflow = \App\Models\Workflow::where('unit_id', $workflow->unit_id)
+                ->where('room_id', $id)
+                ->where('id', '!=', $workflow->id)
+                ->first();
+
+            if ($existingWorkflow) {
+                return response()->json(['message' => 'Unit Anda sudah memiliki workflow lain yang terhubung ke ruangan ini. Lepas hubungan workflow tersebut terlebih dahulu.'], 422);
+            }
+
+            // Validasi: 1 workflow hanya bisa terhubung maksimal ke 1 ruangan
+            if ($workflow->room_id && $workflow->room_id != $id) {
+                return response()->json(['message' => 'Workflow ini sudah terhubung dengan ruangan lain. Lepas hubungan ruangan sebelumnya terlebih dahulu.'], 422);
+            }
+
+            $workflow->update(['room_id' => $id]);
+        } else {
+            // Jika workflow_id null (unassign), temukan workflow milik unit ini yang terhubung ke ruangan ini
+            $workflowToUnassign = \App\Models\Workflow::where('unit_id', $user->unit_id)
+                ->where('room_id', $id)
+                ->first();
+                
+            if ($workflowToUnassign) {
+                $workflowToUnassign->update(['room_id' => null]);
             }
         }
 
-        // Validasi input
-        $validated = $request->validate([
-            'building_id' => 'required|exists:buildings,id',
-            'room_name' => 'required|string|max:255',
-            'capacity' => 'required|integer|min:1',
-            'description' => 'nullable|string',
-        ]);
+        return response()->json(['message' => 'Penugasan ruangan untuk workflow berhasil diperbarui']);
+    }
 
-        // Update ruangan
-        $room->update($validated);
+    public function show($id)
+    {
+        $room = Room::findOrFail($id);
 
-        // Kembali ke halaman sebelumnya karena disubmit via form HTML
-        return redirect()->back()->with('success', 'Ruangan berhasil diperbarui!');
+        return response()->json($room);
     }
 
     public function destroy(Request $request, $id)
@@ -83,7 +172,7 @@ class RoomController extends Controller
         $room = Room::findOrFail($id);
 
         // Authorization check
-        if ($user->role->name === 'Admin_Unit') {
+        if ($user->role->name === 'Administrator Unit') {
             if ($room->unit_id != $user->unit_id) {
                 return response()->json(['message' => 'Unauthorized'], 403);
             }
@@ -100,6 +189,10 @@ class RoomController extends Controller
             ], 422);
         }
 
+        if ($room->image) {
+            Storage::disk('public')->delete($room->image);
+        }
+
         $room->delete();
 
         // Mengembalikan JSON karena disubmit via JavaScript (Fetch)
@@ -111,13 +204,14 @@ class RoomController extends Controller
         $room = Room::with([
             'building',
             'unit',
-            'bookings.workflow',
+            'workflows.steps.position',
+            'workflows.requirements',
         ])->findOrFail($id);
 
         return response()->json($room);
     }
 
-public function blockRoom(Request $request)
+    public function blockRoom(Request $request)
     {
         $request->validate([
             'room_id' => 'required|exists:rooms,id',
@@ -127,18 +221,18 @@ public function blockRoom(Request $request)
         ]);
 
         $user = Auth::user();
-        
+
         // Pastikan ruangan benar-benar milik unit admin ini (Keamanan)
         $room = Room::where('id', $request->room_id)->where('unit_id', $user->unit_id)->firstOrFail();
 
         // 1. Parsing Tanggal dan Waktu menggunakan Carbon
-        $startDateTime = \Carbon\Carbon::parse($request->mulai_dari);
-        $endDateTime = \Carbon\Carbon::parse($request->hingga);
+        $startDateTime = Carbon::parse($request->mulai_dari);
+        $endDateTime = Carbon::parse($request->hingga);
 
         $diffInDays = $startDateTime->diffInDays($endDateTime);
         if ($diffInDays > 366) {
             return redirect()->back()->withErrors([
-                'hingga' => 'Durasi pemblokiran maksimal 1 tahun '
+                'hingga' => 'Durasi pemblokiran maksimal 1 tahun ',
             ])->withInput();
         }
 
@@ -158,7 +252,7 @@ public function blockRoom(Request $request)
         $batchId = strtoupper(substr(uniqid(), -6));
 
         while ($currentDate->lte($lastDate)) {
-            
+
             // Logika Penentuan Jam per Harinya
             $dayStartTime = '00:00';
             $dayEndTime = '23:59';
@@ -187,7 +281,7 @@ public function blockRoom(Request $request)
                 'start_time' => $dayStartTime,
                 'end_time' => $dayEndTime,
                 // Tambahkan workflow_id dummy (biarkan null/0 jika database mengizinkan, atau ambil workflow pertama)
-                'workflow_id' => \App\Models\Workflow::where('unit_id', $room->unit_id)->value('id') ?? 1, 
+                'workflow_id' => Workflow::where('unit_id', $room->unit_id)->value('id') ?? 1,
                 'event_name' => "[MAINTENANCE HARD-LOCK] #$batchId",
                 'event_description' => $request->alasan,
                 'status' => 'Approved', // Otomatis disetujui agar langsung memblokir kalender
@@ -200,18 +294,20 @@ public function blockRoom(Request $request)
         return redirect()->back()->with('success', 'Jadwal ruangan berhasil diblokir secara Hard-Lock!');
     }
 
-    public function unblockRoom($eventName)
+    public function unblockRoom(Request $request): RedirectResponse
     {
+        $eventName = urldecode($request->input('event_name', ''));
+        $eventName = trim($eventName);
         $user = Auth::user();
-        
+
         // Ambil data untuk verifikasi (opsional, untuk pesan sukses)
         $blockings = Booking::where('event_name', $eventName)
-            ->whereHas('room', function($q) use ($user) {
+            ->whereHas('room', function ($q) use ($user) {
                 $q->where('unit_id', $user->unit_id);
             });
 
         $count = $blockings->count();
-        
+
         if ($count === 0) {
             return redirect()->back()->withErrors(['message' => 'Jadwal pemblokiran tidak ditemukan atau Anda tidak memiliki akses.']);
         }

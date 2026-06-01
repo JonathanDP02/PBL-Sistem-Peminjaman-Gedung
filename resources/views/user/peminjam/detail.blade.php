@@ -4,7 +4,16 @@
         <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div>
                 <nav class="flex items-center gap-2 text-xs font-medium text-slate-400 mb-2">
-                    <a href="{{ route('riwayat') }}" class="hover:text-kinetic-primary transition">Riwayat</a>
+                    @php
+                        $userRole = Auth::user()?->role?->name;
+                        $backRoute = route('dashboard');
+                        $backText = 'Dashboard';
+                        if ($userRole === 'Peminjam') {
+                            $backRoute = route('riwayat');
+                            $backText = 'Riwayat';
+                        }
+                    @endphp
+                    <a href="{{ $backRoute }}" class="hover:text-kinetic-primary transition">{{ $backText }}</a>
                     <i class="ph ph-caret-right text-[10px]"></i>
                     <span class="text-slate-500">Detail Pesanan</span>
                 </nav>
@@ -43,7 +52,7 @@
                 </a>
                 @endif
                 
-                @if(in_array($booking->status, ['Pending', 'Revising', 'Draft']))
+                @if(in_array($booking->status, ['Pending', 'Revising', 'Draft']) && Auth::user()?->role?->name === 'Peminjam')
                 <button onclick="cancelBooking({{ $booking->id }})" class="flex items-center gap-2 px-5 py-2.5 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-500 border border-red-200 dark:border-red-500/20 rounded-xl text-sm font-bold hover:bg-red-100 dark:hover:bg-red-500/20 transition">
                     <i class="ph ph-x-circle text-lg"></i> Batalkan
                 </button>
@@ -225,11 +234,11 @@
                 </div>
 
                 <div class="bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-3xl p-8 flex items-center gap-8 transition-colors">
-                    <div class="w-32 h-32 bg-slate-200 dark:bg-[#222] rounded-2xl flex items-center justify-center border border-slate-300 dark:border-[#333] shrink-0 relative overflow-hidden group">
+                    <div class="w-32 h-32 bg-white dark:bg-[#222] rounded-2xl flex items-center justify-center border border-slate-300 dark:border-[#333] shrink-0 relative overflow-hidden group">
                         @if($booking->status === 'Approved')
-                        <i class="ph-fill ph-check-circle text-4xl text-kinetic-primary transition-transform group-hover:scale-110"></i>
+                        <img src="data:image/png;base64, {!! App\Support\QrCodeHelper::generateBase64(url('/validate/'.$booking->id)) !!}" class="w-24 h-24 object-contain transition-transform group-hover:scale-105 z-10">
                         @else
-                        <i class="ph-fill ph-lock-key text-4xl text-slate-400 dark:text-gray-600 transition-transform group-hover:scale-110"></i>
+                        <i class="ph-fill ph-lock-key text-4xl text-slate-400 dark:text-gray-600 transition-transform group-hover:scale-110 z-10"></i>
                         @endif
                         <div class="absolute inset-0 bg-black/5 dark:bg-black/20"></div>
                     </div>

@@ -166,42 +166,21 @@
 
         <div class="hidden print:block border-b-2 border-slate-800 pb-4 mb-6">
             <h1 class="print-title">Laporan Peminjaman Ruangan</h1>
-            <p class="print-subtitle">Unit: <strong>{{ auth()->user()->unit->unit_name ?? 'Fakultas / Unit Kerja' }}</strong> &nbsp;|&nbsp; Periode: <strong>{{ now()->translatedFormat('F Y') }}</strong></p>
+            @php
+                $printUnitName = auth()->user()?->role?->name === 'Administrator Utama'
+                    ? 'Seluruh Unit'
+                    : (auth()->user()?->unit?->unit_name ?? 'Fakultas / Unit Kerja');
+            @endphp
+            <p class="print-subtitle">Unit: <strong>{{ $printUnitName }}</strong> &nbsp;|&nbsp; Periode: <strong>{{ now()->translatedFormat('F Y') }}</strong></p>
         </div>
 
         @php
-            // Logika Pengambilan Data Dinamis
-            $unitId = auth()->user()->unit_id ?? null;
-            $query = \App\Models\Booking::query();
-            
-            if (auth()->user() && auth()->user()->role->name === 'Admin_Unit') {
-                $query->whereHas('room', function($q) use ($unitId) {
-                    $q->where('unit_id', $unitId);
-                });
-            }
+            $totalBooking = $bookings->count();
+            $ruangTerpakai = $bookings->pluck('room_id')->unique()->count();
+            $disetujui = $bookings->where('status', 'Approved')->count();
+            $menunggu = $bookings->where('status', 'Pending')->count();
 
-            $currentMonth = now()->month;
-            $currentYear = now()->year;
-            
-            // Siapkan base query bulanan
-            $monthlyBookings = (clone $query)->whereMonth('booking_date', $currentMonth)->whereYear('booking_date', $currentYear);
-
-            // ==========================================
-            // FIX: Gunakan (clone) di setiap eksekusi 
-            // agar perintah SQL tidak saling bercampur
-            // ==========================================
-            
-            $totalBooking = (clone $monthlyBookings)->count();
-            
-            // Hitung ruang terpakai dengan aman untuk PostgreSQL
-            $ruangTerpakai = (clone $monthlyBookings)->select('room_id')->distinct()->count('room_id');
-            
-            $disetujui = (clone $monthlyBookings)->where('status', 'Approved')->count();
-            
-            $menunggu = (clone $monthlyBookings)->where('status', 'Pending')->count();
-
-            // Ambil semua data bulan ini untuk di print (bukan cuma 10)
-            $recentBookingsList = (clone $monthlyBookings)->with(['room', 'user'])->orderBy('booking_date', 'asc')->get();
+            $recentBookingsList = $bookings;
         @endphp
 
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 print-grid-4">
@@ -241,11 +220,13 @@
                             <th class="px-6 py-4 font-semibold uppercase tracking-wider text-[10px] text-center">Status</th>
                             <th class="px-6 py-4 font-semibold uppercase tracking-wider text-[10px]">Tanggal</th>
                             <th class="px-6 py-4 font-semibold uppercase tracking-wider text-[10px]">Pemesan</th>
+                            <th class="px-6 py-4 font-semibold uppercase tracking-wider text-[10px] no-print"></th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-200 dark:divide-kinetic-border/70">
                         @forelse ($recentBookingsList as $booking)
-                            <tr class="hover:bg-slate-50 dark:hover:bg-slate-900 transition">
+                            <tr class="hover:bg-teal-50/50 dark:hover:bg-kinetic-primary/5 transition cursor-pointer"
+                                onclick="window.location='{{ route('detail', $booking->id) }}'">
                                 <td class="px-6 py-4 font-medium text-slate-900 dark:text-white">{{ $booking->room->room_name ?? 'N/A' }}</td>
                                 <td class="px-6 py-4 text-slate-600 dark:text-slate-300">{{ $booking->event_name }}</td>
                                 <td class="px-6 py-4 text-center">
@@ -270,6 +251,11 @@
                                 </td>
                                 <td class="px-6 py-4 text-slate-600 dark:text-slate-300">{{ \Carbon\Carbon::parse($booking->booking_date)->translatedFormat('d M Y') }}</td>
                                 <td class="px-6 py-4 text-slate-600 dark:text-slate-300">{{ $booking->user->name ?? 'N/A' }}</td>
+                                <td class="px-6 py-4 no-print">
+                                    <span class="inline-flex items-center gap-1 text-[10px] font-bold text-kinetic-primary hover:underline">
+                                        <i class="ph ph-arrow-square-out text-xs"></i> Detail
+                                    </span>
+                                </td>
                             </tr>
                         @empty
                             <tr>

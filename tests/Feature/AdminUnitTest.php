@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Booking;
 use App\Models\Building;
 use App\Models\Position;
 use App\Models\Room;
@@ -60,6 +61,30 @@ it('allows admin_unit to access pemblokiran ruangan via web', function () {
 });
 
 // --- API ROUTES TESTING ---
+
+it('allows admin_unit to get filtered positions via api', function () {
+    // Create units
+    $pusatUnit = Unit::create(['unit_name' => 'Pusat Test', 'level' => 'Pusat']);
+    $otherUnit = Unit::create(['unit_name' => 'Other Jurusan', 'level' => 'Jurusan']);
+
+    // Create positions
+    $pusatPos = Position::create(['name' => 'Wadir Pusat', 'unit_id' => $pusatUnit->id]);
+    $localPos = Position::create(['name' => 'Kaprodi Local', 'unit_id' => $this->jurusanTI->id]);
+    $otherPos = Position::create(['name' => 'Kaprodi Other', 'unit_id' => $otherUnit->id]);
+
+    $response = $this->actingAs($this->adminUnit)->getJson('/admin_unit/api/positions');
+
+    $response->assertStatus(200);
+    $data = $response->json('data');
+
+    $names = collect($data)->pluck('name')->toArray();
+
+    // Harus memuat posisi dari unit Pusat dan Unit lokal (jurusanTI)
+    expect($names)->toContain('Wadir Pusat');
+    expect($names)->toContain('Kaprodi Local');
+    // Dan tidak boleh memuat posisi dari unit lain yang tidak relevan (otherUnit)
+    expect($names)->not->toContain('Kaprodi Other');
+});
 
 it('allows admin_unit to get workflows via api', function () {
     $response = $this->actingAs($this->adminUnit)->getJson('/admin_unit/api/workflows');
@@ -149,10 +174,39 @@ it('allows admin_unit to block a room (maintenance) via web form', function () {
     ]);
 
     $response->assertRedirect();
-    $this->assertDatabaseHas('bookings', [
+
+    // Since the event_name contains a dynamic batch suffix, we verify using a query
+    $booking = Booking::where('room_id', $room->id)
+        ->where('status', 'Approved')
+        ->where('event_name', 'LIKE', '[MAINTENANCE HARD-LOCK]%')
+        ->first();
+    expect($booking)->not->toBeNull();
+});
+
+it('allows admin_unit to unblock a room via web form', function () {
+    $room = Room::where('unit_id', $this->jurusanTI->id)->first();
+    $eventName = '[MAINTENANCE HARD-LOCK] #ABC123';
+
+    Booking::create([
         'room_id' => $room->id,
-        'event_name' => '[MAINTENANCE HARD-LOCK]',
+        'user_id' => $this->adminUnit->id,
+        'booking_date' => now()->addDay()->format('Y-m-d'),
+        'start_time' => '08:00',
+        'end_time' => '10:00',
+        'workflow_id' => Workflow::where('unit_id', $room->unit_id)->value('id') ?? 1,
+        'event_name' => $eventName,
+        'event_description' => 'Test Maintenance',
         'status' => 'Approved',
+    ]);
+
+    // Perform unblock request using form parameter
+    $response = $this->actingAs($this->adminUnit)->delete('/admin_unit/pemblokiran-ruangan', [
+        'event_name' => $eventName,
+    ]);
+
+    $response->assertRedirect();
+    $this->assertDatabaseMissing('bookings', [
+        'event_name' => $eventName,
     ]);
 });
 

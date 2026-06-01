@@ -29,6 +29,34 @@
         .sign-name { font-weight: bold; text-decoration: underline; font-size: 12px; margin-top: 5px; }
         .sign-nip { font-size: 11px; margin-top: 2px; }
         
+        .digital-stamp {
+            border: 2px dashed #065f46;
+            background-color: #f0fdf4;
+            color: #065f46;
+            padding: 8px;
+            margin: 10px auto;
+            width: 200px;
+            text-align: center;
+            border-radius: 4px;
+        }
+        .stamp-title {
+            font-size: 8px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 3px;
+        }
+        .stamp-desc {
+            font-size: 8px;
+            margin-bottom: 2px;
+            color: #065f46;
+        }
+        .stamp-date {
+            font-size: 7px;
+            color: #047857;
+            font-weight: bold;
+        }
+        
         /* .qr-box { display: inline-block; text-align: center; } */
         .qr-box p { font-size: 8px; color: #777; margin-top: 5px; }
         
@@ -95,36 +123,39 @@
         </table>
     </div>
 
-    {{-- Footer dengan TTD dan QR --}}
+    {{-- Footer dengan TTD QR Resmi --}}
     <table class="footer-table">
         <tr>
+            {{-- Kolom Kiri Dikosongkan agar TTD tetap di Kanan --}}
+            <td style=""></td>
+            {{-- Bagian Kanan: Tanda Tangan Digital Berbasis QR Code --}}
             <td class="sign-section">
-                <div class="qr-box">
-                    {!! $qrCode !!}
-                    <p>Verifikasi Keaslian Surat</p>
-                    <p style="font-size: 7px;">{{ url('/validate/' . $booking->id) }}</p>
-                </div>
-            </td>
-            {{-- Bagian Tanda Tangan (Tengah/Kiri) --}}
-            <td class="sign-section">
-                @php
-                    $lastApproval = $booking->approvals->where('approval_status', 'Approved')->sortByDesc('step.step_order')->first();
-                @endphp
-                
                 <div class="sign-title">Menyetujui,</div>
-                <div>Wakil Direktur</div>
-                <div>Politeknik Negeri Malang</div>
+                <div style="font-size: 10px;">{{ $lastApproval->step->position->name ?? 'Pejabat Berwenang' }}</div>
+                <div style="font-size: 9px; color: #555; margin-bottom: 6px;">{{ $lastApproval->step->position->unit->unit_name ?? 'Politeknik Negeri Malang' }}</div>
                 
-                {{-- Gambar TTD --}}
-                <div style="margin: 5px 0;">
-                    <img src="{{ base_path('resources/views/pdf/ttd/TTD.png') }}" class="sign-image">
+                {{-- QR Code Resmi sebagai TTD Elektronik (Berada di Tengah Signature Block) --}}
+                <div style="margin: 8px 0;">
+                    <div style="display: inline-block; padding: 5px; border: 1px solid #ddd; background-color: #ffffff; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                        <img src="data:image/png;base64, {!! $qrCode !!}" style="width: 80px; height: 80px; display: block; margin: 0 auto;">
+                    </div>
+                    <div style="font-size: 7px; color: #065f46; font-weight: bold; margin-top: 4px; letter-spacing: 0.5px;">✓ DISETUJUI SECARA ELEKTRONIK</div>
                 </div>
                 
                 <div class="sign-name">{{ $lastApproval->approver->name ?? 'Dr. Hj. Susi Evanita, M. S.' }}</div>
                 <div class="sign-nip">NIP : {{ $lastApproval->approver->profile_data['nip'] ?? '19630608 198703 2 002' }}</div>
             </td>
+            <td style=""></td>
         </tr>
     </table>
+
+    {{-- Catatan Penting di Pojok Kiri Paling Bawah Halaman --}}
+    <div style="position:bottom: 0; left: 0;margin-top: 40px; font-size: 11px; color: #555; line-height: 1.3; border-left: 2px solid #aaa; padding-left: 6px; width: 280px;">
+        <strong>PENTING:</strong><br>
+        1. Surat Izin ini resmi diterbitkan secara elektronik oleh sistem <strong>Space.in</strong>.<br>
+        2. Dokumen ini sah dan tidak memerlukan tanda tangan basah serta stempel fisik.<br>
+        3. Keaslian dokumen dapat diverifikasi dengan memindai QR Code di atas.
+    </div>
 
 </body>
 </html>

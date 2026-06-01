@@ -4,12 +4,12 @@ namespace App\Jobs;
 
 use App\Mail\ApprovalCertificateMail;
 use App\Models\Booking;
+use App\Support\QrCodeHelper;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
-use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class GenerateApprovalCertificateJob implements ShouldQueue
 {
@@ -32,19 +32,24 @@ class GenerateApprovalCertificateJob implements ShouldQueue
             'approvals.approver',
         ])->findOrFail($this->bookingId);
 
-        // Generate QR Code
-        $qrCode = QrCode::format('svg')
-            ->size(120)
-            ->generate(url(route('booking.validate', $booking->id)));
+        // Ambil approval terakhir (pejabat tertinggi yang approve)
+        $lastApproval = $booking->approvals
+            ->where('approval_status', 'Approved')
+            ->sortByDesc(fn ($a) => $a->step->step_order ?? 0)
+            ->first();
+
+        // Generate QR Code menggunakan GD (tidak perlu Imagick)
+        $qrCode = QrCodeHelper::generateBase64(url(route('booking.validate', $booking->id)));
 
         // Render Blade ke PDF
         $pdf = Pdf::loadView('pdf.surat-izin', [
             'booking' => $booking,
+            'lastApproval' => $lastApproval,
             'qrCode' => $qrCode,
         ])->setPaper('a4', 'portrait');
 
         // Save ke storage private dengan path: certificates/BOOKING-{id}-{date}.pdf
-        $fileName = "BOOKING-{$booking->id}-" . now()->format('Y-m-d') . '.pdf';
+        $fileName = "BOOKING-{$booking->id}-".now()->format('Y-m-d').'.pdf';
         $pdfPath = "certificates/{$fileName}";
         Storage::disk('private')->put($pdfPath, $pdf->output());
 

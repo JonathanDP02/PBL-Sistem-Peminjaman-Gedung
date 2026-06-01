@@ -1,20 +1,23 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Peminjaman Ruangan Disetujui</title>
-</head>
-<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-    <h2>Halo {{ $booking->user->name }},</h2>
-    <p>Selamat! Pengajuan peminjaman ruangan Anda telah disetujui secara keseluruhan (Hard-Lock).</p>
-    <ul>
-        <li><strong>No. Booking:</strong> #{{ $booking->id }}</li>
-        <li><strong>Kegiatan:</strong> {{ $booking->event_name }}</li>
-        <li><strong>Tanggal:</strong> {{ $booking->booking_date->format('d M Y') }}</li>
-        <li><strong>Ruangan:</strong> {{ $booking->room->room_name ?? 'Ruangan' }}</li>
-    </ul>
-    <p>Sertifikat/Surat Izin peminjaman akan/telah digenerate dan Anda dapat mengunduhnya melalui dashboard Space.in.</p>
-    <br>
-    <p>Terima kasih,</p>
-    <p><strong>Space.in System</strong></p>
-</body>
-</html>
+<x-mail::message>
+# Peminjaman Ruangan Disetujui (Hard-Lock) 🎉
+
+Halo **{{ $booking->user->name }}**,
+
+Selamat! Pengajuan peminjaman ruangan Anda telah **disetujui secara keseluruhan (Hard-Lock)**. Jadwal ruangan telah resmi dikunci untuk kegiatan Anda.
+
+**Detail Peminjaman:**
+- **No. Booking:** #{{ $booking->id }}
+- **Kegiatan:** {{ $booking->event_name }}
+- **Ruangan:** {{ $booking->room->room_name }}
+- **Tanggal:** {{ \Carbon\Carbon::parse($booking->booking_date)->format('d M Y') }}
+- **Waktu:** {{ \Carbon\Carbon::parse($booking->start_time)->format('H:i') }} - {{ \Carbon\Carbon::parse($booking->end_time)->format('H:i') }}
+
+Sertifikat/Surat Izin peminjaman resmi telah diterbitkan oleh sistem dengan pengamanan kode verifikasi QR Code. Anda dapat mengunduh dokumen tersebut melalui tautan di bawah ini atau via dashboard Space.in Anda.
+
+<x-mail::button :url="config('app.url') . '/peminjam/detail/' . $booking->id">
+Lihat Detail & Unduh Surat Izin
+</x-mail::button>
+
+Terima kasih,<br>
+{{ config('app.name') }}
+</x-mail::message>

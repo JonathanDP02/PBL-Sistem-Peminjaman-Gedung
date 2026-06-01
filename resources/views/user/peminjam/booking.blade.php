@@ -162,6 +162,8 @@
             workflowContainer.innerHTML = '<p class="col-span-2 text-sm text-slate-500 dark:text-gray-400">Pilih ruangan terlebih dahulu untuk melihat alur persetujuan</p>';
             documentsContainer.innerHTML = '<p class="text-sm text-slate-500 dark:text-gray-400">Pilih ruangan dan workflow untuk melihat dokumen yang diperlukan</p>';
             workflowIdInput.value = '';
+            document.getElementById('submitBtn').disabled = true;
+            document.getElementById('submitBtn').classList.add('opacity-50', 'cursor-not-allowed');
             return;
         }
 
@@ -173,59 +175,67 @@
 
         if (!selectedRoom) return;
 
-        const applicableWorkflows = workflowsData.filter(w => w.unit_id == selectedRoom.unit_id);
+        // Cari workflow dari daftar workflowsData yang memiliki room_id sesuai ruangan yang dipilih
+        const workflow = workflowsData.find(w => w.room_id == selectedRoom.id);
 
-        if (applicableWorkflows.length === 0) {
-            workflowContainer.innerHTML = '<p class="col-span-2 text-sm text-red-500 dark:text-red-400">Tidak ada alur persetujuan untuk ruangan ini. Hubungi Admin.</p>';
+        if (!workflow) {
+            workflowContainer.innerHTML = `
+                <div class="col-span-2 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 rounded-xl p-4 flex items-start gap-3">
+                    <i class="ph-fill ph-warning-circle text-rose-500 text-xl mt-0.5"></i>
+                    <div>
+                        <h4 class="text-sm font-bold text-rose-800 dark:text-rose-300">SOP Belum Dikonfigurasi</h4>
+                        <p class="text-[11px] text-rose-600 dark:text-rose-400 mt-1">Unit Anda belum memiliki alur persetujuan (workflow) yang dikonfigurasi untuk ruangan ini. Silakan hubungi Admin Unit Anda untuk melakukan setup workflow agar ruangan ini dapat dipinjam.</p>
+                    </div>
+                </div>`;
             documentsContainer.innerHTML = '';
             workflowIdInput.value = '';
+            document.getElementById('submitBtn').disabled = true;
+            document.getElementById('submitBtn').classList.add('opacity-50', 'cursor-not-allowed');
             return;
         }
 
-        let workflowHTML = '';
-        applicableWorkflows.forEach((workflow, index) => {
-            const isSelected = index === 0;
-            workflowHTML += `
-                <button type="button" 
-                        class="workflow-btn bg-slate-50 dark:bg-[#1A1A1A] border rounded-xl p-5 text-left transition-colors relative overflow-hidden ${isSelected ? 'border-kinetic-primary bg-teal-50 dark:bg-kinetic-primary/10' : 'border-slate-200 dark:border-[#2A2A2A] hover:border-slate-400 dark:hover:border-gray-500'}"
-                        data-workflow-id="${workflow.id}"
-                        onclick="selectWorkflow(${workflow.id})">
-                    <div class="flex items-start justify-between">
-                        <div>
-                            <p class="font-bold ${isSelected ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-gray-300'} text-sm mb-1">${workflow.name}</p>
-                            <p class="text-[10px] text-slate-500 dark:text-gray-500">${workflow.description || 'Tidak ada deskripsi'}</p>
+        document.getElementById('submitBtn').disabled = false;
+        document.getElementById('submitBtn').classList.remove('opacity-50', 'cursor-not-allowed');
+
+        workflowIdInput.value = workflow.id;
+
+        let stepsHTML = '<div class="col-span-2 relative pl-2 pt-2">';
+        stepsHTML += '<div class="absolute left-[19px] top-6 bottom-4 w-px bg-slate-200 dark:bg-[#2A2A2A]"></div>';
+        stepsHTML += '<div class="space-y-4">';
+        
+        if (workflow.steps && workflow.steps.length > 0) {
+            workflow.steps.forEach((step, index) => {
+                stepsHTML += `
+                    <div class="relative flex items-center gap-4">
+                        <div class="w-8 h-8 rounded-full bg-teal-50 dark:bg-kinetic-primary/10 border-2 border-kinetic-primary text-kinetic-primary flex items-center justify-center text-[11px] font-bold z-10 shrink-0 shadow-[0_0_10px_rgba(20,184,166,0.3)] bg-white dark:bg-[#151515]">
+                            ${index + 1}
                         </div>
-                        ${isSelected ? '<i class="ph-fill ph-check-circle text-kinetic-primary text-xl relative z-10"></i>' : ''}
+                        <div class="bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl px-4 py-3 flex-1 group hover:border-kinetic-primary/50 transition-colors">
+                            <p class="text-[9px] text-slate-400 dark:text-gray-500 font-bold uppercase tracking-widest mb-0.5">Langkah ${index + 1}</p>
+                            <p class="text-sm font-bold text-slate-900 dark:text-white">${step.position ? step.position.name : 'Posisi Tidak Diketahui'}</p>
+                        </div>
                     </div>
-                </button>
+                `;
+            });
+        } else {
+            stepsHTML += `
+                <div class="relative flex items-center gap-4">
+                    <div class="w-8 h-8 rounded-full bg-green-50 dark:bg-green-500/10 border-2 border-green-500 text-green-500 flex items-center justify-center text-[11px] font-bold z-10 shrink-0 bg-white dark:bg-[#151515]">
+                        <i class="ph-bold ph-check"></i>
+                    </div>
+                    <div class="bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl px-4 py-3 flex-1">
+                        <p class="text-[9px] text-slate-400 dark:text-gray-500 font-bold uppercase tracking-widest mb-0.5">Otomatis</p>
+                        <p class="text-sm font-bold text-slate-900 dark:text-white">Tanpa Persetujuan Khusus</p>
+                    </div>
+                </div>
             `;
-        });
-        workflowContainer.innerHTML = workflowHTML;
-
-        if (applicableWorkflows.length > 0) {
-            selectWorkflow(applicableWorkflows[0].id);
         }
+        
+        stepsHTML += '</div></div>';
+        workflowContainer.innerHTML = stepsHTML;
+
+        displayDocuments(workflow.id);
     });
-
-    function selectWorkflow(workflowId) {
-        workflowIdInput.value = workflowId;
-
-        document.querySelectorAll('.workflow-btn').forEach(btn => {
-            if (btn.dataset.workflowId == workflowId) {
-                btn.classList.remove('border-slate-200', 'dark:border-[#2A2A2A]');
-                btn.classList.add('border-kinetic-primary', 'bg-teal-50', 'dark:bg-kinetic-primary/10');
-                if(!btn.innerHTML.includes('ph-check-circle')) {
-                    btn.innerHTML = btn.innerHTML.replace('</div>\n                </button>', '<i class="ph-fill ph-check-circle text-kinetic-primary text-xl relative z-10"></i>\n                    </div>\n                </button>');
-                }
-            } else {
-                btn.classList.remove('border-kinetic-primary', 'bg-teal-50', 'dark:bg-kinetic-primary/10');
-                btn.classList.add('border-slate-200', 'dark:border-[#2A2A2A]');
-                btn.innerHTML = btn.innerHTML.replace(/<i class="ph-fill ph-check-circle.*?<\/i>/g, '');
-            }
-        });
-
-        displayDocuments(workflowId);
-    }
 
     function displayDocuments(workflowId) {
         const workflow = workflowsData.find(w => w.id == workflowId);

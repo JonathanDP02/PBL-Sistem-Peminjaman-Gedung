@@ -18,7 +18,7 @@ class TestApprovalDataSeeder extends Seeder
         // Get test data
         $peminjam = User::where('email', 'user@spacein.test')->firstOrFail();
         $workflow = Workflow::where('name', 'Peminjaman JTI')->firstOrFail();
-        $room = Room::firstOrFail();
+        $room = Room::findOrFail($workflow->room_id);
         $kaprodi = User::where('email', 'kaprodi.ti@spacein.test')->firstOrFail();
         $kajur = User::where('email', 'kajur.ti@spacein.test')->firstOrFail();
         $wadir = User::where('email', 'wadir@spacein.test')->firstOrFail();

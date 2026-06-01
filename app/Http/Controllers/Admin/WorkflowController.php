@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Position;
+use App\Models\Unit;
 use App\Models\Workflow;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -21,7 +22,7 @@ class WorkflowController extends Controller
         // Konsisten: Selalu filter berdasarkan unit_id untuk Admin_Unit
         $query = Workflow::query()->with('steps.position', 'requirements')->withCount('steps');
 
-        if ($user->role->name === 'Admin_Unit') {
+        if ($user->role->name === 'Administrator Unit') {
             $query->where('unit_id', $user->unit_id);
         }
 
@@ -35,7 +36,7 @@ class WorkflowController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->role->name !== 'Admin_Unit') {
+        if ($user->role->name !== 'Administrator Unit') {
             return response()->json(['message' => 'Hanya Admin Unit yang dapat membuat workflow'], 403);
         }
 
@@ -125,7 +126,7 @@ class WorkflowController extends Controller
                 }
 
                 // 3. Simpan Tahapan (Dengan Logika Hierarki Level Anda)
-                if (!empty($validated['steps'])) {
+                if (! empty($validated['steps'])) {
                     $positionIds = collect($validated['steps'])->pluck('position_id');
                     $positions = Position::with('unit')->whereIn('id', $positionIds)->get()->keyBy('id');
 
@@ -139,6 +140,7 @@ class WorkflowController extends Controller
                     // Urutkan langkah berdasarkan level unit pejabat
                     $sortedSteps = collect($validated['steps'])->sortBy(function ($step) use ($positions, $levelScore) {
                         $unitLevel = $positions[$step['position_id']]->unit->level ?? 'Organisasi';
+
                         return $levelScore[$unitLevel] ?? 1;
                     })->values();
 
@@ -171,7 +173,38 @@ class WorkflowController extends Controller
      */
     public function getPositions()
     {
-        $positions = Position::select('id', 'name')->orderBy('name', 'asc')->get();
+        $user = Auth::user();
+        $unitIds = [];
+
+        if ($user && $user->unit_id) {
+            $unitIds[] = $user->unit_id;
+
+            // Dapatkan seluruh parent unit secara rekursif
+            $unit = Unit::find($user->unit_id);
+            while ($unit && $unit->parent_id) {
+                $unitIds[] = $unit->parent_id;
+                $unit = Unit::find($unit->parent_id);
+            }
+
+            // Tambahkan BEM Polinema secara otomatis agar posisinya bisa dipilih oleh ormawa (seperti HMTI)
+            $bemUnit = Unit::where('unit_name', 'like', '%BEM%')->first();
+            if ($bemUnit) {
+                $unitIds[] = $bemUnit->id;
+            }
+        }
+
+        $positions = Position::query()
+            ->where(function ($query) use ($unitIds) {
+                if (! empty($unitIds)) {
+                    $query->whereIn('unit_id', $unitIds);
+                }
+            })
+            ->orWhereHas('unit', function ($query) {
+                $query->where('level', 'Pusat');
+            })
+            ->orderBy('name', 'asc')
+            ->get(['id', 'name']);
+
         return response()->json(['data' => $positions]);
     }
 
@@ -181,7 +214,7 @@ class WorkflowController extends Controller
     private function authorizeUnit(Workflow $workflow): void
     {
         $user = Auth::user();
-        if ($user->role->name === 'Admin_Unit' && $workflow->unit_id !== $user->unit_id) {
+        if ($user->role->name === 'Administrator Unit' && $workflow->unit_id !== $user->unit_id) {
             abort(403, 'Akses ditolak: Workflow ini bukan milik unit Anda.');
         }
     }

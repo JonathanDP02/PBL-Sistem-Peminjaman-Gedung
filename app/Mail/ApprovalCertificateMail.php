@@ -12,7 +12,7 @@ use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Storage;
 
-class ApprovalCertificateMail extends Mailable
+class ApprovalCertificateMail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 

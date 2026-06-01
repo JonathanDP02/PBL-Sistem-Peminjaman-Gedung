@@ -45,7 +45,11 @@
                         <button @click="activeTab = 'alur'" :class="activeTab === 'alur' ? 'border-b-2 border-teal-500 text-teal-600 bg-slate-50 dark:bg-kinetic-surface' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'" class="flex-1 px-6 py-4 font-semibold text-sm transition-colors">
                             Alur Persetujuan (<span x-text="steps.length"></span>)
                         </button>
+                        <button @click="activeTab = 'ruangan'; fetchRooms()" :class="activeTab === 'ruangan' ? 'border-b-2 border-teal-500 text-teal-600 bg-slate-50 dark:bg-kinetic-surface' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'" class="flex-1 px-6 py-4 font-semibold text-sm transition-colors">
+                            Ruangan Terhubung (<span x-text="assignedRooms.length"></span>)
+                        </button>
                     </div>
+
 
                     <div x-show="activeTab === 'dokumen'" class="space-y-4">
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -100,13 +104,13 @@
                                         </div>
 
                                         <div class="flex-1 bg-white border border-slate-200 rounded-lg p-5 hover:border-teal-500 transition-colors shadow-sm">
-                                            <div class="flex items-start justify-between mb-3">
+                                            <div class="flex items-start justify-between">
                                                 <div class="flex items-start gap-3 flex-1">
                                                     
                                                     <div class="flex-1">
                                                         <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Urutan <span x-text="index + 1"></span></p>
                                                         
-                                                        <select x-model="step.position_id" class="text-lg font-bold text-slate-900 bg-transparent border-b border-dashed border-slate-300 focus:border-teal-500 focus:ring-0 p-0 pb-1 mb-3 w-full cursor-pointer">
+                                                        <select x-model="step.position_id" class="text-lg font-bold text-slate-900 bg-transparent border-b border-dashed border-slate-300 focus:border-teal-500 focus:ring-0 p-0 pb-1 w-full cursor-pointer">
                                                             <option value="" disabled>-- Pilih Jabatan / Pejabat --</option>
                                                             <template x-for="pos in availablePositions" :key="pos.id">
                                                                 <option :value="pos.id" x-text="pos.name" :selected="step.position_id == pos.id"></option>
@@ -117,15 +121,6 @@
 
                                                 <button type="button" @click="removeStep(index)" class="text-slate-400 hover:text-red-500 p-2 rounded transition-colors shrink-0" title="Hapus Tahap">
                                                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-                                                </button>
-                                            </div>
-
-                                            <div class="flex items-center justify-between pt-3 border-t border-slate-100">
-                                                <span class="text-xs font-bold text-slate-600 uppercase tracking-widest">Wajib Upload Surat Balasan (Disposisi)</span>
-                                                <button type="button" @click="step.requires_attachment = !step.requires_attachment" 
-                                                        :class="step.requires_attachment ? 'bg-teal-500' : 'bg-slate-300'" 
-                                                        class="relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors">
-                                                    <span :class="step.requires_attachment ? 'translate-x-2' : 'translate-x-0'" class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white transition duration-200"></span>
                                                 </button>
                                             </div>
                                         </div>
@@ -140,7 +135,63 @@
                         </button>
                     </div>
 
-                    <div class="flex justify-between items-center mt-12 pt-6 border-t border-slate-200">
+                    <!-- Tab Ruangan Terhubung -->
+                    <div x-show="activeTab === 'ruangan'" class="space-y-4">
+                        <div class="bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-700/30 rounded-xl p-4 text-sm text-teal-700 dark:text-teal-300">
+                            <p class="font-semibold mb-1">Cara Kerja Penugasan Ruangan</p>
+                            <p>Klik <strong>Hubungkan</strong> untuk menetapkan workflow ini ke sebuah ruangan. Ruangan yang sudah menggunakan workflow lain akan diperbarui. Klik <strong>Lepas</strong> untuk menghapus hubungan tersebut.</p>
+                        </div>
+
+                        <template x-if="loadingRooms">
+                            <div class="py-10 flex justify-center">
+                                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
+                            </div>
+                        </template>
+
+                        <div x-show="!loadingRooms" class="relative w-full max-w-md mb-4">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <svg class="h-5 w-5 text-slate-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                            </div>
+                            <input x-model="searchRoom" type="text" class="block w-full pl-10 pr-3 py-2 border border-slate-200 dark:border-kinetic-border rounded-lg leading-5 bg-white dark:bg-kinetic-surface text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all sm:text-sm" placeholder="Cari nama ruangan atau gedung...">
+                        </div>
+
+                        <template x-if="!loadingRooms">
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <template x-for="room in filteredRooms" :key="room.id">
+                                    <div class="bg-white dark:bg-kinetic-card border rounded-xl p-4 flex items-center justify-between gap-3 transition-all"
+                                         :class="assignedRooms.includes(room.id) ? 'border-teal-400 dark:border-teal-500 shadow-sm shadow-teal-100' : 'border-slate-200 dark:border-kinetic-border'">
+                                        <div class="flex items-center gap-3 min-w-0">
+                                            <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                                                 :class="assignedRooms.includes(room.id) ? 'bg-teal-500 text-white' : 'bg-slate-100 dark:bg-kinetic-surface text-slate-500'">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                                            </div>
+                                            <div class="min-w-0">
+                                                <p class="font-semibold text-sm text-slate-900 dark:text-white truncate" x-text="room.room_name"></p>
+                                                <p class="text-xs text-slate-500 dark:text-gray-400 truncate" x-text="room.building_name || '-'"></p>
+                                            </div>
+                                        </div>
+                                        <div class="shrink-0">
+                                            <template x-if="assignedRooms.includes(room.id)">
+                                                <button @click="unassignRoom(room.id)" class="px-3 py-1.5 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40 rounded-lg transition-colors">
+                                                    Lepas
+                                                </button>
+                                            </template>
+                                            <template x-if="!assignedRooms.includes(room.id)">
+                                                <button @click="assignRoom(room.id)" class="px-3 py-1.5 text-xs font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 dark:bg-teal-900/20 dark:text-teal-400 dark:hover:bg-teal-900/30 rounded-lg transition-colors">
+                                                    Hubungkan
+                                                </button>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </template>
+                                <div x-show="filteredRooms.length === 0" class="col-span-full text-center py-10 text-slate-500 dark:text-gray-400 text-sm">
+                                    Tidak ada ruangan yang cocok dengan pencarian Anda.
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+
+                    <div class="flex justify-between items-center mt-12 pt-6 border-t border-slate-200" x-show="activeTab !== 'ruangan'">
                         <div class="text-sm text-slate-500">
                             Pastikan data sudah benar sebelum menyimpan.
                         </div>
@@ -175,6 +226,23 @@
                 documents: [],
                 steps: [],
                 availablePositions: [],
+
+                // Ruangan Tab
+                allRooms: [],
+                assignedRooms: [],
+                loadingRooms: false,
+                searchRoom: '',
+
+                get filteredRooms() {
+                    if (this.searchRoom === '') {
+                        return this.allRooms;
+                    }
+                    const s = this.searchRoom.toLowerCase();
+                    return this.allRooms.filter(r => 
+                        (r.room_name && r.room_name.toLowerCase().includes(s)) ||
+                        (r.building_name && r.building_name.toLowerCase().includes(s))
+                    );
+                },
 
                 getHeaders() {
                     return {
@@ -311,6 +379,63 @@
                         alert('Terjadi kesalahan pada sistem saat menyimpan.');
                     } finally {
                         this.saving = false;
+                    }
+                },
+
+                async fetchRooms() {
+                    if (this.allRooms.length > 0) return; // Cache – only load once
+                    this.loadingRooms = true;
+                    try {
+                        const res = await fetch('/admin_unit/api/rooms', { headers: this.getHeaders() });
+                        if (res.ok) {
+                            const data = await res.json();
+                            this.allRooms = data.data || data;
+                            // Build list of room IDs already assigned to this workflow
+                            // In the backend, room.workflow_id is now the ID of the workflow *for this unit* that is attached to the room
+                            this.assignedRooms = this.allRooms
+                                .filter(r => r.workflow_id == this.workflowId)
+                                .map(r => r.id);
+                        }
+                    } catch (e) {
+                        console.error('fetchRooms error:', e);
+                    } finally {
+                        this.loadingRooms = false;
+                    }
+                },
+
+                async assignRoom(roomId) {
+                    try {
+                        const res = await fetch(`/admin_unit/api/rooms/${roomId}/assign-workflow`, {
+                            method: 'PATCH',
+                            headers: this.getHeaders(),
+                            body: JSON.stringify({ workflow_id: this.workflowId })
+                        });
+                        if (res.ok) {
+                            this.assignedRooms.push(roomId);
+                        } else {
+                            const err = await res.json();
+                            alert(err.message || 'Gagal menghubungkan ruangan.');
+                        }
+                    } catch (e) {
+                        alert('Terjadi kesalahan koneksi.');
+                    }
+                },
+
+                async unassignRoom(roomId) {
+                    try {
+                        const res = await fetch(`/admin_unit/api/rooms/${roomId}/assign-workflow`, {
+                            method: 'PATCH',
+                            headers: this.getHeaders(),
+                            body: JSON.stringify({ workflow_id: null })
+                        });
+                        if (res.ok) {
+                            this.assignedRooms = this.assignedRooms.filter(id => id !== roomId);
+                        } else {
+                            const err = await res.json();
+                            alert(err.message || 'Gagal melepas hubungan ruangan.');
+                        }
+                    } catch (e) {
+                        alert('Terjadi kesalahan koneksi.');
                     }
                 }
             }

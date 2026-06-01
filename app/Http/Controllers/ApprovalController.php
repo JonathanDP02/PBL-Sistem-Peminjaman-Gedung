@@ -1,22 +1,22 @@
 <?php
 
 namespace App\Http\Controllers;
+
+use App\Jobs\GenerateApprovalCertificateJob;
+use App\Mail\ApprovalNeededMail;
+use App\Mail\BookingRejectedMail;
 use App\Models\Approval;
 use App\Models\Booking;
 use App\Models\BookingAttachment;
-use App\Models\BookingLog;
-use App\Models\WorkflowStep;
 use App\Models\Unit;
+use App\Models\User;
+use App\Models\WorkflowStep;
 use App\Services\LoggerService;
-use App\Services\WorkflowService;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Support\Facades\Storage;
-use SimpleSoftwareIO\QrCode\Facades\QrCode;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 
 class ApprovalController extends Controller
 {
@@ -267,7 +267,7 @@ class ApprovalController extends Controller
                     ]);
 
                     // Dispatch async job untuk generate PDF certificate & email
-                    dispatch(new \App\Jobs\GenerateApprovalCertificateJob($booking->id));
+                    dispatch(new GenerateApprovalCertificateJob($booking->id));
                 }
 
                 $approval = Approval::create([
@@ -276,6 +276,7 @@ class ApprovalController extends Controller
                     'step_id' => $currentStep->id,
                     'approval_status' => 'Approved',
                     'notes' => $request->notes,
+                    'attempt' => ($booking->revision_count ?? 0) + 1,
                 ]);
 
                 LoggerService::logAction($booking->id, 'APPROVED', $currentStep->id, $request->notes);
@@ -288,9 +289,30 @@ class ApprovalController extends Controller
         /** @var Approval $approval */
         $booking->refresh();
 
+        // Dispatch intermediate email notifications outside transaction
+        try {
+            if ($booking->status === 'Pending') {
+                $nextStepOrder = $booking->current_step;
+                $nextWorkflowStep = WorkflowStep::where('workflow_id', $booking->workflow_id)
+                    ->where('step_order', $nextStepOrder)
+                    ->first();
+
+                if ($nextWorkflowStep) {
+                    $nextApprovers = User::where('position_id', $nextWorkflowStep->position_id)->get();
+                    \Log::info('Attempting to send intermediate email to '.$nextApprovers->count().' approvers for booking #'.$booking->id);
+                    foreach ($nextApprovers as $nextApprover) {
+                        Mail::to($nextApprover->email)->send(new ApprovalNeededMail($booking, $nextApprover));
+                        \Log::info('Intermediate email sent to approver: '.$nextApprover->email);
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            \Log::error('Mail Error (Intermediate Approval Needed booking #'.$booking->id.'): '.$e->getMessage());
+        }
+
         return response()->json([
             'success' => true,
-            'message' => $booking->status === 'Approved' 
+            'message' => $booking->status === 'Approved'
                 ? 'Booking disetujui! Surat izin sedang digenerate dan akan dikirim ke email peminjam dalam beberapa saat.'
                 : 'Booking berhasil dilanjutkan ke pejabat berikutnya.',
             'booking' => [
@@ -369,8 +391,9 @@ class ApprovalController extends Controller
                     'step_id' => $currentStep->id,
                     'approval_status' => 'Rejected',
                     'notes' => $request->notes,
+                    'attempt' => ($booking->revision_count ?? 0) + 1,
                 ]);
-                
+
                 LoggerService::logAction($booking->id, 'REJECTED', $currentStep->id, $request->notes);
 
             });
@@ -381,6 +404,14 @@ class ApprovalController extends Controller
         /** @var Booking $booking */
         /** @var Approval $approval */
         $booking->refresh();
+
+        // Send email notification to borrower (outside transaction)
+        try {
+            Mail::to($booking->user->email)->send(new BookingRejectedMail($booking, $request->notes));
+            \Log::info('Rejection email sent to borrower: '.$booking->user->email);
+        } catch (\Exception $e) {
+            \Log::error('Mail Error (Rejection Notification Booking #'.$booking->id.'): '.$e->getMessage());
+        }
 
         return response()->json([
             'success' => true,
@@ -467,7 +498,7 @@ class ApprovalController extends Controller
      * GET /meja-kerja
      * Render Meja Kerja (Work Desk) view with all pending approvals for current approver
      */
-public function mejaKerja(Request $request)
+    public function mejaKerja(Request $request)
     {
         $approver = Auth::user();
         $positionId = $approver->position_id;
@@ -485,33 +516,41 @@ public function mejaKerja(Request $request)
             'approvals.approver.position',
             'approvals.step',
         ])
-        ->where('status', 'Pending')
-        ->whereHas('workflow.steps', function ($q) use ($positionId) {
-            $q->where('position_id', $positionId)
-                ->whereColumn('step_order', 'bookings.current_step');
-        });
+            ->where('status', 'Pending')
+            ->whereHas('workflow.steps', function ($q) use ($positionId) {
+                $q->where('position_id', $positionId)
+                    ->whereColumn('step_order', 'bookings.current_step');
+            });
 
         // 3. Logika Pencarian (Event, Peminjam, atau Ruangan)
         if ($search) {
-            $query->where(function($q) use ($search) {
-                $q->where('event_name', 'ilike', "%$search%")
-                  ->orWhereHas('user', function($qu) use ($search) {
-                      $qu->where('name', 'ilike', "%$search%");
-                  })
-                  ->orWhereHas('room', function($qr) use ($search) {
-                      $qr->where('room_name', 'ilike', "%$search%");
-                  });
+            $operator = config('database.default') === 'sqlite' ? 'like' : 'ilike';
+            $query->where(function ($q) use ($search, $operator) {
+                $q->where('event_name', $operator, "%$search%")
+                    ->orWhereHas('user', function ($qu) use ($search, $operator) {
+                        $qu->where('name', $operator, "%$search%");
+                    })
+                    ->orWhereHas('room', function ($qr) use ($search, $operator) {
+                        $qr->where('room_name', $operator, "%$search%");
+                    });
             });
         }
 
         // 4. Logika Filter Berdasarkan Unit
         if ($unitFilter) {
-            $query->whereHas('user', function($q) use ($unitFilter) {
+            $query->whereHas('user', function ($q) use ($unitFilter) {
                 $q->where('unit_id', $unitFilter);
             });
         }
 
-        $bookings = $query->orderBy('created_at', 'desc')->get();
+        $mode = $request->input('mode');
+        if ($mode === 'satset') {
+            $bookings = $query->orderBy('booking_date', 'asc')
+                ->orderBy('start_time', 'asc')
+                ->get();
+        } else {
+            $bookings = $query->orderBy('created_at', 'desc')->get();
+        }
 
         // 5. Transformasi data ke format yang dibutuhkan Blade
         $approvals = $bookings->map(function ($booking) use ($positionId) {
@@ -519,11 +558,53 @@ public function mejaKerja(Request $request)
         });
 
         // 6. Hitung Statistik untuk Dashboard Meja Kerja
+        $reviewedCount = \App\Models\Approval::where('approver_id', $approver->id)->count();
         $stats = [
             'pending_count' => $approvals->count(),
             'urgent_count' => $approvals->filter(fn ($a) => $a['priority_indicator'] === 'urgent')->count(),
             'high_count' => $approvals->filter(fn ($a) => $a['priority_indicator'] === 'high')->count(),
+            'reviewed_count' => $reviewedCount,
+            'total_count' => $approvals->count() + $reviewedCount,
         ];
+
+        // 6a. Hitung Rata-rata Durasi Penyelesaian Per-Berkas
+        $approvedBookings = Booking::where('status', 'Approved')
+            ->withCount('approvals')
+            ->get();
+
+        $totalMinutesPerStep = 0;
+        $validBookingsCount = 0;
+
+        foreach ($approvedBookings as $b) {
+            if ($b->approvals_count > 0) {
+                $duration = $b->created_at->diffInMinutes($b->updated_at);
+                $totalMinutesPerStep += ($duration / $b->approvals_count);
+                $validBookingsCount++;
+            }
+        }
+
+        $avgMinutes = $validBookingsCount > 0 ? (int) round($totalMinutesPerStep / $validBookingsCount) : 12;
+
+        if ($avgMinutes < 1) {
+            $estimationTime = 'Kurang dari 1 Menit';
+        } else {
+            $days = floor($avgMinutes / 1440);
+            $hours = floor(($avgMinutes % 1440) / 60);
+            $remainingMinutes = $avgMinutes % 60;
+            
+            $parts = [];
+            if ($days > 0) {
+                $parts[] = $days . ' Hari';
+            }
+            if ($hours > 0) {
+                $parts[] = $hours . ' Jam';
+            }
+            if ($remainingMinutes > 0 || empty($parts)) {
+                $parts[] = $remainingMinutes . ' Menit';
+            }
+            
+            $estimationTime = implode(' ', $parts);
+        }
 
         // 7. Ambil daftar unit untuk Dropdown (FIX: Pakai unit_name)
         $units = Unit::orderBy('unit_name', 'asc')->get();
@@ -533,8 +614,10 @@ public function mejaKerja(Request $request)
             'stats' => $stats,
             'approver' => $approver,
             'units' => $units,
+            'estimation_time' => $estimationTime,
         ]);
     }
+
     /**
      * GET /approver/approvals/{id}
      * Show detail view for single approval/booking
@@ -569,7 +652,7 @@ public function mejaKerja(Request $request)
         if (request()->wantsJson()) {
             return response()->json([
                 'success' => true,
-                'data' => $approval
+                'data' => $approval,
             ]);
         }
 
@@ -587,7 +670,7 @@ public function mejaKerja(Request $request)
     public function history(Request $request)
     {
         $approver = Auth::user();
-        
+
         // 1. Ambil input dari request
         $search = $request->input('search');
         $unitFilter = $request->input('unit_id');
@@ -598,20 +681,21 @@ public function mejaKerja(Request $request)
 
         // 3. Logika SEARCH (Nama Event, Nama Peminjam, atau Nama Ruangan)
         if ($search) {
-            $query->whereHas('booking', function($q) use ($search) {
-                $q->where('event_name', 'ilike', "%$search%")
-                ->orWhereHas('user', function($qu) use ($search) {
-                    $qu->where('name', 'ilike', "%$search%");
-                })
-                ->orWhereHas('room', function($qr) use ($search) {
-                    $qr->where('room_name', 'ilike', "%$search%");
-                });
+            $operator = config('database.default') === 'sqlite' ? 'like' : 'ilike';
+            $query->whereHas('booking', function ($q) use ($search, $operator) {
+                $q->where('event_name', $operator, "%$search%")
+                    ->orWhereHas('user', function ($qu) use ($search, $operator) {
+                        $qu->where('name', $operator, "%$search%");
+                    })
+                    ->orWhereHas('room', function ($qr) use ($search, $operator) {
+                        $qr->where('room_name', $operator, "%$search%");
+                    });
             });
         }
 
         // 4. Logika FILTER UNIT (Berdasarkan unit asal peminjam)
         if ($unitFilter) {
-            $query->whereHas('booking.user', function($q) use ($unitFilter) {
+            $query->whereHas('booking.user', function ($q) use ($unitFilter) {
                 $q->where('unit_id', $unitFilter);
             });
         }
@@ -620,11 +704,11 @@ public function mejaKerja(Request $request)
         $approvals = $query->orderBy('created_at', 'desc')->paginate(10);
 
         // 6. Ambil daftar unit untuk dropdown (Fix column: unit_name)
-        $units = \App\Models\Unit::orderBy('unit_name', 'asc')->get();
+        $units = Unit::orderBy('unit_name', 'asc')->get();
 
         return view('user.approver.riwayat', [
             'approvals' => $approvals,
-            'units' => $units
+            'units' => $units,
         ]);
     }
 }

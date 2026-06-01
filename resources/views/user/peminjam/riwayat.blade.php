@@ -41,7 +41,15 @@
                                         <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
                                             {{ $booking->room->building->name ?? $booking->room->building->building_name ?? 'Gedung' }} - Kapasitas {{ $booking->room->capacity ?? 0 }} Orang
                                         </p>
-                                        <p class="text-[10px] text-slate-400 dark:text-gray-500 mt-1">
+                                        <p class="text-xs text-teal-600 dark:text-teal-500 font-bold mt-1">
+                                            Kegiatan: {{ $booking->event_name }}
+                                        </p>
+                                        @if(in_array(Auth::user()?->role?->name, ['Administrator Utama', 'Administrator Unit']))
+                                            <p class="text-xs text-slate-600 dark:text-gray-400 mt-0.5">
+                                                Peminjam: <span class="font-semibold">{{ $booking->user->name ?? 'User' }}</span>
+                                            </p>
+                                        @endif
+                                        <p class="text-[10px] text-slate-400 dark:text-gray-500 mt-1.5">
                                             {{ \Carbon\Carbon::parse($booking->booking_date)->translatedFormat('d M Y') }} • {{ date('H:i', strtotime($booking->start_time)) }} - {{ date('H:i', strtotime($booking->end_time)) }} WIB
                                         </p>
                                     </div>

@@ -2,18 +2,20 @@
 
 namespace App\Models;
 
+use Database\Factories\UnitFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Unit extends Model
 {
-    /** @use HasFactory<\Database\Factories\UnitFactory> */
+    /** @use HasFactory<UnitFactory> */
     use HasFactory;
+
     protected $fillable = [
         'parent_id',
         'level',
         'unit_name',
-        'description'
+        'description',
     ];
 
     public function parent()
@@ -24,6 +26,11 @@ class Unit extends Model
     public function children()
     {
         return $this->hasMany(Unit::class, 'parent_id');
+    }
+
+    public function users()
+    {
+        return $this->hasMany(User::class);
     }
 
     public function rooms()

@@ -37,6 +37,51 @@
             </div>
         </div>
 
+        <!-- Filter Toolbar -->
+        <div class="bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] rounded-2xl p-4 shadow-sm dark:shadow-none transition-colors">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                <!-- Search Input -->
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                        <i class="ph-bold ph-magnifying-glass text-slate-400 dark:text-gray-500"></i>
+                    </span>
+                    <input type="text" id="filterSearch" placeholder="Cari nama..." class="w-full pl-9 pr-4 py-2.5 text-sm bg-slate-50 dark:bg-[#1C1C1C] border border-slate-200 dark:border-[#2A2A2A] rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-kinetic-primary focus:border-transparent transition-all">
+                </div>
+
+                <!-- Unit Filter -->
+                <div>
+                    <select id="filterUnit" class="w-full px-3 py-2.5 text-sm bg-slate-50 dark:bg-[#1C1C1C] border border-slate-200 dark:border-[#2A2A2A] rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-kinetic-primary focus:border-transparent transition-all">
+                        <option value="">Semua Unit</option>
+                    </select>
+                </div>
+
+                <!-- Level Filter -->
+                <div>
+                    <select id="filterLevel" class="w-full px-3 py-2.5 text-sm bg-slate-50 dark:bg-[#1C1C1C] border border-slate-200 dark:border-[#2A2A2A] rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-kinetic-primary focus:border-transparent transition-all">
+                        <option value="">Semua Level</option>
+                        <option value="Pusat">Pusat</option>
+                        <option value="Jurusan">Jurusan</option>
+                        <option value="Organisasi">Organisasi</option>
+                    </select>
+                </div>
+
+                <!-- Role Filter -->
+                <div>
+                    <select id="filterRole" class="w-full px-3 py-2.5 text-sm bg-slate-50 dark:bg-[#1C1C1C] border border-slate-200 dark:border-[#2A2A2A] rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-kinetic-primary focus:border-transparent transition-all">
+                        <option value="">Semua Role</option>
+                    </select>
+                </div>
+
+                <!-- Sort Name Filter -->
+                <div>
+                    <select id="filterSortName" class="w-full px-3 py-2.5 text-sm bg-slate-50 dark:bg-[#1C1C1C] border border-slate-200 dark:border-[#2A2A2A] rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-kinetic-primary focus:border-transparent transition-all">
+                        <option value="asc">Nama: A - Z</option>
+                        <option value="desc">Nama: Z - A</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
         <!-- Alert Message -->
         <div id="alertContainer" class="hidden"></div>
 
@@ -70,25 +115,11 @@
             </div>
 
             <div class="border-t border-slate-200 dark:border-[#2A2A2A] px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4 bg-white dark:bg-[#151515]">
-                <p class="text-xs text-slate-500 dark:text-gray-400">
-                    Menampilkan <span class="font-bold text-slate-900 dark:text-white">1-10</span> dari <span id="totalUsers" class="font-bold text-slate-900 dark:text-white">0</span> pengguna
+                <p class="text-xs text-slate-500 dark:text-gray-400" id="paginationInfo">
+                    Menampilkan <span class="font-bold text-slate-900 dark:text-white">0</span> dari <span class="font-bold text-slate-900 dark:text-white">0</span> pengguna
                 </p>
-                <div class="flex items-center gap-1 text-sm">
-                    <button class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 dark:text-gray-500 hover:bg-slate-100 dark:hover:bg-[#222] transition-colors">
-                        <i class="ph-bold ph-caret-left"></i>
-                    </button>
-                    <button class="w-8 h-8 flex items-center justify-center rounded-lg bg-kinetic-primary text-slate-900 font-bold transition-colors">
-                        1
-                    </button>
-                    <button class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-600 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-[#222] font-medium transition-colors">
-                        2
-                    </button>
-                    <button class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-600 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-[#222] font-medium transition-colors">
-                        3
-                    </button>
-                    <button class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 dark:text-gray-500 hover:bg-slate-100 dark:hover:bg-[#222] transition-colors">
-                        <i class="ph-bold ph-caret-right"></i>
-                    </button>
+                <div class="flex items-center gap-1 text-sm" id="paginationControls">
+                    <!-- Dynamic Pagination Controls -->
                 </div>
             </div>
         </div>
@@ -124,22 +155,89 @@ function getElement(id) {
     return el;
 }
 
+let currentSearch = '';
+let currentUnitId = '';
+let currentLevel = '';
+let currentRoleId = '';
+let currentSortName = 'asc';
+let currentPage = 1;
+
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOMContentLoaded - starting to load data');
     const userForm = getElement('userForm');
     if (userForm) {
         setupFormSubmit();
     }
-    loadUsers();
+    setupFilterListeners();
+    loadUsers(1);
     loadUnitsAndRoles();
 });
 
-// Load users from database
-function loadUsers() {
+// Setup event listeners for filtering
+function setupFilterListeners() {
+    const searchInput = getElement('filterSearch');
+    const unitSelect = getElement('filterUnit');
+    const levelSelect = getElement('filterLevel');
+    const roleSelect = getElement('filterRole');
+    const sortSelect = getElement('filterSortName');
+
+    let debounceTimeout = null;
+
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            clearTimeout(debounceTimeout);
+            debounceTimeout = setTimeout(() => {
+                currentSearch = this.value.toLowerCase();
+                loadUsers(1);
+            }, 300);
+        });
+    }
+
+    if (unitSelect) {
+        unitSelect.addEventListener('change', function() {
+            currentUnitId = this.value;
+            loadUsers(1);
+        });
+    }
+
+    if (levelSelect) {
+        levelSelect.addEventListener('change', function() {
+            currentLevel = this.value;
+            loadUsers(1);
+        });
+    }
+
+    if (roleSelect) {
+        roleSelect.addEventListener('change', function() {
+            currentRoleId = this.value;
+            loadUsers(1);
+        });
+    }
+
+    if (sortSelect) {
+        sortSelect.addEventListener('change', function() {
+            currentSortName = this.value;
+            loadUsers(1);
+        });
+    }
+}
+
+// Load users from database with filters and pagination
+function loadUsers(page = 1) {
+    currentPage = page;
     showLoading(true);
     const csrfToken = getCsrfToken();
     
-    fetch('/admin/api/users', {
+    const params = new URLSearchParams({
+        page: page,
+        search: currentSearch,
+        unit_id: currentUnitId,
+        level: currentLevel,
+        role_id: currentRoleId,
+        sort_name: currentSortName
+    });
+
+    fetch(`/admin/api/users?${params.toString()}`, {
         method: 'GET',
         credentials: 'include',
         headers: {
@@ -149,25 +247,19 @@ function loadUsers() {
         }
     })
     .then(response => {
-        console.log('Response status:', response.status);
         if (!response.ok) {
             return response.text().then(text => {
-                console.error('Response text:', text);
                 throw new Error(`HTTP error! status: ${response.status}`);
             });
         }
         return response.json();
     })
     .then(data => {
-        console.log('Users data loaded:', data);
         showLoading(false);
         
         if (data.success && data.data) {
-            renderUsersTable(data.data.data || data.data);
-            const totalUsersEl = getElement('totalUsers');
-            if (totalUsersEl) {
-                totalUsersEl.textContent = (data.data.total || data.data.length);
-            }
+            renderUsersTable(data.data.data || []);
+            renderPagination(data.data);
             
             // Update stats
             if (data.stats) {
@@ -190,6 +282,93 @@ function loadUsers() {
         console.error('Error loading users:', error);
         showAlert('Terjadi kesalahan saat memuat data: ' + error.message, 'error');
     });
+}
+
+// Render dynamic pagination controls
+function renderPagination(paginationData) {
+    const infoEl = getElement('paginationInfo');
+    const controlsEl = getElement('paginationControls');
+    
+    if (!paginationData) return;
+
+    const from = paginationData.from || 0;
+    const to = paginationData.to || 0;
+    const total = paginationData.total || 0;
+    const currentPage = paginationData.current_page || 1;
+    const lastPage = paginationData.last_page || 1;
+
+    // Update info text
+    if (infoEl) {
+        infoEl.innerHTML = `
+            Menampilkan <span class="font-bold text-slate-900 dark:text-white">${from}-${to}</span> dari <span class="font-bold text-slate-900 dark:text-white">${total}</span> pengguna
+        `;
+    }
+
+    if (!controlsEl) return;
+    
+    if (total === 0) {
+        controlsEl.innerHTML = '';
+        return;
+    }
+
+    let html = '';
+
+    // Previous Page Button
+    const prevDisabled = currentPage === 1;
+    html += `
+        <button onclick="${prevDisabled ? '' : `loadUsers(${currentPage - 1})`}" 
+            class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 dark:text-gray-500 hover:bg-slate-100 dark:hover:bg-[#222] transition-colors ${prevDisabled ? 'opacity-40 cursor-not-allowed' : ''}">
+            <i class="ph-bold ph-caret-left"></i>
+        </button>
+    `;
+
+    // Dynamic Page Numbers
+    const delta = 2;
+    const range = [];
+    for (let i = Math.max(2, currentPage - delta); i <= Math.min(lastPage - 1, currentPage + delta); i++) {
+        range.push(i);
+    }
+
+    if (currentPage - delta > 2) {
+        range.unshift('...');
+    }
+    if (currentPage + delta < lastPage - 1) {
+        range.push('...');
+    }
+
+    range.unshift(1);
+    if (lastPage > 1) {
+        range.push(lastPage);
+    }
+
+    range.forEach(page => {
+        if (page === '...') {
+            html += `
+                <span class="w-8 h-8 flex items-center justify-center text-slate-400 dark:text-gray-500">
+                    ...
+                </span>
+            `;
+        } else {
+            const isCurrent = page === currentPage;
+            html += `
+                <button onclick="loadUsers(${page})" 
+                    class="w-8 h-8 flex items-center justify-center rounded-lg ${isCurrent ? 'bg-kinetic-primary text-slate-900 font-bold' : 'text-slate-600 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-[#222] font-medium'} transition-colors">
+                    ${page}
+                </button>
+            `;
+        }
+    });
+
+    // Next Page Button
+    const nextDisabled = currentPage === lastPage;
+    html += `
+        <button onclick="${nextDisabled ? '' : `loadUsers(${currentPage + 1})`}" 
+            class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 dark:text-gray-500 hover:bg-slate-100 dark:hover:bg-[#222] transition-colors ${nextDisabled ? 'opacity-40 cursor-not-allowed' : ''}">
+            <i class="ph-bold ph-caret-right"></i>
+        </button>
+    `;
+
+    controlsEl.innerHTML = html;
 }
 
 // Render users table
@@ -257,10 +436,10 @@ function renderUsersTable(users) {
 // Get role color class
 function getRoleColor(roleName) {
     const colors = {
-        'SuperAdmin': 'text-teal-600 dark:text-kinetic-primary',
-        'Admin_Unit': 'text-cyan-600 dark:text-kinetic-tertiary',
-        'Approver': 'text-purple-600 dark:text-purple-400',
-        'User': 'text-slate-500 dark:text-gray-500'
+        'Administrator Utama': 'text-teal-600 dark:text-kinetic-primary',
+        'Administrator Unit': 'text-cyan-600 dark:text-kinetic-tertiary',
+        'Penyetuju': 'text-purple-600 dark:text-purple-400',
+        'Peminjam': 'text-slate-500 dark:text-gray-500'
     };
     return colors[roleName] || 'text-slate-500 dark:text-gray-500';
 }
@@ -280,13 +459,9 @@ function loadUnitsAndRoles() {
     const unitSelect = document.getElementById('inputUnit');
     const positionSelect = document.getElementById('inputPosition');
     const roleSelect = document.getElementById('inputRole');
+    const filterUnit = document.getElementById('filterUnit');
+    const filterRole = document.getElementById('filterRole');
 
-    if (!unitSelect || !positionSelect || !roleSelect) {
-        console.error('Form elements not found');
-        return;
-    }
-
-    // Load units
     fetch('/admin/api/units', {
         credentials: 'include',
         headers: {
@@ -302,16 +477,28 @@ function loadUnitsAndRoles() {
         if (data.data || data.units) {
             const units = data.data || data.units;
             units.forEach(unit => {
-                const option = document.createElement('option');
-                option.value = unit.id;
-                option.textContent = unit.unit_name || unit.name;
-                unitSelect.appendChild(option);
+                const name = unit.unit_name || unit.name;
+                
+                // Populates modal select
+                if (unitSelect) {
+                    const option = document.createElement('option');
+                    option.value = unit.id;
+                    option.textContent = name;
+                    unitSelect.appendChild(option);
+                }
+
+                // Populates filter select
+                if (filterUnit) {
+                    const option = document.createElement('option');
+                    option.value = unit.id;
+                    option.textContent = name;
+                    filterUnit.appendChild(option);
+                }
             });
         }
     })
     .catch(e => console.error('Error loading units:', e));
 
-    // Load positions
     fetch('/admin/api/positions', {
         credentials: 'include',
         headers: {
@@ -327,16 +514,17 @@ function loadUnitsAndRoles() {
         if (data.data || data.positions) {
             const positions = data.data || data.positions;
             positions.forEach(pos => {
-                const option = document.createElement('option');
-                option.value = pos.id;
-                option.textContent = pos.name;
-                positionSelect.appendChild(option);
+                if (positionSelect) {
+                    const option = document.createElement('option');
+                    option.value = pos.id;
+                    option.textContent = pos.name;
+                    positionSelect.appendChild(option);
+                }
             });
         }
     })
     .catch(e => console.error('Error loading positions:', e));
 
-    // Load roles
     fetch('/admin/api/roles', {
         credentials: 'include',
         headers: {
@@ -352,10 +540,21 @@ function loadUnitsAndRoles() {
         if (data.data || data.roles) {
             const roles = data.data || data.roles;
             roles.forEach(role => {
-                const option = document.createElement('option');
-                option.value = role.id;
-                option.textContent = role.name;
-                roleSelect.appendChild(option);
+                // Populates modal select
+                if (roleSelect) {
+                    const option = document.createElement('option');
+                    option.value = role.id;
+                    option.textContent = role.name;
+                    roleSelect.appendChild(option);
+                }
+
+                // Populates filter select
+                if (filterRole) {
+                    const option = document.createElement('option');
+                    option.value = role.id;
+                    option.textContent = role.name;
+                    filterRole.appendChild(option);
+                }
             });
         }
     })
@@ -389,7 +588,6 @@ function openAddUserModal() {
 // Edit user
 function editUser(userId) {
     currentEditUserId = userId;
-    
     fetch(`/admin/api/users/${userId}`, {
         method: 'GET',
         credentials: 'include',
@@ -574,11 +772,11 @@ function viewUser(userId) {
             // Apply role colors classes dynamically
             roleEl.className = 'px-3 py-1 rounded-full text-xs font-medium border border-slate-200 dark:border-[#333]'; // reset base
             
-            if (user.role?.name === 'SuperAdmin') {
+            if (user.role?.name === 'Administrator Utama') {
                 roleEl.classList.add('bg-teal-50', 'dark:bg-[#0D2A27]', 'text-teal-700', 'dark:text-kinetic-primary');
-            } else if (user.role?.name === 'Admin_Unit') {
+            } else if (user.role?.name === 'Administrator Unit') {
                 roleEl.classList.add('bg-cyan-50', 'dark:bg-cyan-900/20', 'text-cyan-700', 'dark:text-cyan-400');
-            } else if (user.role?.name === 'Approver') {
+            } else if (user.role?.name === 'Penyetuju') {
                 roleEl.classList.add('bg-purple-50', 'dark:bg-purple-900/20', 'text-purple-700', 'dark:text-purple-400');
             } else {
                 roleEl.classList.add('bg-slate-100', 'dark:bg-[#222]', 'text-slate-600', 'dark:text-gray-300');
@@ -608,7 +806,6 @@ function closeViewUserModal() {
 function confirmDelete() {
     if (!currentDeleteUserId) return;
     const csrfToken = getCsrfToken();
-
     fetch(`/admin/api/users/${currentDeleteUserId}`, {
         method: 'DELETE',
         credentials: 'include',

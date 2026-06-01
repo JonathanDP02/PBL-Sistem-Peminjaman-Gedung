@@ -3,21 +3,20 @@
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
-if (!function_exists('dashboardRoute')) {
+if (! function_exists('dashboardRoute')) {
     function dashboardRoute()
     {
         $role = Auth::user()?->role->name ?? null;
-        
+
         return match ($role) {
-            'Admin_Unit' => route('laporan'),
-            'Approver' => route('meja-kerja'),
+            'Administrator Unit' => route('laporan'),
+            'Penyetuju' => route('meja-kerja'),
             default => route('dashboard'),
         };
     }
 }
 
-
-if (!function_exists('getPageTitle')) {
+if (! function_exists('getPageTitle')) {
     /**
      * Get page title based on current route name
      * Mengambil dari route yang sedang aktif
@@ -25,25 +24,25 @@ if (!function_exists('getPageTitle')) {
     function getPageTitle(): string
     {
         $titles = [
-            'dashboard' => 'Dashboard',
+            'dashboard' => 'Dasbor',
             'ruangan' => 'Daftar Ruangan',
-            'booking' => 'Booking Ruangan',
+            'booking' => 'Pesan Ruangan',
             'jadwal-saya' => 'Jadwal Saya',
-            'riwayat' => 'Riwayat Peminjaman',
+            'riwayat' => (Auth::user()?->role?->name ?? '') === 'Peminjam' ? 'Riwayat Peminjaman' : 'Riwayat Persetujuan',
             'peminjaman' => 'Permohonan Peminjaman',
             'meja-kerja' => 'Meja Kerja',
             'manajemenRuangan' => 'Manajemen Ruangan',
             'pemblokiranRuangan' => 'Pemblokiran Ruangan',
-            'workflowsBuilder' => 'Workflow Builder',
-            'workflowsIndex' => 'Daftar Workflow',
-            'laporan' => 'Laporan Penggunaan',
+            'workflowsBuilder' => 'Kelola Alur Kerja',
+            'workflowsIndex' => 'Kelola Alur Kerja',
+            'laporan' => 'Laporan Peminjaman',
             'fasilitas' => 'Kelola Fasilitas',
             'unit' => 'Kelola Unit',
-            'kelola-user' => 'Manajemen Pengguna',
+            'kelola-user' => 'Kelola Pengguna',
             'profile.edit' => 'Profil Saya',
             'approvals.show' => 'Detail Persetujuan',
             'booking.show' => 'Detail Peminjaman',
-            'detail' => 'Detail Booking',
+            'detail' => 'Detail Peminjaman',
             'booking.validate' => 'Validasi Dokumen',
         ];
 

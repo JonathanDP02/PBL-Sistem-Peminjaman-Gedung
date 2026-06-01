@@ -96,10 +96,10 @@
             openDetail(notif) {
                 // Jika ada booking_id, langsung arahkan ke halaman detail booking sesuai role
                 if (notif.booking_id) {
-                    if (this.userRole === 'Approver') {
+                    if (this.userRole === 'Penyetuju') {
                         window.location.href = `/approver/approvals/${notif.booking_id}`;
                     } else {
-                        window.location.href = `/user/detail/${notif.booking_id}`;
+                        window.location.href = `/peminjam/detail/${notif.booking_id}`;
                     }
                     return;
                 }
