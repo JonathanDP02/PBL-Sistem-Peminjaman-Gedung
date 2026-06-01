@@ -10,20 +10,7 @@
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
                     <div>
                         <h1 class="text-4xl font-bold text-slate-900 dark:text-white mb-2">Manajemen Workflow</h1>
-                        <p class="text-slate-600 dark:text-gray-400 text-sm">Kelola alur persetujuan dan syarat dokumen untuk unit Anda.</p>
-                    </div>
-                    <button @click="openCreateModal()" class="px-5 py-2.5 bg-teal-500 dark:bg-teal-500 text-white rounded-lg font-semibold hover:bg-teal-600 dark:hover:bg-teal-400 transition-colors flex items-center gap-2 shadow-sm">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                        Buat Workflow Baru
-                    </button>
-                </div>
-                
-                <div class="flex flex-col sm:flex-row gap-4 items-center justify-between bg-white dark:bg-kinetic-card p-4 rounded-xl border border-slate-200 dark:border-kinetic-border shadow-sm">
-                    <div class="relative w-full sm:w-96">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <svg class="h-5 w-5 text-slate-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                        </div>
-                        <input x-model="search" type="text" class="block w-full pl-10 pr-3 py-2 border border-slate-200 dark:border-kinetic-border rounded-lg leading-5 bg-slate-50 dark:bg-kinetic-surface text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all sm:text-sm" placeholder="Cari nama workflow...">
+                        <p class="text-slate-600 dark:text-gray-400 text-sm">Kelola alur persetujuan umum dan syarat dokumen untuk unit Anda.</p>
                     </div>
                 </div>
             </div>
@@ -34,10 +21,10 @@
                 </div>
             </template>
 
-            <div x-show="!loading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div x-show="!loading" class="max-w-xl mx-auto">
                 <template x-for="workflow in filteredWorkflows" :key="workflow.id">
                     
-                    <div @click="openEditModal(workflow)" class="group block h-full relative cursor-pointer">
+                    <div @click="window.location.href = '/admin_unit/workflows-index?id=' + workflow.id" class="group block h-full relative cursor-pointer">
                         
                         <div class="bg-white dark:bg-kinetic-card rounded-xl border border-slate-200 dark:border-kinetic-border p-6 hover:shadow-lg hover:border-teal-500 dark:hover:border-teal-400 transition-all h-full flex flex-col overflow-hidden relative">
                             
@@ -59,13 +46,9 @@
                                 <p class="text-sm font-medium text-slate-500 dark:text-gray-400 mb-4" x-text="workflow.description || 'Tidak ada deskripsi'"></p>
                             </div>
 
-                            <div class="mt-4 pt-4 border-t border-slate-100 dark:border-kinetic-border flex items-center justify-between relative z-10">
-                                <button @click.stop="deleteWorkflow(workflow.id)" class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 px-3 py-2 rounded-lg font-semibold text-sm transition-colors flex items-center gap-1">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-                                    Hapus
-                                </button>
-                                <a @click.stop :href="'/admin_unit/workflows-index?id=' + workflow.id" class="text-teal-600 dark:text-white hover:text-white bg-slate-100 dark:bg-teal-900/20  hover:bg-teal-600 border dark:hover:bg-teal-600 border-white/20 font-semibold rounded-lg text-sm px-5 py-2 transition-all backdrop-blur-sm flex items-center gap-1">
-                                    Atur Alur 
+                            <div class="mt-4 pt-4 border-t border-slate-100 dark:border-kinetic-border flex items-center justify-end relative z-10">
+                                <a @click.stop :href="'/admin_unit/workflows-index?id=' + workflow.id" class="w-full text-center text-teal-600 dark:text-white hover:text-white bg-slate-100 dark:bg-teal-900/20  hover:bg-teal-600 border dark:hover:bg-teal-600 border-white/20 font-semibold rounded-lg text-sm px-5 py-3.5 transition-all backdrop-blur-sm flex items-center justify-center gap-2">
+                                    <span>Atur Alur Unit Saya</span>
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
                                 </a>
                             </div>
@@ -81,7 +64,7 @@
                     <svg class="w-16 h-16 mb-4 text-slate-300 dark:text-kinetic-border" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
                     </svg>
-                    <p class="text-lg font-medium">Tidak ada workflow ditemukan.</p>
+                    <p class="text-lg font-medium">Alur unit belum terkonfigurasi otomatis.</p>
                 </div>
             </div>
 

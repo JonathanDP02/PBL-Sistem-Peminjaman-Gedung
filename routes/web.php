@@ -20,6 +20,7 @@ use App\Models\Building;
 use App\Models\Position;
 use App\Models\Role;
 use App\Models\Room;
+use App\Models\Unit;
 use App\Models\Workflow;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -149,12 +150,28 @@ Route::middleware('auth')->group(function () {
                 // SuperAdmin can see all bookings
                 $bookings = $query->get();
             } elseif ($user->role->name === 'Administrator Unit') {
-                // Admin_Unit can see bookings belonging to their unit's rooms or parent's rooms
+                // Admin_Unit can see bookings belonging to their unit's rooms, parent's rooms, or child's rooms
                 $unitIds = [$user->unit_id];
-                if ($user->unit && $user->unit->parent_id) {
-                    $unitIds[] = $user->unit->parent_id;
+
+                // Dapatkan seluruh parent unit secara rekursif (ancestors)
+                $unit = $user->unit;
+                while ($unit && $unit->parent_id) {
+                    $unitIds[] = $unit->parent_id;
+                    $unit = $unit->parent;
                 }
-                
+
+                // Dapatkan seluruh child unit (descendants)
+                if ($user->unit) {
+                    $childIds = Unit::where('parent_id', $user->unit_id)->pluck('id')->toArray();
+                    $unitIds = array_merge($unitIds, $childIds);
+                    if (! empty($childIds)) {
+                        $grandchildIds = Unit::whereIn('parent_id', $childIds)->pluck('id')->toArray();
+                        $unitIds = array_merge($unitIds, $grandchildIds);
+                    }
+                }
+
+                $unitIds = array_unique($unitIds);
+
                 $bookings = $query->whereHas('room', function ($q) use ($unitIds) {
                     $q->whereIn('unit_id', $unitIds);
                 })->get();
@@ -250,19 +267,62 @@ Route::middleware('auth')->group(function () {
         // Views
         Route::get('/bookings/bulk-pdf', [BookingPdfController::class, 'bulkDownload'])->name('booking.pdf.bulk');
         Route::get('/manajemen-ruangan', function () {
-            $rooms = Room::where('unit_id', Auth::user()->unit_id)->with(['building', 'workflows'])->get();
-            $workflows = Workflow::where('unit_id', Auth::user()->unit_id)->get();
+            $user = Auth::user();
+            $unitIds = [$user->unit_id];
+
+            // Dapatkan seluruh parent unit secara rekursif (ancestors)
+            $unit = $user->unit;
+            while ($unit && $unit->parent_id) {
+                $unitIds[] = $unit->parent_id;
+                $unit = $unit->parent;
+            }
+
+            // Dapatkan seluruh child unit (descendants)
+            if ($user->unit) {
+                $childIds = Unit::where('parent_id', $user->unit_id)->pluck('id')->toArray();
+                $unitIds = array_merge($unitIds, $childIds);
+                if (! empty($childIds)) {
+                    $grandchildIds = Unit::whereIn('parent_id', $childIds)->pluck('id')->toArray();
+                    $unitIds = array_merge($unitIds, $grandchildIds);
+                }
+            }
+
+            $unitIds = array_unique($unitIds);
+
+            $rooms = Room::whereIn('unit_id', $unitIds)->with(['building', 'workflows'])->get();
+            $workflows = Workflow::where('unit_id', $user->unit_id)->get();
 
             return view('user.admin_unit.manajemenRuangan', compact('rooms', 'workflows'));
         })->name('manajemenRuangan');
 
         Route::get('/pemblokiran-ruangan', function () {
             $user = Auth::user();
-            $rooms = Room::where('unit_id', $user->unit_id)->with('building')->get();
+            $unitIds = [$user->unit_id];
+
+            // Dapatkan seluruh parent unit secara rekursif (ancestors)
+            $unit = $user->unit;
+            while ($unit && $unit->parent_id) {
+                $unitIds[] = $unit->parent_id;
+                $unit = $unit->parent;
+            }
+
+            // Dapatkan seluruh child unit (descendants)
+            if ($user->unit) {
+                $childIds = Unit::where('parent_id', $user->unit_id)->pluck('id')->toArray();
+                $unitIds = array_merge($unitIds, $childIds);
+                if (! empty($childIds)) {
+                    $grandchildIds = Unit::whereIn('parent_id', $childIds)->pluck('id')->toArray();
+                    $unitIds = array_merge($unitIds, $grandchildIds);
+                }
+            }
+
+            $unitIds = array_unique($unitIds);
+
+            $rooms = Room::whereIn('unit_id', $unitIds)->with('building')->get();
 
             // Mengambil jadwal maintenance mendatang dan mengelompokkannya
             $rawBlockings = Booking::with('room')
-                ->whereHas('room', fn ($q) => $q->where('unit_id', $user->unit_id))
+                ->whereHas('room', fn ($q) => $q->whereIn('unit_id', $unitIds))
                 ->where('event_name', 'LIKE', '[MAINTENANCE HARD-LOCK]%')
                 ->whereDate('booking_date', '>=', now())
                 ->orderBy('booking_date', 'asc')

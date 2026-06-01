@@ -134,7 +134,7 @@ Alur bisnis Space.in dirancang untuk menggantikan prosedur manual yang tidak efi
 | 1 | Pencarian Ruangan | Peminjam mencari ruangan yang dibutuhkan dan memeriksa ketersediaan jadwal secara real-time melalui kalender ketersediaan. |
 | 2 | Pengajuan Peminjaman | Peminjam mengisi detail acara (nama acara, estimasi peserta, durasi), memilih Workflow sesuai otoritas ruangan, dan mengunggah dokumen persyaratan. |
 | 3 | Validasi Anti-Overlap | Sistem secara otomatis memvalidasi bentrok jadwal (logika Anti-Overlap) dan menerapkan Soft-Lock agar jadwal tidak dapat diambil pengguna lain selama proses berlangsung. |
-| 4 | Antrean Persetujuan | Pengajuan masuk ke antrean Admin Unit dan Approver secara berurutan sesuai hirarki unit yang telah dikonfigurasi (Pusat, Jurusan, atau Organisasi). |
+| 4 | Antrean Persetujuan Berlapis (Multi-tier Workflow) | Pengajuan diproses melalui **Workflow Internal** (Ormawa/Unit Peminjam) untuk peninjauan kelayakan internal. Setelah disetujui penuh di Tier 1, booking otomatis diteruskan (promoted) ke **Workflow Eksternal** (Unit Pemilik Ruangan) di Tier 2 untuk persetujuan resmi kampus. |
 | 5 | Review Approver | Setiap Approver meninjau dokumen melalui dashboard; dapat menyetujui, meminta dokumen tambahan, atau menolak dengan catatan revisi. |
 | 6 | Revisi (jika ditolak) | Peminjam memperbaiki dokumen dan mengajukan revisi kembali tanpa mengulang proses dari awal; sistem mencatat log percobaan revisi beserta timestamp. |
 | 7 | Hard-Lock & Penerbitan Surat | Setelah seluruh rantai persetujuan selesai, status booking berubah menjadi Hard-Lock dan sistem menerbitkan Surat Izin Peminjaman PDF beserta QR Code unik. |
@@ -577,12 +577,17 @@ Sistem wajib mengimplementasikan logika Anti-Overlap yang memastikan tidak ada d
 - Setiap surat izin memiliki QR Code unik yang berisi informasi terenkripsi: ID booking, ruangan, tanggal, dan identitas Peminjam.
 - QR Code dapat dipindai melalui fitur scanner pada platform Space.in untuk verifikasi keabsahan izin secara instan oleh pengelola gedung.
 
-### 10.4 Aturan Workflow
+### 10.4 Aturan Workflow (Multi-tier Workflow)
 
-- Setiap workflow harus memiliki minimal satu langkah Approver; sistem menolak penyimpanan workflow tanpa Approver.
-- Approver diproses secara berurutan sesuai urutan yang dikonfigurasi Admin Unit; Approver berikutnya hanya dapat mengakses pengajuan setelah Approver sebelumnya menyetujui.
-- Jika Approver menolak, seluruh rantai berhenti dan pengajuan dikembalikan ke Peminjam dengan catatan revisi.
-- Workflow bersifat dinamis dan tersimpan di database; perubahan pada workflow hanya berlaku untuk pengajuan baru (tidak retroaktif).
+Sistem mengimplementasikan alur persetujuan dua tingkat (Multi-tier/Alur Berlapis):
+- **Workflow Internal (Tier 1):** Dibuat dan dikonfigurasi oleh Admin Unit asal peminjam (misal: HMTI/BEM) untuk penyaringan kelayakan internal mahasiswa. Jika unit peminjam tidak mengaktifkan alur internal, sistem otomatis langsung melompat ke Tier 2.
+- **Workflow Eksternal (Tier 2):** Dibuat dan dikonfigurasi oleh Admin Unit pemilik ruangan (misal: Jurusan TI atau Pusat) untuk persetujuan akhir resmi kampus.
+- **Mekanisme Poin Evaluasi (Chain of Promotion):**
+  - Booking berstatus `Pending` saat memasuki Tier 1. Setelah langkah terakhir di Tier 1 menyetujui, booking tetap berstatus `Pending` tetapi tingkatannya dinaikkan (promoted) ke Tier 2 dengan `current_step` di-reset kembali ke `1`.
+  - Status `Approved (Hard-Lock)` hanya akan dipicu dan dicapai setelah langkah persetujuan terakhir pada Tier 2 (Workflow Eksternal) memberikan persetujuan penuh.
+- Setiap workflow (baik Tier 1 maupun Tier 2) harus memiliki minimal satu langkah Approver untuk dapat diaktifkan.
+- Jika ada Approver menolak di tingkat/tahapan mana pun, seluruh rantai persetujuan langsung berhenti dan status booking diturunkan ke `Revising` untuk dikembalikan ke Peminjam dengan catatan revisi yang wajib diisi.
+- Workflow bersifat dinamis dan perubahan hanya berlaku untuk transaksi pengajuan baru (tidak retroaktif).
 
 ### 10.5 Aturan Hierarki Unit
 

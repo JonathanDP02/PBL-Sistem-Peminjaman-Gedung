@@ -14,6 +14,7 @@ use App\Models\Workflow;
 use App\Models\WorkflowRequirement;
 use App\Models\WorkflowStep;
 use App\Services\LoggerService;
+use App\Services\WorkflowBridgeService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -45,14 +46,16 @@ class BookingController extends Controller
             'rooms.unit',
         ])->get();
 
-        // Mengambil data alur (workflow) beserta langkah dan syaratnya khusus untuk unit user ini
+        // Mengambil data alur (workflow) beserta langkah dan syaratnya terhubung ke unit (room_id null)
         $workflows = Workflow::with(['steps.position', 'requirements'])
-            ->where('unit_id', Auth::user()->unit_id)
-            ->whereNotNull('room_id')
+            ->whereNull('room_id')
             ->get();
 
-        // Mengirimkan variabel $buildings dan $workflows ke halaman view
-        return view('user.peminjam.booking', compact('buildings', 'workflows'));
+        // Ambil data semua unit untuk pemetaan dinamis di client-side
+        $units = \App\Models\Unit::all();
+
+        // Mengirimkan variabel $buildings, $workflows, dan $units ke halaman view
+        return view('user.peminjam.booking', compact('buildings', 'workflows', 'units'));
     }
 
     public function create()
@@ -65,24 +68,26 @@ class BookingController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'room_id' => 'required|exists:rooms,id',
+            'room_id' => 'required|integer|exists:rooms,id',
             'event_name' => 'required|string|max:200',
             'event_description' => 'nullable|string',
+            'event_scope' => 'required|in:Internal,Lintas Jurusan',
             'booking_date' => 'required|date|after_or_equal:today',
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'required|date_format:H:i|after:start_time',
         ]);
 
         $room = Room::findOrFail($validated['room_id']);
+        $eventScope = $validated['event_scope'];
 
-        // Cari workflow milik unit peminjam yang terhubung ke ruangan ini
-        $workflow = Workflow::where('unit_id', Auth::user()->unit_id)
-            ->where('room_id', $room->id)
+        // Cari workflow milik unit pemilik ruangan (General Workflow di mana room_id IS NULL)
+        $workflow = Workflow::where('unit_id', $room->unit_id)
+            ->whereNull('room_id')
             ->first();
 
         if (! $workflow) {
             return response()->json([
-                'error' => "Unit Anda belum memiliki alur persetujuan (workflow) yang dikonfigurasi untuk ruangan '{$room->room_name}'. Silakan hubungi pengelola unit Anda.",
+                'error' => "Unit pemilik ruangan '{$room->room_name}' belum mengonfigurasi alur persetujuan (workflow) umum. Silakan hubungi pengelola unit pemilik ruangan.",
             ], 422);
         }
 
@@ -102,7 +107,7 @@ class BookingController extends Controller
         }
 
         try {
-            $booking = DB::transaction(function () use ($validated, $request, $mandatoryRequirements) {
+            $booking = DB::transaction(function () use ($validated, $request, $mandatoryRequirements, $eventScope) {
 
                 $conflict = Booking::where('room_id', $validated['room_id'])
                     ->where('booking_date', $validated['booking_date'])
@@ -131,6 +136,7 @@ class BookingController extends Controller
                     'workflow_id' => $validated['workflow_id'],
                     'event_name' => $validated['event_name'],
                     'event_description' => $validated['event_description'] ?? null,
+                    'event_scope' => $eventScope,
                     'booking_date' => $validated['booking_date'],
                     'start_time' => $validated['start_time'],
                     'end_time' => $validated['end_time'],
@@ -138,6 +144,12 @@ class BookingController extends Controller
                     'status' => $isMaintenance ? 'Approved' : 'Pending',
                     'revision_count' => 0,
                 ]);
+
+                // Build and persist the dynamic approval chain (booking_steps)
+                if (! $isMaintenance) {
+                    $bridgeService = app(WorkflowBridgeService::class);
+                    $bridgeService->buildAndPersistChain($booking, $eventScope);
+                }
 
                 // Upload mandatory attachments
                 foreach ($mandatoryRequirements as $requirement) {
@@ -196,6 +208,7 @@ class BookingController extends Controller
                     'user',
                     'workflow.steps',
                     'workflow.requirements',
+                    'bookingSteps.position',
                     'attachments',
                 ]),
             ], 201);
@@ -412,7 +425,7 @@ class BookingController extends Controller
             if ($user->unit && $user->unit->parent_id) {
                 $unitIds[] = $user->unit->parent_id;
             }
-            
+
             $booking = $query->whereHas('room', function ($q) use ($unitIds) {
                 $q->whereIn('unit_id', $unitIds);
             })->findOrFail($id);

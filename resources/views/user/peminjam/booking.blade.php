@@ -49,6 +49,17 @@
                                 </select>
                             </div>
                         </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-400 tracking-widest uppercase mb-3">Skop Kegiatan <span class="text-red-500">*</span></label>
+                            <div class="relative">
+                                <i class="ph ph-globe absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-gray-500 text-lg"></i>
+                                <select id="scopeSelect" name="event_scope" required
+                                        class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl pl-12 pr-4 py-3.5 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-600 focus:outline-none focus:border-kinetic-primary transition-colors">
+                                    <option value="Internal">Internal (Hanya lingkup unit/jurusan sendiri)</option>
+                                    <option value="Lintas Jurusan">Lintas Jurusan (Melibatkan BEM & Pusat/Wadir 3)</option>
+                                </select>
+                            </div>
+                        </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div>
@@ -148,19 +159,133 @@
     // Data workflows dari server (Laravel)
     const workflowsData = @json($workflows);
     const buildingsData = @json($buildings);
+    const unitsData = @json($units);
+    const currentUserUnit = @json(Auth::user()->unit);
 
     const roomSelect = document.getElementById('roomSelect');
+    const scopeSelect = document.getElementById('scopeSelect');
     const workflowContainer = document.getElementById('workflowContainer');
     const documentsContainer = document.getElementById('documentsContainer');
     const workflowIdInput = document.getElementById('workflowIdInput');
 
-    // Handle room selection
-    roomSelect.addEventListener('change', function() {
-        const selectedRoomId = this.value;
+    // Helper: cari alur umum unit
+    function findUnitWorkflow(unitId) {
+        return workflowsData.find(w => w.unit_id == unitId && w.room_id == null);
+    }
+
+    // Helper: cari unit
+    function findUnit(unitId) {
+        return unitsData.find(u => u.id == unitId);
+    }
+
+    // Helper: cari BEM Polinema
+    function findBemUnit() {
+        return unitsData.find(u => u.level === 'Organisasi' && (u.unit_name.toLowerCase().includes('bem') || u.parent_id === null));
+    }
+
+    // Helper: cari Pusat
+    function findPusatUnit() {
+        return unitsData.find(u => u.level === 'Pusat');
+    }
+
+    // Algoritma 3-Tier Dynamic Bridging versi Client-Side (JS)
+    function resolveWorkflowChain(selectedRoom, eventScope) {
+        const chain = [];
+        const missingConfigurations = [];
+
+        const borrowerUnit = currentUserUnit;
+        const roomOwnerUnit = findUnit(selectedRoom.unit_id);
+
+        if (!roomOwnerUnit) {
+            return { chain, missingConfigurations: ['Unit pemilik ruangan tidak ditemukan.'] };
+        }
+
+        // ─── Tier 1: Internal Ormawa ──────────────────────────────────
+        if (borrowerUnit.level === 'Organisasi') {
+            const wf = findUnitWorkflow(borrowerUnit.id);
+            if (!wf) {
+                missingConfigurations.push(`Unit Anda (${borrowerUnit.unit_name}) belum mengonfigurasi alur persetujuan umum.`);
+            } else {
+                (wf.steps || []).forEach(step => {
+                    chain.push({
+                        position_name: step.position ? step.position.name : 'Posisi Tidak Diketahui',
+                        tier: `Internal (${borrowerUnit.unit_name})`
+                    });
+                });
+            }
+        }
+
+        // ─── Tier 2a: BEM Polinema ───────────────────────────────────────────
+        if (borrowerUnit.level === 'Organisasi' && eventScope === 'Lintas Jurusan') {
+            const bem = findBemUnit();
+            if (bem && bem.id !== borrowerUnit.id) {
+                const wf = findUnitWorkflow(bem.id);
+                if (!wf) {
+                    missingConfigurations.push(`Unit BEM Polinema (${bem.unit_name}) belum mengonfigurasi alur persetujuan umum.`);
+                } else {
+                    (wf.steps || []).forEach(step => {
+                        chain.push({
+                            position_name: step.position ? step.position.name : 'Posisi Tidak Diketahui',
+                            tier: `BEM (${bem.unit_name})`
+                        });
+                    });
+                }
+            }
+        }
+
+        // ─── Tier 2b: Pemilik Ruangan ────────────────────────────────────────
+        if (roomOwnerUnit.id !== borrowerUnit.id) {
+            const wf = findUnitWorkflow(roomOwnerUnit.id);
+            if (!wf) {
+                missingConfigurations.push(`Unit pemilik ruangan (${roomOwnerUnit.unit_name}) belum mengonfigurasi alur persetujuan umum.`);
+            } else {
+                (wf.steps || []).forEach(step => {
+                    chain.push({
+                        position_name: step.position ? step.position.name : 'Posisi Tidak Diketahui',
+                        tier: `Pemilik Ruangan (${roomOwnerUnit.unit_name})`
+                    });
+                });
+            }
+        }
+
+        // ─── Tier 3: Pusat ───────────────────────────────────────────────────
+        if (eventScope === 'Lintas Jurusan' && roomOwnerUnit.level !== 'Pusat') {
+            const pusat = findPusatUnit();
+            if (pusat) {
+                const wf = findUnitWorkflow(pusat.id);
+                if (!wf) {
+                    missingConfigurations.push(`Unit Pusat (${pusat.unit_name}) belum mengonfigurasi alur persetujuan umum.`);
+                } else {
+                    const wadir3Step = (wf.steps || []).find(step => step.position && (step.position.name.toLowerCase().includes('iii') || step.position.name.toLowerCase().includes('3')));
+                    if (wadir3Step) {
+                        chain.push({
+                            position_name: wadir3Step.position.name,
+                            tier: `Pusat (${pusat.unit_name})`
+                        });
+                    } else {
+                        const lastStep = wf.steps[wf.steps.length - 1];
+                        if (lastStep) {
+                            chain.push({
+                                position_name: lastStep.position ? lastStep.position.name : 'Wakil Direktur III',
+                                tier: `Pusat (${pusat.unit_name})`
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        return { chain, missingConfigurations };
+    }
+
+    // Fungsi Update SOP dinamis saat form berubah
+    function updateSOP() {
+        const selectedRoomId = roomSelect.value;
+        const eventScope = scopeSelect.value;
         
         if (!selectedRoomId) {
             workflowContainer.innerHTML = '<p class="col-span-2 text-sm text-slate-500 dark:text-gray-400">Pilih ruangan terlebih dahulu untuk melihat alur persetujuan</p>';
-            documentsContainer.innerHTML = '<p class="text-sm text-slate-500 dark:text-gray-400">Pilih ruangan dan workflow untuk melihat dokumen yang diperlukan</p>';
+            documentsContainer.innerHTML = '<p class="text-sm text-slate-500 dark:text-gray-400">Pilih ruangan dan skop untuk melihat dokumen yang diperlukan</p>';
             workflowIdInput.value = '';
             document.getElementById('submitBtn').disabled = true;
             document.getElementById('submitBtn').classList.add('opacity-50', 'cursor-not-allowed');
@@ -175,18 +300,23 @@
 
         if (!selectedRoom) return;
 
-        // Cari workflow dari daftar workflowsData yang memiliki room_id sesuai ruangan yang dipilih
-        const workflow = workflowsData.find(w => w.room_id == selectedRoom.id);
+        // Hitung dynamic chain
+        const result = resolveWorkflowChain(selectedRoom, eventScope);
 
-        if (!workflow) {
-            workflowContainer.innerHTML = `
+        // Jika ada unit di chain yang belum dikonfigurasi, tampilkan detail pesan spesifik
+        if (result.missingConfigurations.length > 0) {
+            let errorsHTML = `
                 <div class="col-span-2 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 rounded-xl p-4 flex items-start gap-3">
                     <i class="ph-fill ph-warning-circle text-rose-500 text-xl mt-0.5"></i>
                     <div>
-                        <h4 class="text-sm font-bold text-rose-800 dark:text-rose-300">SOP Belum Dikonfigurasi</h4>
-                        <p class="text-[11px] text-rose-600 dark:text-rose-400 mt-1">Unit Anda belum memiliki alur persetujuan (workflow) yang dikonfigurasi untuk ruangan ini. Silakan hubungi Admin Unit Anda untuk melakukan setup workflow agar ruangan ini dapat dipinjam.</p>
+                        <h4 class="text-sm font-bold text-rose-800 dark:text-rose-300">Konfigurasi Alur Belum Lengkap</h4>
+                        <ul class="text-[11px] text-rose-600 dark:text-rose-400 mt-2 list-disc list-inside space-y-1">
+                            ${result.missingConfigurations.map(err => `<li>${err}</li>`).join('')}
+                        </ul>
+                        <p class="text-[10px] text-rose-500 dark:text-rose-400 mt-2">Silakan hubungi admin unit terkait untuk menyelesaikan konfigurasi agar ruangan dapat dipinjam.</p>
                     </div>
                 </div>`;
+            workflowContainer.innerHTML = errorsHTML;
             documentsContainer.innerHTML = '';
             workflowIdInput.value = '';
             document.getElementById('submitBtn').disabled = true;
@@ -197,22 +327,28 @@
         document.getElementById('submitBtn').disabled = false;
         document.getElementById('submitBtn').classList.remove('opacity-50', 'cursor-not-allowed');
 
-        workflowIdInput.value = workflow.id;
+        // Gunakan alur unit pemilik sebagai workflow_id utama form
+        const ownerWorkflow = findUnitWorkflow(selectedRoom.unit_id);
+        workflowIdInput.value = ownerWorkflow.id;
 
+        // Render alur langkah visual
         let stepsHTML = '<div class="col-span-2 relative pl-2 pt-2">';
         stepsHTML += '<div class="absolute left-[19px] top-6 bottom-4 w-px bg-slate-200 dark:bg-[#2A2A2A]"></div>';
         stepsHTML += '<div class="space-y-4">';
         
-        if (workflow.steps && workflow.steps.length > 0) {
-            workflow.steps.forEach((step, index) => {
+        if (result.chain.length > 0) {
+            result.chain.forEach((step, index) => {
                 stepsHTML += `
                     <div class="relative flex items-center gap-4">
                         <div class="w-8 h-8 rounded-full bg-teal-50 dark:bg-kinetic-primary/10 border-2 border-kinetic-primary text-kinetic-primary flex items-center justify-center text-[11px] font-bold z-10 shrink-0 shadow-[0_0_10px_rgba(20,184,166,0.3)] bg-white dark:bg-[#151515]">
                             ${index + 1}
                         </div>
                         <div class="bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl px-4 py-3 flex-1 group hover:border-kinetic-primary/50 transition-colors">
-                            <p class="text-[9px] text-slate-400 dark:text-gray-500 font-bold uppercase tracking-widest mb-0.5">Langkah ${index + 1}</p>
-                            <p class="text-sm font-bold text-slate-900 dark:text-white">${step.position ? step.position.name : 'Posisi Tidak Diketahui'}</p>
+                            <div class="flex justify-between items-center mb-0.5">
+                                <p class="text-[9px] text-slate-400 dark:text-gray-500 font-bold uppercase tracking-widest">Langkah ${index + 1}</p>
+                                <span class="text-[8px] bg-teal-500/10 text-kinetic-primary px-1.5 py-0.5 rounded-full font-bold uppercase">${step.tier}</span>
+                            </div>
+                            <p class="text-sm font-bold text-slate-900 dark:text-white">${step.position_name}</p>
                         </div>
                     </div>
                 `;
@@ -234,11 +370,12 @@
         stepsHTML += '</div></div>';
         workflowContainer.innerHTML = stepsHTML;
 
-        displayDocuments(workflow.id);
-    });
+        // Render dokumen syarat dari unit pemilik ruangan
+        displayDocumentsForRoomOwner(selectedRoom.unit_id);
+    }
 
-    function displayDocuments(workflowId) {
-        const workflow = workflowsData.find(w => w.id == workflowId);
+    function displayDocumentsForRoomOwner(roomOwnerUnitId) {
+        const workflow = findUnitWorkflow(roomOwnerUnitId);
         if (!workflow || !workflow.requirements) {
             documentsContainer.innerHTML = '<p class="text-sm text-slate-500 dark:text-gray-400">Tidak ada dokumen yang diperlukan</p>';
             return;
@@ -275,6 +412,9 @@
         }
         documentsContainer.innerHTML = documentsHTML;
     }
+
+    roomSelect.addEventListener('change', updateSOP);
+    scopeSelect.addEventListener('change', updateSOP);
 
     function updateFileName(input, textId, iconId) {
         const textElement = document.getElementById(textId);

@@ -8,11 +8,12 @@ use App\Mail\BookingRejectedMail;
 use App\Models\Approval;
 use App\Models\Booking;
 use App\Models\BookingAttachment;
+use App\Models\BookingStep;
 use App\Models\Unit;
 use App\Models\User;
-use App\Models\WorkflowStep;
 use App\Services\LoggerService;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -34,12 +35,13 @@ class ApprovalController extends Controller
             'room.building',
             'user',
             'workflow.steps.position',
+            'bookingSteps.position',
             'attachments',
             'approvals.approver.position',
-            'approvals.step',
+            'approvals.bookingStep',
         ])
             ->where('status', 'Pending')
-            ->whereHas('workflow.steps', function ($q) use ($positionId) {
+            ->whereHas('bookingSteps', function ($q) use ($positionId) {
                 $q->where('position_id', $positionId)
                     ->whereColumn('step_order', 'bookings.current_step');
             })
@@ -64,18 +66,26 @@ class ApprovalController extends Controller
      */
     private function formatApprovalResponse($booking, $positionId)
     {
-        $currentStep = $booking->workflow->steps
-            ->where('step_order', $booking->current_step)
+        // Prefer instantiated booking_steps; fallback ke workflow_steps template
+        $currentStep = $booking->bookingSteps
+            ?->where('step_order', $booking->current_step)
             ->where('position_id', $positionId)
-            ->first();
+            ->first()
+            ?? $booking->workflow?->steps
+                ->where('step_order', $booking->current_step)
+                ->where('position_id', $positionId)
+                ->first();
 
         $approvalHistory = $booking->approvals
             ->sortBy('created_at')
             ->map(function ($approval) {
+                // Try bookingStep first (new system), fallback to step (legacy)
+                $stepRecord = $approval->bookingStep ?? $approval->step;
+
                 return [
-                    'step_order' => $approval->step->step_order ?? null,
-                    'position' => $approval->step->position->name ?? 'System',
-                    'approver_name' => $approval->approver->name ?? 'System',
+                    'step_order' => $stepRecord?->step_order ?? null,
+                    'position' => $stepRecord?->position?->name ?? 'System',
+                    'approver_name' => $approval->approver?->name ?? 'System',
                     'approval_status' => ucfirst($approval->approval_status),
                     'approved_at' => $approval->created_at->toIso8601String(),
                     'approved_at_formatted' => $approval->created_at->format('d M Y, H:i'),
@@ -103,6 +113,7 @@ class ApprovalController extends Controller
                 'id' => $booking->id,
                 'event_name' => $booking->event_name,
                 'event_description' => $booking->event_description,
+                'event_scope' => $booking->event_scope,
                 'booking_date' => $booking->booking_date->format('Y-m-d'),
                 'start_time' => $booking->start_time->format('H:i'),
                 'end_time' => $booking->end_time->format('H:i'),
@@ -129,19 +140,20 @@ class ApprovalController extends Controller
                 'email' => $booking->user->email,
                 'unit' => [
                     'id' => $booking->user->unit->id,
-                    'name' => $booking->user->unit->name,
+                    'name' => $booking->user->unit->unit_name,
                 ],
             ],
             'workflow' => [
                 'id' => $booking->workflow->id,
                 'name' => $booking->workflow->name,
-                'total_steps' => $booking->workflow->steps->count(),
+                'total_steps' => $booking->bookingSteps->count() ?: $booking->workflow->steps->count(),
             ],
             'current_approver_required' => [
                 'step_order' => $currentStep?->step_order,
+                'tier_label' => $currentStep instanceof BookingStep ? $currentStep->tier_label : null,
                 'position' => [
                     'id' => $currentStep?->position_id,
-                    'name' => $currentStep?->position->name,
+                    'name' => $currentStep?->position?->name,
                 ],
                 'requires_attachment' => (bool) $currentStep?->requires_attachment,
                 'attachment_type' => $currentStep?->attachment_type ?? null,
@@ -231,7 +243,8 @@ class ApprovalController extends Controller
             DB::transaction(function () use ($request, $bookingId, $approver, $positionId, &$booking, &$approval) {
                 $booking = Booking::lockForUpdate()->findOrFail($bookingId);
 
-                $currentStep = WorkflowStep::where('workflow_id', $booking->workflow_id)
+                // Find the active instantiated step for this approver
+                $currentStep = BookingStep::where('booking_id', $booking->id)
                     ->where('step_order', $booking->current_step)
                     ->where('position_id', $positionId)
                     ->firstOrFail();
@@ -243,37 +256,35 @@ class ApprovalController extends Controller
 
                     if (! $hasAttachment) {
                         throw new \Exception(
-                            'Step ini memerlukan lampiran file balasan. '.
-                            'Harap upload dokumen terlebih dahulu sebelum menyetujui.'
+                            'Step ini memerlukan lampiran file balasan. '
+                            .'Harap upload dokumen terlebih dahulu sebelum menyetujui.'
                         );
                     }
                 }
 
-                $nextStep = WorkflowStep::where('workflow_id', $booking->workflow_id)
+                // Check if there is a next step in the instantiated chain
+                $nextStep = BookingStep::where('booking_id', $booking->id)
                     ->where('step_order', '>', $booking->current_step)
                     ->orderBy('step_order')
                     ->first();
 
                 if ($nextStep) {
-                    // Ada step selanjutnya - lanjut ke pejabat berikutnya
+                    // Advance to next step in the chain
                     $booking->update([
                         'current_step' => $nextStep->step_order,
                         'status' => 'Pending',
                     ]);
                 } else {
-                    // Ini step terakhir - update status dan dispatch job untuk generate PDF
-                    $booking->update([
-                        'status' => 'Approved',
-                    ]);
-
-                    // Dispatch async job untuk generate PDF certificate & email
+                    // Last step approved — Hard-Lock
+                    $booking->update(['status' => 'Approved']);
                     dispatch(new GenerateApprovalCertificateJob($booking->id));
                 }
 
                 $approval = Approval::create([
                     'booking_id' => $booking->id,
                     'approver_id' => $approver->id,
-                    'step_id' => $currentStep->id,
+                    'booking_step_id' => $currentStep->id,
+                    'step_id' => null, // legacy field, unused for new bookings
                     'approval_status' => 'Approved',
                     'notes' => $request->notes,
                     'attempt' => ($booking->revision_count ?? 0) + 1,
@@ -281,6 +292,8 @@ class ApprovalController extends Controller
 
                 LoggerService::logAction($booking->id, 'APPROVED', $currentStep->id, $request->notes);
             });
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['success' => false, 'error' => 'Data tidak ditemukan.'], 404);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'error' => $e->getMessage()], 422);
         }
@@ -289,16 +302,15 @@ class ApprovalController extends Controller
         /** @var Approval $approval */
         $booking->refresh();
 
-        // Dispatch intermediate email notifications outside transaction
+        // Send notification to next approver (outside transaction)
         try {
             if ($booking->status === 'Pending') {
-                $nextStepOrder = $booking->current_step;
-                $nextWorkflowStep = WorkflowStep::where('workflow_id', $booking->workflow_id)
-                    ->where('step_order', $nextStepOrder)
+                $nextBookingStep = BookingStep::where('booking_id', $booking->id)
+                    ->where('step_order', $booking->current_step)
                     ->first();
 
-                if ($nextWorkflowStep) {
-                    $nextApprovers = User::where('position_id', $nextWorkflowStep->position_id)->get();
+                if ($nextBookingStep) {
+                    $nextApprovers = User::where('position_id', $nextBookingStep->position_id)->get();
                     \Log::info('Attempting to send intermediate email to '.$nextApprovers->count().' approvers for booking #'.$booking->id);
                     foreach ($nextApprovers as $nextApprover) {
                         Mail::to($nextApprover->email)->send(new ApprovalNeededMail($booking, $nextApprover));
@@ -310,6 +322,21 @@ class ApprovalController extends Controller
             \Log::error('Mail Error (Intermediate Approval Needed booking #'.$booking->id.'): '.$e->getMessage());
         }
 
+        // Build next_approver info from booking_steps
+        $nextStepInfo = null;
+        if ($booking->status !== 'Approved') {
+            $nextBs = BookingStep::where('booking_id', $booking->id)
+                ->where('step_order', $booking->current_step)
+                ->with('position')
+                ->first();
+            $nextStepInfo = $nextBs ? [
+                'step_order' => $nextBs->step_order,
+                'tier_label' => $nextBs->tier_label,
+                'position' => $nextBs->position?->name,
+                'requires_attachment' => $nextBs->requires_attachment,
+            ] : null;
+        }
+
         return response()->json([
             'success' => true,
             'message' => $booking->status === 'Approved'
@@ -319,17 +346,7 @@ class ApprovalController extends Controller
                 'id' => $booking->id,
                 'status' => $booking->status,
                 'current_step' => $booking->current_step,
-                'next_approver' => $booking->status !== 'Approved' ? [
-                    'step_order' => $booking->workflow->steps
-                        ->where('step_order', $booking->current_step)
-                        ->first()?->step_order,
-                    'position' => $booking->workflow->steps
-                        ->where('step_order', $booking->current_step)
-                        ->first()?->position->name,
-                    'requires_attachment' => $booking->workflow->steps
-                        ->where('step_order', $booking->current_step)
-                        ->first()?->requires_attachment,
-                ] : null,
+                'next_approver' => $nextStepInfo,
             ],
             'log' => [
                 'id' => $approval->id,
@@ -363,7 +380,8 @@ class ApprovalController extends Controller
             DB::transaction(function () use ($request, $bookingId, $approver, $positionId, &$booking, &$approval) {
                 $booking = Booking::lockForUpdate()->findOrFail($bookingId);
 
-                $currentStep = WorkflowStep::where('workflow_id', $booking->workflow_id)
+                // Find the active instantiated step for this approver
+                $currentStep = BookingStep::where('booking_id', $booking->id)
                     ->where('step_order', $booking->current_step)
                     ->where('position_id', $positionId)
                     ->firstOrFail();
@@ -375,11 +393,12 @@ class ApprovalController extends Controller
 
                     if (! $hasAttachment) {
                         throw new \Exception(
-                            'Step ini memerlukan lampiran file balasan. '.
-                            'Harap upload dokumen terlebih dahulu sebelum menyetujui.'
+                            'Step ini memerlukan lampiran file balasan. '
+                            .'Harap upload dokumen terlebih dahulu sebelum menyetujui.'
                         );
                     }
                 }
+
                 $booking->update([
                     'status' => 'Revising',
                     'revision_count' => $booking->revision_count + 1,
@@ -388,15 +407,17 @@ class ApprovalController extends Controller
                 $approval = Approval::create([
                     'booking_id' => $booking->id,
                     'approver_id' => $approver->id,
-                    'step_id' => $currentStep->id,
+                    'booking_step_id' => $currentStep->id,
+                    'step_id' => null,
                     'approval_status' => 'Rejected',
                     'notes' => $request->notes,
                     'attempt' => ($booking->revision_count ?? 0) + 1,
                 ]);
 
                 LoggerService::logAction($booking->id, 'REJECTED', $currentStep->id, $request->notes);
-
             });
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['success' => false, 'error' => 'Data tidak ditemukan.'], 404);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'error' => $e->getMessage()], 422);
         }
@@ -413,6 +434,12 @@ class ApprovalController extends Controller
             \Log::error('Mail Error (Rejection Notification Booking #'.$booking->id.'): '.$e->getMessage());
         }
 
+        // Fetch rejecting step info for response
+        $rejectedStepInfo = BookingStep::where('booking_id', $booking->id)
+            ->where('step_order', $booking->current_step)
+            ->with('position')
+            ->first();
+
         return response()->json([
             'success' => true,
             'message' => 'Booking ditolak. Menunggu revisi dari peminjam.',
@@ -427,7 +454,8 @@ class ApprovalController extends Controller
                 'booking_id' => $booking->id,
                 'action' => 'REJECTED',
                 'actor' => $approver->name,
-                'actor_position' => $approver->position->name ?? null,
+                'actor_position' => $approver->position?->name ?? null,
+                'tier_label' => $rejectedStepInfo?->tier_label,
                 'notes' => $request->notes,
                 'created_at' => $approval->created_at->toIso8601String(),
             ],
@@ -443,17 +471,18 @@ class ApprovalController extends Controller
         $approver = Auth::user();
         $positionId = $approver->position_id;
 
-        // Fetch pending approvals
+        // Fetch pending approvals using booking_steps (new system)
         $bookings = Booking::with([
             'room.building',
             'user.unit',
             'workflow.steps.position',
+            'bookingSteps.position',
             'attachments',
             'approvals.approver.position',
-            'approvals.step',
+            'approvals.bookingStep',
         ])
             ->where('status', 'Pending')
-            ->whereHas('workflow.steps', function ($q) use ($positionId) {
+            ->whereHas('bookingSteps', function ($q) use ($positionId) {
                 $q->where('position_id', $positionId)
                     ->whereColumn('step_order', 'bookings.current_step');
             })
@@ -512,12 +541,13 @@ class ApprovalController extends Controller
             'room.building',
             'user.unit',
             'workflow.steps.position',
+            'bookingSteps.position',
             'attachments',
             'approvals.approver.position',
-            'approvals.step',
+            'approvals.bookingStep',
         ])
             ->where('status', 'Pending')
-            ->whereHas('workflow.steps', function ($q) use ($positionId) {
+            ->whereHas('bookingSteps', function ($q) use ($positionId) {
                 $q->where('position_id', $positionId)
                     ->whereColumn('step_order', 'bookings.current_step');
             });
@@ -558,7 +588,7 @@ class ApprovalController extends Controller
         });
 
         // 6. Hitung Statistik untuk Dashboard Meja Kerja
-        $reviewedCount = \App\Models\Approval::where('approver_id', $approver->id)->count();
+        $reviewedCount = Approval::where('approver_id', $approver->id)->count();
         $stats = [
             'pending_count' => $approvals->count(),
             'urgent_count' => $approvals->filter(fn ($a) => $a['priority_indicator'] === 'urgent')->count(),
@@ -591,18 +621,18 @@ class ApprovalController extends Controller
             $days = floor($avgMinutes / 1440);
             $hours = floor(($avgMinutes % 1440) / 60);
             $remainingMinutes = $avgMinutes % 60;
-            
+
             $parts = [];
             if ($days > 0) {
-                $parts[] = $days . ' Hari';
+                $parts[] = $days.' Hari';
             }
             if ($hours > 0) {
-                $parts[] = $hours . ' Jam';
+                $parts[] = $hours.' Jam';
             }
             if ($remainingMinutes > 0 || empty($parts)) {
-                $parts[] = $remainingMinutes . ' Menit';
+                $parts[] = $remainingMinutes.' Menit';
             }
-            
+
             $estimationTime = implode(' ', $parts);
         }
 

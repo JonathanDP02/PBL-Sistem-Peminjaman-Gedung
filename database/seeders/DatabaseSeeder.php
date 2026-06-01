@@ -80,7 +80,8 @@ class DatabaseSeeder extends Seeder
         // ═══════════════════════════════════════════════════════
 
         // Jabatan di Pusat
-        $posWadir = Position::create(['unit_id' => $pusat->id,       'name' => 'Wakil Direktur']);
+        $posWadir2 = Position::create(['unit_id' => $pusat->id,       'name' => 'Wakil Direktur II']);
+        $posWadir3 = Position::create(['unit_id' => $pusat->id,       'name' => 'Wakil Direktur III']);
 
         // Jabatan di Jurusan TI
         $posKajurTI = Position::create(['unit_id' => $jurusanTI->id,    'name' => 'Ketua Jurusan TI']);
@@ -96,6 +97,7 @@ class DatabaseSeeder extends Seeder
 
         // Jabatan organisasi (untuk kelola data lokal)
         $posPresBEM = Position::create(['unit_id' => $bemPusat->id, 'name' => 'Presiden BEM Polinema']);
+        $posHumasHMTI = Position::create(['unit_id' => $hmti->id, 'name' => 'Humas HMTI']);
         $posKetHMTI = Position::create(['unit_id' => $hmti->id, 'name' => 'Ketua HMTI']);
         $posKetHMS = Position::create(['unit_id' => $hms->id, 'name' => 'Ketua HMS']);
         $posKetHME = Position::create(['unit_id' => $hme->id, 'name' => 'Ketua HME']);
@@ -258,10 +260,26 @@ class DatabaseSeeder extends Seeder
         ]);
         User::create([
             'unit_id' => $pusat->id,
-            'position_id' => $posWadir->id,
+            'position_id' => $posWadir3->id,
             'role_id' => $roleApprover->id,
             'name' => 'Dr. Siti Rahayu',
             'email' => 'wadir@spacein.test',
+            'password' => Hash::make('12345'),
+        ]);
+        User::create([
+            'unit_id' => $pusat->id,
+            'position_id' => $posWadir2->id,
+            'role_id' => $roleApprover->id,
+            'name' => 'Dr. Ahmad Subagyo',
+            'email' => 'wadir2@spacein.test',
+            'password' => Hash::make('12345'),
+        ]);
+        User::create([
+            'unit_id' => $hmti->id,
+            'position_id' => $posHumasHMTI->id,
+            'role_id' => $roleApprover->id,
+            'name' => 'Humas HMTI',
+            'email' => 'humas.hmti@spacein.test',
             'password' => Hash::make('12345'),
         ]);
         User::create([
@@ -377,7 +395,7 @@ class DatabaseSeeder extends Seeder
             'description' => 'Alur persetujuan peminjaman ruangan Jurusan Teknologi Informasi',
         ]);
 
-        // Urutan: Kaprodi (Jurusan) -> Kajur (Jurusan) -> Wadir (Pusat)
+        // Urutan: Kaprodi (Jurusan) -> Kajur (Jurusan) (Tanpa Wadir karena Pusat di-append dinamis)
         WorkflowStep::create([
             'workflow_id' => $wfJTI->id,
             'position_id' => $posKaprodiTI->id,
@@ -389,13 +407,6 @@ class DatabaseSeeder extends Seeder
             'workflow_id' => $wfJTI->id,
             'position_id' => $posKajurTI->id,
             'step_order' => 2,
-            'requires_attachment' => false,
-        ]);
-
-        WorkflowStep::create([
-            'workflow_id' => $wfJTI->id,
-            'position_id' => $posWadir->id,
-            'step_order' => 3,
             'requires_attachment' => false,
         ]);
 
@@ -418,17 +429,17 @@ class DatabaseSeeder extends Seeder
             'description' => 'Alur persetujuan peminjaman Graha Polinema',
         ]);
 
-        // Urutan: Kajur TI (Jurusan) -> Wadir (Pusat)
+        // Urutan jika Pusat adalah Pemilik Ruang: Wakil Direktur II -> Wakil Direktur III
         WorkflowStep::create([
             'workflow_id' => $wfAuditorium->id,
-            'position_id' => $posKajurTI->id,
+            'position_id' => $posWadir2->id,
             'step_order' => 1,
             'requires_attachment' => false,
         ]);
 
         WorkflowStep::create([
             'workflow_id' => $wfAuditorium->id,
-            'position_id' => $posWadir->id,
+            'position_id' => $posWadir3->id,
             'step_order' => 2,
             'requires_attachment' => false,
         ]);
@@ -441,21 +452,51 @@ class DatabaseSeeder extends Seeder
         ]);
         WorkflowRequirement::create([
             'workflow_id' => $wfAuditorium->id,
-            'document_name' => 'Surat Disposisi Wadir',
+            'document_name' => 'Surat Disposini Wadir',
             'is_mandatory' => true,
         ]);
 
-        // Hubungkan ruangan ke alur persetujuan (workflow) yang sesuai
-        // Assign Workflow to Rooms via workflows.room_id
-        $jtiRoom = Room::where('unit_id', $jurusanTI->id)->first();
-        if ($jtiRoom) {
-            $wfJTI->update(['room_id' => $jtiRoom->id]);
-        }
-        
-        $pusatRoom = Room::where('unit_id', $pusat->id)->first();
-        if ($pusatRoom) {
-            $wfAuditorium->update(['room_id' => $pusatRoom->id]);
-        }
+        // Workflow umum untuk BEM Polinema (Tier 2a)
+        $wfBEM = Workflow::create([
+            'unit_id' => $bemPusat->id,
+            'name' => 'Alur BEM Polinema',
+            'description' => 'Alur umum persetujuan tingkat ormawa pusat',
+        ]);
+        WorkflowStep::create([
+            'workflow_id' => $wfBEM->id,
+            'position_id' => $posPresBEM->id,
+            'step_order' => 1,
+            'requires_attachment' => false,
+        ]);
+        WorkflowRequirement::create([
+            'workflow_id' => $wfBEM->id,
+            'document_name' => 'Proposal Kegiatan (BEM)',
+            'is_mandatory' => true,
+        ]);
+
+        // Workflow umum untuk HMTI (Tier 1)
+        $wfHMTI = Workflow::create([
+            'unit_id' => $hmti->id,
+            'name' => 'Alur HMTI',
+            'description' => 'Alur umum persetujuan tingkat himpunan TI',
+        ]);
+        WorkflowStep::create([
+            'workflow_id' => $wfHMTI->id,
+            'position_id' => $posHumasHMTI->id,
+            'step_order' => 1,
+            'requires_attachment' => false,
+        ]);
+        WorkflowStep::create([
+            'workflow_id' => $wfHMTI->id,
+            'position_id' => $posKetHMTI->id,
+            'step_order' => 2,
+            'requires_attachment' => false,
+        ]);
+        WorkflowRequirement::create([
+            'workflow_id' => $wfHMTI->id,
+            'document_name' => 'Proposal Kegiatan (HMTI)',
+            'is_mandatory' => true,
+        ]);
 
         // ═══════════════════════════════════════════════════════
         // STEP 7: SEED TEST DATA MENGGUNAKAN FACTORIES

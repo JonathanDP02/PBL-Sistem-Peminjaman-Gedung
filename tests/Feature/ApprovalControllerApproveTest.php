@@ -4,7 +4,8 @@ namespace Tests\Feature;
 
 use App\Models\Approval;
 use App\Models\Booking;
-use App\Models\BookingLog;
+use App\Models\BookingStep;
+use App\Models\Building;
 use App\Models\Position;
 use App\Models\Role;
 use App\Models\Room;
@@ -21,10 +22,18 @@ class ApprovalControllerApproveTest extends TestCase
     use RefreshDatabase;
 
     private User $approver;
+
     private User $peminjam;
+
     private Booking $booking;
+
     private WorkflowStep $step1;
+
     private WorkflowStep $step2;
+
+    private BookingStep $bookingStep1;
+
+    private BookingStep $bookingStep2;
 
     protected function setUp(): void
     {
@@ -34,51 +43,69 @@ class ApprovalControllerApproveTest extends TestCase
         Mail::fake();
 
         // Seed data minimal
-        $unit     = Unit::factory()->create();
+        $unit = Unit::factory()->create(['level' => 'Jurusan']);
         $building = Building::factory()->create();
-        $role     = Role::factory()->create(['name' => 'Approver']);
-        $userRole = Role::factory()->create(['name' => 'User']);
-        $position = Position::factory()->create(['name' => 'Kepala Unit']);
+        $role = Role::factory()->create(['name' => 'Penyetuju']);
+        $userRole = Role::factory()->create(['name' => 'Peminjam']);
+        $position = Position::factory()->create(['name' => 'Kepala Unit', 'unit_id' => $unit->id]);
 
         $this->approver = User::factory()->create([
-            'unit_id'     => $unit->id,
-            'role_id'     => $role->id,
+            'unit_id' => $unit->id,
+            'role_id' => $role->id,
             'position_id' => $position->id,
         ]);
 
         $this->peminjam = User::factory()->create([
-            'unit_id'     => $unit->id,
-            'role_id'     => $userRole->id,
+            'unit_id' => $unit->id,
+            'role_id' => $userRole->id,
             'position_id' => null,
         ]);
 
-        $workflow = Workflow::factory()->create();
+        $workflow = Workflow::factory()->create(['unit_id' => $unit->id]);
 
         $this->step1 = WorkflowStep::factory()->create([
-            'workflow_id'        => $workflow->id,
-            'position_id'        => $position->id,
-            'step_order'         => 1,
-            'requires_attachment'=> false,
+            'workflow_id' => $workflow->id,
+            'position_id' => $position->id,
+            'step_order' => 1,
+            'requires_attachment' => false,
         ]);
 
         $this->step2 = WorkflowStep::factory()->create([
-            'workflow_id'        => $workflow->id,
-            'position_id'        => $position->id,
-            'step_order'         => 2,
-            'requires_attachment'=> false,
+            'workflow_id' => $workflow->id,
+            'position_id' => $position->id,
+            'step_order' => 2,
+            'requires_attachment' => false,
         ]);
 
         $room = Room::factory()->create([
-            'unit_id'     => $unit->id,
+            'unit_id' => $unit->id,
             'building_id' => $building->id,
         ]);
 
         $this->booking = Booking::factory()->create([
-            'user_id'      => $this->peminjam->id,
-            'room_id'      => $room->id,
-            'workflow_id'  => $workflow->id,
+            'user_id' => $this->peminjam->id,
+            'room_id' => $room->id,
+            'workflow_id' => $workflow->id,
             'current_step' => 1,
-            'status'       => 'Pending',
+            'status' => 'Pending',
+            'event_scope' => 'Internal',
+        ]);
+
+        // Create instantiated booking_steps (normally done by WorkflowBridgeService on store)
+        $this->bookingStep1 = BookingStep::create([
+            'booking_id' => $this->booking->id,
+            'position_id' => $position->id,
+            'step_order' => 1,
+            'requires_attachment' => false,
+            'tier_label' => 'Test Tier 1',
+        ]);
+
+        $this->bookingStep2 = BookingStep::create([
+            'booking_id' => $this->booking->id,
+            'position_id' => $position->id,
+            'step_order' => 2,
+            'requires_attachment' => false,
+            'tier_label' => 'Test Tier 2',
         ]);
     }
 
@@ -96,7 +123,7 @@ class ApprovalControllerApproveTest extends TestCase
         );
 
         $response->assertStatus(200)
-                 ->assertJsonPath('success', true);
+            ->assertJsonPath('success', true);
 
         $this->booking->refresh();
 
@@ -124,8 +151,8 @@ class ApprovalControllerApproveTest extends TestCase
         );
 
         $response->assertStatus(200)
-                 ->assertJsonPath('success', true)
-                 ->assertJsonPath('booking.status', 'Approved');
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('booking.status', 'Approved');
 
         $this->booking->refresh();
 
@@ -134,6 +161,7 @@ class ApprovalControllerApproveTest extends TestCase
 
     // =========================================================================
     // TEST 3: Record approval tersimpan di tabel approvals
+    // Now uses booking_step_id (new system), step_id is null
     // =========================================================================
     public function test_approve_creates_approval_record(): void
     {
@@ -145,9 +173,9 @@ class ApprovalControllerApproveTest extends TestCase
         );
 
         $this->assertDatabaseHas('approvals', [
-            'booking_id'      => $this->booking->id,
-            'approver_id'     => $this->approver->id,
-            'step_id'         => $this->step1->id,
+            'booking_id' => $this->booking->id,
+            'approver_id' => $this->approver->id,
+            'booking_step_id' => $this->bookingStep1->id,
             'approval_status' => 'Approved',
         ]);
     }
@@ -166,8 +194,8 @@ class ApprovalControllerApproveTest extends TestCase
 
         $this->assertDatabaseHas('booking_logs', [
             'booking_id' => $this->booking->id,
-            'actor_id'   => $this->approver->id,
-            'action'     => 'APPROVED',
+            'actor_id' => $this->approver->id,
+            'action' => 'APPROVED',
         ]);
     }
 
@@ -176,8 +204,8 @@ class ApprovalControllerApproveTest extends TestCase
     // =========================================================================
     public function test_approve_fails_if_attachment_required_but_missing(): void
     {
-        // Set step 1 requires attachment
-        $this->step1->update(['requires_attachment' => true]);
+        // Set booking_step1 requires attachment
+        $this->bookingStep1->update(['requires_attachment' => true]);
 
         $this->actingAs($this->approver);
 
@@ -187,7 +215,7 @@ class ApprovalControllerApproveTest extends TestCase
         );
 
         $response->assertStatus(422)
-                 ->assertJsonPath('success', false);
+            ->assertJsonPath('success', false);
 
         // Booking tidak boleh berubah
         $this->booking->refresh();
@@ -204,6 +232,7 @@ class ApprovalControllerApproveTest extends TestCase
         $otherPosition = Position::factory()->create(['name' => 'Wakil Rektor']);
         $otherApprover = User::factory()->create([
             'position_id' => $otherPosition->id,
+            'role_id' => $this->approver->role_id,
         ]);
 
         $this->actingAs($otherApprover);
@@ -213,15 +242,12 @@ class ApprovalControllerApproveTest extends TestCase
             ['notes' => 'Coba approve oleh approver salah']
         );
 
-        // Harus 404 karena firstOrFail() tidak menemukan step yang cocok
+        // Harus 404 karena firstOrFail() tidak menemukan booking_step yang cocok
         $response->assertStatus(404);
     }
 
     // =========================================================================
     // TEST 7: Email terkirim saat step terakhir di-approve (Hard-Lock Approved)
-    // ASUMSI: ada Mail::to(...)->send(new BookingApprovedMail(...)) dipanggil
-    //         di ApprovalController atau observer Booking.
-    //         Jika belum ada mail, test ini akan FAIL → ini intentional sebagai reminder.
     // =========================================================================
     public function test_email_sent_when_booking_fully_approved(): void
     {
@@ -239,12 +265,6 @@ class ApprovalControllerApproveTest extends TestCase
 
         // Pastikan status benar-benar Approved
         $this->assertEquals('Approved', $this->booking->status);
-
-        // Cek email terkirim ke peminjam
-        // CATATAN: aktifkan assertion ini setelah BookingApprovedMail dibuat
-        // Mail::assertSent(\App\Mail\BookingApprovedMail::class, function ($mail) {
-        //     return $mail->hasTo($this->peminjam->email);
-        // });
 
         // Sementara: pastikan Mail::fake() tidak throw error (email tidak crash)
         Mail::assertNothingSent(); // Ganti dengan assertSent setelah mail class dibuat

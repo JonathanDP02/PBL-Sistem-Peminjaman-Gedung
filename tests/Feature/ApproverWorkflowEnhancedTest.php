@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Booking;
 use App\Models\BookingAttachment;
+use App\Models\BookingStep;
 use App\Models\Room;
 use App\Models\User;
 use App\Models\Workflow;
@@ -31,6 +32,26 @@ class ApproverWorkflowEnhancedTest extends TestCase
         if (! $this->room || ! $this->workflow) {
             throw new \Exception('Room or Workflow not found in seeded data. Check DatabaseSeeder.');
         }
+
+        // Cache the kaprodi position_id for creating booking_steps
+        $this->approverPositionId = $this->approver->position_id;
+    }
+
+    /**
+     * Helper: create booking_steps from the workflow's steps for a given booking.
+     * Simulates what WorkflowBridgeService::buildAndPersistChain() does.
+     */
+    private function createBookingStepsFor(Booking $booking): void
+    {
+        $this->workflow->steps->each(function ($step, $index) use ($booking) {
+            BookingStep::create([
+                'booking_id' => $booking->id,
+                'position_id' => $step->position_id,
+                'step_order' => $step->step_order,
+                'requires_attachment' => $step->requires_attachment,
+                'tier_label' => 'Test Tier '.($index + 1),
+            ]);
+        });
     }
 
     public function test_approver_rejection_removes_booking_from_pending_list()
@@ -46,7 +67,9 @@ class ApproverWorkflowEnhancedTest extends TestCase
             'end_time' => '10:00',
             'status' => 'Pending',
             'current_step' => 1,
+            'event_scope' => 'Internal',
         ]);
+        $this->createBookingStepsFor($booking);
 
         // 2. Check if it appears in Meja Kerja (Pending list)
         $response = $this->actingAs($this->approver)->get(route('meja-kerja'));
@@ -83,7 +106,10 @@ class ApproverWorkflowEnhancedTest extends TestCase
             'end_time' => '10:00',
             'status' => 'Revising',
             'current_step' => 2, // Sebelumnya ditolak di langkah 2
+            'event_scope' => 'Internal',
         ]);
+        // Booking_steps must exist even for revising bookings so rebuild works
+        $this->createBookingStepsFor($booking);
 
         // 2. Ensure it's NOT in Meja Kerja of step 1 approver yet (because it's Revising)
         $response = $this->actingAs($this->approver)->get(route('meja-kerja'));
@@ -124,7 +150,9 @@ class ApproverWorkflowEnhancedTest extends TestCase
             'end_time' => '10:00',
             'status' => 'Pending',
             'current_step' => 1,
+            'event_scope' => 'Internal',
         ]);
+        $this->createBookingStepsFor($booking);
 
         $this->actingAs($this->approver)->postJson(route('approval.approve', $booking->id), [
             'notes' => 'Sesuai prosedur.',
@@ -153,7 +181,9 @@ class ApproverWorkflowEnhancedTest extends TestCase
             'end_time' => '10:00',
             'status' => 'Pending',
             'current_step' => 1,
+            'event_scope' => 'Internal',
         ]);
+        $this->createBookingStepsFor($booking);
 
         $file = UploadedFile::fake()->create('proposal.pdf', 50);
         $path = $file->store('attachments/'.$booking->id, 'private');

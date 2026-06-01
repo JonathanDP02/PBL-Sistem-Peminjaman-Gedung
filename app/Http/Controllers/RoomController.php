@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Booking;
 use App\Models\Room;
+use App\Models\Unit;
 use App\Models\Workflow;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
@@ -23,9 +24,25 @@ class RoomController extends Controller
 
         if ($user->role->name === 'Administrator Unit') {
             $unitIds = [$user->unit_id];
-            if ($user->unit && $user->unit->parent_id) {
-                $unitIds[] = $user->unit->parent_id;
+
+            // Dapatkan seluruh parent unit secara rekursif (ancestors)
+            $unit = $user->unit;
+            while ($unit && $unit->parent_id) {
+                $unitIds[] = $unit->parent_id;
+                $unit = $unit->parent;
             }
+
+            // Dapatkan seluruh child unit (descendants)
+            if ($user->unit) {
+                $childIds = Unit::where('parent_id', $user->unit_id)->pluck('id')->toArray();
+                $unitIds = array_merge($unitIds, $childIds);
+                if (! empty($childIds)) {
+                    $grandchildIds = Unit::whereIn('parent_id', $childIds)->pluck('id')->toArray();
+                    $unitIds = array_merge($unitIds, $grandchildIds);
+                }
+            }
+
+            $unitIds = array_unique($unitIds);
             $query->whereIn('unit_id', $unitIds);
         }
 
@@ -127,10 +144,10 @@ class RoomController extends Controller
         $user = Auth::user();
 
         if ($workflowId) {
-            $workflow = \App\Models\Workflow::findOrFail($workflowId);
+            $workflow = Workflow::findOrFail($workflowId);
 
             // Validasi: 1 unit = 1 workflow per ruangan
-            $existingWorkflow = \App\Models\Workflow::where('unit_id', $workflow->unit_id)
+            $existingWorkflow = Workflow::where('unit_id', $workflow->unit_id)
                 ->where('room_id', $id)
                 ->where('id', '!=', $workflow->id)
                 ->first();
@@ -147,10 +164,10 @@ class RoomController extends Controller
             $workflow->update(['room_id' => $id]);
         } else {
             // Jika workflow_id null (unassign), temukan workflow milik unit ini yang terhubung ke ruangan ini
-            $workflowToUnassign = \App\Models\Workflow::where('unit_id', $user->unit_id)
+            $workflowToUnassign = Workflow::where('unit_id', $user->unit_id)
                 ->where('room_id', $id)
                 ->first();
-                
+
             if ($workflowToUnassign) {
                 $workflowToUnassign->update(['room_id' => null]);
             }

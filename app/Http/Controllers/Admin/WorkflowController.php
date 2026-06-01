@@ -19,14 +19,38 @@ class WorkflowController extends Controller
     {
         $user = Auth::user();
 
-        // Konsisten: Selalu filter berdasarkan unit_id untuk Admin_Unit
-        $query = Workflow::query()->with('steps.position', 'requirements')->withCount('steps');
-
         if ($user->role->name === 'Administrator Unit') {
-            $query->where('unit_id', $user->unit_id);
+            // Ambil alur umum pertama milik unit admin (room_id is null)
+            $workflow = Workflow::with(['steps.position', 'requirements'])
+                ->withCount('steps')
+                ->where('unit_id', $user->unit_id)
+                ->whereNull('room_id')
+                ->first();
+
+            if (! $workflow) {
+                // Auto create general workflow jika belum ada
+                $unit = Unit::find($user->unit_id);
+                $workflow = Workflow::create([
+                    'unit_id' => $user->unit_id,
+                    'room_id' => null,
+                    'name' => 'Alur Peminjaman '.($unit ? $unit->unit_name : 'Unit'),
+                    'description' => 'Alur persetujuan umum untuk unit '.($unit ? $unit->unit_name : 'terkait'),
+                ]);
+                $workflow->load(['steps.position', 'requirements']);
+                $workflow->steps_count = 0;
+            }
+
+            return response()->json([$workflow]);
         }
 
-        return response()->json($query->orderBy('updated_at', 'desc')->get());
+        // Untuk user non-admin unit (misal SuperAdmin)
+        $workflows = Workflow::with(['steps.position', 'requirements'])
+            ->withCount('steps')
+            ->whereNull('room_id')
+            ->orderBy('updated_at', 'desc')
+            ->get();
+
+        return response()->json($workflows);
     }
 
     /**
@@ -174,36 +198,37 @@ class WorkflowController extends Controller
     public function getPositions()
     {
         $user = Auth::user();
-        $unitIds = [];
 
-        if ($user && $user->unit_id) {
-            $unitIds[] = $user->unit_id;
+        if (! $user || ! $user->unit_id) {
+            return response()->json(['data' => []]);
+        }
 
-            // Dapatkan seluruh parent unit secara rekursif
-            $unit = Unit::find($user->unit_id);
+        $userUnit = Unit::find($user->unit_id);
+
+        if ($userUnit && $userUnit->level === 'Organisasi') {
+            // Ormawa (HMTI/Formadiksi) hanya boleh melihat jabatan milik unitnya sendiri
+            $positions = Position::where('unit_id', $user->unit_id)
+                ->orderBy('name', 'asc')
+                ->get(['id', 'name']);
+        } else {
+            // Jurusan dan Pusat boleh melihat unit sendiri, parent unit, dan level Pusat
+            $unitIds = [$user->unit_id];
+            $unit = $userUnit;
             while ($unit && $unit->parent_id) {
                 $unitIds[] = $unit->parent_id;
                 $unit = Unit::find($unit->parent_id);
             }
 
-            // Tambahkan BEM Polinema secara otomatis agar posisinya bisa dipilih oleh ormawa (seperti HMTI)
-            $bemUnit = Unit::where('unit_name', 'like', '%BEM%')->first();
-            if ($bemUnit) {
-                $unitIds[] = $bemUnit->id;
-            }
-        }
-
-        $positions = Position::query()
-            ->where(function ($query) use ($unitIds) {
-                if (! empty($unitIds)) {
+            $positions = Position::query()
+                ->where(function ($query) use ($unitIds) {
                     $query->whereIn('unit_id', $unitIds);
-                }
-            })
-            ->orWhereHas('unit', function ($query) {
-                $query->where('level', 'Pusat');
-            })
-            ->orderBy('name', 'asc')
-            ->get(['id', 'name']);
+                })
+                ->orWhereHas('unit', function ($query) {
+                    $query->where('level', 'Pusat');
+                })
+                ->orderBy('name', 'asc')
+                ->get(['id', 'name']);
+        }
 
         return response()->json(['data' => $positions]);
     }
