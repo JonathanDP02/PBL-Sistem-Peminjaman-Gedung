@@ -5,9 +5,10 @@
                 <x-application-logo class="h-8 w-auto text-slate-900 dark:text-white" />
             </a>
         </div>
-        <div class="flex items-center gap-2 sm:gap-4">
-            <a href="{{ route('welcome') }}" class="text-slate-700 dark:text-white hover:text-[#14B8A6] dark:hover:text-[#5EEAD4] font-semibold text-sm px-3 py-2 transition-colors">
-                Home
+        <div class="flex items-center gap-5">
+            <a href="{{ route('welcome') }}" class="text-white hover:text-[#5EEAD4] font-semibold text-sm px-4 py-2 transition-colors">
+                <!-- Home -->
+                Beranda
             </a>
             <a href="{{ route('ruangan') }}" class="text-slate-700 dark:text-white hover:text-[#14B8A6] dark:hover:text-[#5EEAD4] font-semibold text-sm px-3 py-2 transition-colors">
                 Ruangan

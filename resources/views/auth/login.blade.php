@@ -62,7 +62,7 @@
 
                         <!-- Password -->
                         <div>
-                            <label for="password" class="block text-[10px] lg:text-[11px] uppercase tracking-wider font-bold text-[#14B8A6] mb-1.5 hover:text-[#10ECE8] transition-colors cursor-pointer">Password</label>
+                            <label for="password" class="block text-[10px] lg:text-[11px] uppercase tracking-wider font-bold text-[#14B8A6] mb-1.5 hover:text-[#10ECE8] transition-colors cursor-pointer">Kata Sandi</label>
                             <input 
                                 id="password" 
                                 type="password" 
@@ -86,7 +86,7 @@
                                     href="{{ route('password.request') }}" 
                                     class="text-xs lg:text-sm font-semibold text-[#14B8A6] hover:text-[#10ECE8] transition"
                                 >
-                                    Lupa Password?
+                                    Lupa Kata Sandi?
                                 </a>
                             @endif
                         </div>
@@ -106,7 +106,7 @@
                             type="submit"
                             class="w-full mt-2 bg-[#14B8A6] text-white dark:text-black font-bold py-3.5 px-4 rounded-xl hover:bg-[#10ECE8] transition-all duration-200 active:scale-[0.98] shadow-[0_0_20px_rgba(20,184,166,0.2)] hover:shadow-[0_0_25px_rgba(20,184,166,0.4)]"
                         >
-                            Masuk ke Portal
+                            Masuk
                         </button>
                     </form>
                 </div>
