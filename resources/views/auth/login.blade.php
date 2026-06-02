@@ -36,8 +36,8 @@
 
                 <div class="bg-white dark:bg-[#111] border border-slate-200 dark:border-white/5 hover:border-[#14B8A6]/20 transition rounded-3xl p-6 sm:p-8 lg:p-10 shadow-[0_0_50px_rgba(0,0,0,0.05)] dark:shadow-[0_0_50px_rgba(0,0,0,0.4)] backdrop-blur-sm">
                     <div class="text-left mb-6 lg:mb-8 flex flex-col">
-                        <h2 class="text-2xl lg:text-3xl font-extrabold text-slate-900 dark:text-white mb-1 lg:mb-2 tracking-tight">Login Integrasi</h2>
-                        <p class="text-xs lg:text-sm text-slate-500 dark:text-slate-400">Masuk sistem dengan SSO.</p>
+                        <h2 class="text-2xl lg:text-3xl font-extrabold text-white mb-1 lg:mb-2 tracking-tight">Masuk Terintegrasi</h2>
+                        <p class="text-xs lg:text-sm text-slate-400">Masuk sistem dengan SSO.</p>
                     </div>
 
                     <form method="POST" action="{{ route('login') }}" class="space-y-4 lg:space-y-5">

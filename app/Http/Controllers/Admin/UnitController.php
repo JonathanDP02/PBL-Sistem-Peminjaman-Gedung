@@ -102,6 +102,20 @@ class UnitController extends Controller
             ], 422);
         }
 
+        // Strict 4-level nesting limits: prevent Level 5 units by checking if the chosen parent is already a Sub-Organization (Level 4)
+        if ($request->level === 'Organisasi' && $request->filled('parent_id')) {
+            $parent = Unit::find($request->parent_id);
+            if ($parent && $parent->level === 'Organisasi') {
+                $grandparent = Unit::find($parent->parent_id);
+                if ($grandparent && $grandparent->level === 'Organisasi') {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Struktur organisasi maksimal hanya diperbolehkan sampai tingkatan Sub-Organisasi (Level 4).',
+                    ], 422);
+                }
+            }
+        }
+
         $unit = Unit::create($validator->validated());
 
         return response()->json([
@@ -173,6 +187,23 @@ class UnitController extends Controller
                 'message' => 'Validasi gagal.',
                 'errors' => $validator->errors(),
             ], 422);
+        }
+
+        // Strict 4-level nesting limits: prevent Level 5 units by checking if the chosen parent is already a Sub-Organization (Level 4)
+        $targetLevel = $request->input('level', $unit->level);
+        $targetParentId = $request->input('parent_id', $unit->parent_id);
+
+        if ($targetLevel === 'Organisasi' && $targetParentId) {
+            $parent = Unit::find($targetParentId);
+            if ($parent && $parent->level === 'Organisasi') {
+                $grandparent = Unit::find($parent->parent_id);
+                if ($grandparent && $grandparent->level === 'Organisasi') {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Struktur organisasi maksimal hanya diperbolehkan sampai tingkatan Sub-Organisasi (Level 4).',
+                    ], 422);
+                }
+            }
         }
 
         $unit->update($validator->validated());

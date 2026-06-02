@@ -1,4 +1,35 @@
 <x-app-layout title="Booking">
+    <style>
+        /* Sembunyikan default dropdown arrow bawaan OS/browser */
+        select {
+            -webkit-appearance: none !important;
+            -moz-appearance: none !important;
+            appearance: none !important;
+        }
+        select::-ms-expand {
+            display: none !important;
+        }
+
+        /* Sembunyikan native calendar & time picker icons bawaan browser agar tidak double */
+        input[type="date"]::-webkit-calendar-picker-indicator,
+        input[type="time"]::-webkit-calendar-picker-indicator {
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            opacity: 0 !important;
+            cursor: pointer !important;
+            z-index: 20 !important;
+        }
+
+        /* Perbaiki transform scale dot untuk custom radio button */
+        input[name="rental_type"]:checked ~ div .bg-kinetic-primary {
+            transform: scale(1) !important;
+        }
+    </style>
     <div class="relative px-8 pt-4 pb-8 space-y-10 z-10 flex flex-col min-h-full">
         
         <div>
@@ -17,59 +48,116 @@
             @csrf
             <input type="hidden" name="workflow_id" id="workflowIdInput" value="">
 
-            <div class="bg-white dark:bg-[#151515] border border-slate-200 dark:border-kinetic-border shadow-sm dark:shadow-none rounded-3xl p-8 lg:p-10 transition-colors duration-300">
+            <div class="bg-white dark:bg-[#151515] border border-slate-100 dark:border-kinetic-border shadow-xl dark:shadow-none rounded-3xl p-8 lg:p-10 transition-all duration-300">
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
                     
                     <div class="space-y-8">
                         <div>
                             <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-400 tracking-widest uppercase mb-3">Nama Kegiatan <span class="text-red-500">*</span></label>
-                            <div class="relative">
-                                <i class="ph ph-text-t absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-gray-500 text-lg"></i>
+                            <div class="relative group">
+                                <i class="ph ph-text-t absolute left-4 top-1/2 -translate-y-1/4 text-slate-400 dark:text-gray-500 text-lg group-focus-within:text-kinetic-primary transition-colors"></i>
                                 <input type="text" name="event_name" id="eventName" required placeholder="Cth: Rapat Evaluasi Bulanan"
-                                    class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl pl-12 pr-4 py-3.5 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-600 focus:outline-none focus:border-kinetic-primary transition-colors">
+                                    class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl pl-12 pr-4 py-3.5 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-600 focus:outline-none focus:border-kinetic-primary focus:ring-2 focus:ring-kinetic-primary/20 hover:border-slate-300 dark:hover:border-[#3A3A3A] transition-all duration-300">
                             </div>
                         </div>
 
                         <div>
                             <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-400 tracking-widest uppercase mb-3">Pilih Ruangan <span class="text-red-500">*</span></label>
-                            <div class="relative">
-                                <i class="ph ph-buildings absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-gray-500 text-lg"></i>
-                                <select id="roomSelect" name="room_id" required
-                                        class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl pl-12 pr-4 py-3.5 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-600 focus:outline-none focus:border-kinetic-primary transition-colors">
+                            <div class="relative group">
+                                <i class="ph ph-buildings absolute left-4 top-1/2 -translate-y-1/4 text-slate-400 dark:text-gray-500 text-lg group-focus-within:text-kinetic-primary transition-colors"></i>
+                                <select id="roomSelect" name="room_id" required style="appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important;"
+                                        class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl pl-12 pr-10 py-3.5 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-600 focus:outline-none focus:border-kinetic-primary focus:ring-2 focus:ring-kinetic-primary/20 hover:border-slate-300 dark:hover:border-[#3A3A3A] transition-all duration-300 appearance-none cursor-pointer">
                                     <option value="">-- Pilih Ruangan --</option>
                                     @foreach($buildings as $building)
-                                        <optgroup label="{{ $building->building_name }}">
+                                        <optgroup label="{{ $building->building_name }}" class="bg-white dark:bg-[#151515] font-semibold text-xs text-slate-400 dark:text-gray-500">
                                             @foreach($building->rooms as $room)
-                                                <option value="{{ $room->id }}" data-unit-id="{{ $room->unit_id }}" data-capacity="{{ $room->capacity }}">
+                                                <option value="{{ $room->id }}" data-unit-id="{{ $room->unit_id }}" data-capacity="{{ $room->capacity }}" class="bg-white dark:bg-[#1A1A1A] text-sm text-slate-900 dark:text-white py-2">
                                                     {{ $room->room_name }} (Kapasitas: {{ $room->capacity }} orang)
                                                 </option>
                                             @endforeach
                                         </optgroup>
                                     @endforeach
                                 </select>
+                                <i class="ph-caret-down absolute right-4 top-1/2 -translate-y-1/4 text-slate-400 dark:text-gray-500 pointer-events-none text-sm"></i>
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div>
-                                <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-400 tracking-widest uppercase mb-3">Tanggal <span class="text-red-500">*</span></label>
-                                <div class="relative">
-                                    <i class="ph ph-calendar-blank absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-gray-500 text-lg"></i>
-                                    <input type="date" name="booking_date" id="bookingDate" required class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl pl-12 pr-4 py-3.5 text-sm text-slate-900 dark:text-gray-400 focus:outline-none focus:border-kinetic-primary transition-colors [color-scheme:light] dark:[color-scheme:dark]">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-400 tracking-widest uppercase mb-3">Skop Kegiatan <span class="text-red-500">*</span></label>
+                            <div class="relative group">
+                                <i class="ph ph-globe absolute left-4 top-1/2 -translate-y-1/4 text-slate-400 dark:text-gray-500 text-lg group-focus-within:text-kinetic-primary transition-colors"></i>
+                                <select id="scopeSelect" name="event_scope" required style="appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important;"
+                                        class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl pl-12 pr-10 py-3.5 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-600 focus:outline-none focus:border-kinetic-primary focus:ring-2 focus:ring-kinetic-primary/20 hover:border-slate-300 dark:hover:border-[#3A3A3A] transition-all duration-300 appearance-none cursor-pointer">
+                                    <option value="Internal">Internal (Lingkup unit/jurusan sendiri)</option>
+                                    <option value="Lintas Jurusan">Lintas Jurusan (Melibatkan Wakil Direktur 3)</option>
+                                </select>
+                                <i class="ph-caret-down absolute right-4 top-1/2 -translate-y-1/4 text-slate-400 dark:text-gray-500 pointer-events-none text-sm"></i>
+                            </div>
+                        </div>
+
+                        <!-- Durasi Sewa Toggle -->
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-400 tracking-widest uppercase mb-3">Durasi Sewa <span class="text-red-500">*</span></label>
+                            <div class="grid grid-cols-2 gap-4">
+                                <label class="relative flex items-center gap-4 bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-2xl p-5 cursor-pointer hover:border-kinetic-primary/40 hover:bg-slate-100/50 dark:hover:bg-[#222] transition-all group duration-300 select-none">
+                                    <input type="radio" name="rental_type" value="single" checked class="peer sr-only">
+                                    <div class="absolute inset-0 rounded-2xl border border-transparent peer-checked:border-kinetic-primary peer-checked:bg-kinetic-primary/[0.02] dark:peer-checked:bg-kinetic-primary/[0.04] transition-all duration-300"></div>
+                                    <div class="w-5 h-5 rounded-full border border-slate-300 dark:border-[#333] peer-checked:border-kinetic-primary flex items-center justify-center shrink-0 transition-colors z-10 duration-300">
+                                        <div class="w-2.5 h-2.5 rounded-full bg-kinetic-primary scale-0 peer-checked:scale-100 transition-transform duration-300"></div>
+                                    </div>
+                                    <div class="z-10">
+                                        <p class="text-sm font-bold text-slate-900 dark:text-white transition-colors group-hover:text-kinetic-primary duration-300">Satu Hari</p>
+                                        <p class="text-[10px] text-slate-500 dark:text-gray-500 leading-relaxed mt-0.5">Peminjaman selesai di hari yang sama</p>
+                                    </div>
+                                </label>
+                                <label class="relative flex items-center gap-4 bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-2xl p-5 cursor-pointer hover:border-kinetic-primary/40 hover:bg-slate-100/50 dark:hover:bg-[#222] transition-all group duration-300 select-none">
+                                    <input type="radio" name="rental_type" value="range" class="peer sr-only">
+                                    <div class="absolute inset-0 rounded-2xl border border-transparent peer-checked:border-kinetic-primary peer-checked:bg-kinetic-primary/[0.02] dark:peer-checked:bg-kinetic-primary/[0.04] transition-all duration-300"></div>
+                                    <div class="w-5 h-5 rounded-full border border-slate-300 dark:border-[#333] peer-checked:border-kinetic-primary flex items-center justify-center shrink-0 transition-colors z-10 duration-300">
+                                        <div class="w-2.5 h-2.5 rounded-full bg-kinetic-primary scale-0 peer-checked:scale-100 transition-transform duration-300"></div>
+                                    </div>
+                                    <div class="z-10">
+                                        <p class="text-sm font-bold text-slate-900 dark:text-white transition-colors group-hover:text-kinetic-primary duration-300">Rentang Hari</p>
+                                        <p class="text-[10px] text-slate-500 dark:text-gray-500 leading-relaxed mt-0.5">Peminjaman berlangsung multi-hari berturut-turut</p>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="dateAndTimeGrid">
+                            <!-- Block Tanggal (Kiri) -->
+                            <div class="flex flex-col gap-4">
+                                <div id="startDateCol" class="transition-all duration-300">
+                                    <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-400 tracking-widest uppercase mb-3" id="startDateLabel">Tanggal Kegiatan <span class="text-red-500">*</span></label>
+                                    <div class="relative group">
+                                        <i class="ph ph-calendar-blank absolute left-4 top-1/2 -translate-y-1/4 text-slate-400 dark:text-gray-500 text-lg group-focus-within:text-kinetic-primary transition-colors"></i>
+                                        <input type="date" name="booking_date" id="bookingDate" required class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl pl-12 pr-4 py-3.5 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-600 focus:outline-none focus:border-kinetic-primary focus:ring-2 focus:ring-kinetic-primary/20 hover:border-slate-300 dark:hover:border-[#3A3A3A] transition-all duration-300 [color-scheme:light] dark:[color-scheme:dark]">
+                                    </div>
+                                </div>
+                                <div id="endDateCol" class="hidden transition-all duration-300">
+                                    <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-400 tracking-widest uppercase mb-3">Tanggal Selesai <span class="text-red-500">*</span></label>
+                                    <div class="relative group">
+                                        <i class="ph ph-calendar-blank absolute left-4 top-1/2 -translate-y-1/4 text-slate-400 dark:text-gray-500 text-lg group-focus-within:text-kinetic-primary transition-colors"></i>
+                                        <input type="date" name="booking_end_date" id="bookingEndDate" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl pl-12 pr-4 py-3.5 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-600 focus:outline-none focus:border-kinetic-primary focus:ring-2 focus:ring-kinetic-primary/20 hover:border-slate-300 dark:hover:border-[#3A3A3A] transition-all duration-300 [color-scheme:light] dark:[color-scheme:dark]">
+                                    </div>
                                 </div>
                             </div>
-                            <div>
-                                <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-400 tracking-widest uppercase mb-3">Mulai <span class="text-red-500">*</span></label>
-                                <div class="relative">
-                                    <i class="ph ph-clock absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-gray-500 text-lg"></i>
-                                    <input type="time" name="start_time" id="startTime" required class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl pl-12 pr-4 py-3.5 text-sm text-slate-900 dark:text-gray-400 focus:outline-none focus:border-kinetic-primary transition-colors [color-scheme:light] dark:[color-scheme:dark]">
+
+                            <!-- Block Waktu (Kanan) -->
+                            <div class="flex flex-col gap-4">
+                                <div class="transition-all duration-300">
+                                    <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-400 tracking-widest uppercase mb-3">Waktu Mulai <span class="text-red-500">*</span></label>
+                                    <div class="relative group">
+                                        <i class="ph ph-clock absolute left-4 top-1/2 -translate-y-1/4 text-slate-400 dark:text-gray-500 text-lg group-focus-within:text-kinetic-primary transition-colors"></i>
+                                        <input type="time" name="start_time" id="startTime" required class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl pl-12 pr-4 py-3.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-kinetic-primary focus:ring-2 focus:ring-kinetic-primary/20 hover:border-slate-300 dark:hover:border-[#3A3A3A] transition-all duration-300 [color-scheme:light] dark:[color-scheme:dark]">
+                                    </div>
                                 </div>
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-400 tracking-widest uppercase mb-3">Selesai <span class="text-red-500">*</span></label>
-                                <div class="relative">
-                                    <i class="ph ph-clock absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-gray-500 text-lg"></i>
-                                    <input type="time" name="end_time" id="endTime" required class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl pl-12 pr-4 py-3.5 text-sm text-slate-900 dark:text-gray-400 focus:outline-none focus:border-kinetic-primary transition-colors [color-scheme:light] dark:[color-scheme:dark]">
+                                <div class="transition-all duration-300">
+                                    <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-400 tracking-widest uppercase mb-3">Waktu Selesai <span class="text-red-500">*</span></label>
+                                    <div class="relative group">
+                                        <i class="ph ph-clock absolute left-4 top-1/2 -translate-y-1/4 text-slate-400 dark:text-gray-500 text-lg group-focus-within:text-kinetic-primary transition-colors"></i>
+                                        <input type="time" name="end_time" id="endTime" required class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl pl-12 pr-4 py-3.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-kinetic-primary focus:ring-2 focus:ring-kinetic-primary/20 hover:border-slate-300 dark:hover:border-[#3A3A3A] transition-all duration-300 [color-scheme:light] dark:[color-scheme:dark]">
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -148,19 +236,186 @@
     // Data workflows dari server (Laravel)
     const workflowsData = @json($workflows);
     const buildingsData = @json($buildings);
+    const unitsData = @json($units);
+    const currentUserUnit = @json(Auth::user()->unit);
 
     const roomSelect = document.getElementById('roomSelect');
+    const scopeSelect = document.getElementById('scopeSelect');
     const workflowContainer = document.getElementById('workflowContainer');
     const documentsContainer = document.getElementById('documentsContainer');
     const workflowIdInput = document.getElementById('workflowIdInput');
 
-    // Handle room selection
-    roomSelect.addEventListener('change', function() {
-        const selectedRoomId = this.value;
+    // Helper: cari alur umum unit
+    function findUnitWorkflow(unitId) {
+        return workflowsData.find(w => w.unit_id == unitId && w.room_id == null);
+    }
+
+    // Helper: cari unit
+    function findUnit(unitId) {
+        return unitsData.find(u => u.id == unitId);
+    }
+
+    // Helper: cari BEM Polinema
+    function findBemUnit() {
+        return unitsData.find(u => u.level === 'Organisasi' && (u.unit_name.toLowerCase().includes('bem') || u.parent_id === null));
+    }
+
+    // Helper: cari Pusat
+    function findPusatUnit() {
+        return unitsData.find(u => u.level === 'Pusat');
+    }
+
+    // Algoritma 3-Tier Dynamic Bridging versi Client-Side (JS)
+    function resolveWorkflowChain(selectedRoom, eventScope) {
+        let chain = [];
+        const missingConfigurations = [];
+
+        const borrowerUnit = currentUserUnit;
+        const roomOwnerUnit = findUnit(selectedRoom.unit_id);
+
+        if (!roomOwnerUnit) {
+            return { chain, missingConfigurations: ['Unit pemilik ruangan tidak ditemukan.'] };
+        }
+
+        // ─── Tier 1: Internal Ormawa ──────────────────────────────────
+        if (borrowerUnit.level === 'Organisasi') {
+            const wf = findUnitWorkflow(borrowerUnit.id);
+            if (!wf) {
+                missingConfigurations.push(`Unit Anda (${borrowerUnit.unit_name}) belum mengonfigurasi alur persetujuan umum.`);
+            } else {
+                (wf.steps || []).forEach(step => {
+                    chain.push({
+                        position_id: step.position_id,
+                        position_name: step.position ? step.position.name : 'Posisi Tidak Diketahui',
+                        tier: `Internal (${borrowerUnit.unit_name})`
+                    });
+                });
+            }
+        }
+
+        // Jika memiliki unit induk yang juga bertipe Organisasi (e.g. HMTI sebagai induk WRI)
+        if (borrowerUnit.parent_id) {
+            const parentOrg = findUnit(borrowerUnit.parent_id);
+            if (parentOrg && parentOrg.level === 'Organisasi') {
+                const wf = findUnitWorkflow(parentOrg.id);
+                if (wf && wf.steps && wf.steps.length > 0) {
+                    const lastStep = wf.steps[wf.steps.length - 1];
+                    chain.push({
+                        position_id: lastStep.position_id,
+                        position_name: lastStep.position ? lastStep.position.name : 'Ketua Unit Induk',
+                        tier: `Induk (${parentOrg.unit_name})`
+                    });
+                }
+            }
+        }
+
+        // ─── Tier 2a: BEM Polinema & Pembina ─────────────────────────────────
+        if (
+            borrowerUnit.level === 'Organisasi'
+            && !borrowerUnit.unit_name.toLowerCase().includes('bem')
+            && !borrowerUnit.unit_name.toLowerCase().includes('perwakilan')
+        ) {
+            const bem = findBemUnit();
+            if (bem && bem.id !== borrowerUnit.id) {
+                const wf = findUnitWorkflow(bem.id);
+                if (!wf) {
+                    missingConfigurations.push(`Unit BEM Polinema (${bem.unit_name}) belum mengonfigurasi alur persetujuan umum.`);
+                } else {
+                    (wf.steps || []).forEach(step => {
+                        chain.push({
+                            position_id: step.position_id,
+                            position_name: step.position ? step.position.name : 'Posisi Tidak Diketahui',
+                            tier: `BEM (${bem.unit_name})`
+                        });
+                    });
+                }
+            }
+
+            // Cari jika unit peminjam memiliki jabatan dengan kata kunci 'Pembina'
+            const fullBorrowerUnit = findUnit(borrowerUnit.id);
+            if (fullBorrowerUnit && fullBorrowerUnit.positions) {
+                const pembina = fullBorrowerUnit.positions.find(p => p.name.toLowerCase().includes('pembina'));
+                if (pembina) {
+                    chain.push({
+                        position_id: pembina.id,
+                        position_name: pembina.name,
+                        tier: `Pembina (${borrowerUnit.unit_name})`
+                    });
+                }
+            }
+        }
+
+        // ─── Tier 2b: Pemilik Ruangan ────────────────────────────────────────
+        if (roomOwnerUnit.id !== borrowerUnit.id) {
+            const wf = findUnitWorkflow(roomOwnerUnit.id);
+            if (!wf) {
+                missingConfigurations.push(`Unit pemilik ruangan (${roomOwnerUnit.unit_name}) belum mengonfigurasi alur persetujuan umum.`);
+            } else {
+                (wf.steps || []).forEach(step => {
+                    chain.push({
+                        position_id: step.position_id,
+                        position_name: step.position ? step.position.name : 'Posisi Tidak Diketahui',
+                        tier: `Pemilik Ruangan (${roomOwnerUnit.unit_name})`
+                    });
+                });
+            }
+        }
+
+        // ─── Tier 3: Pusat ───────────────────────────────────────────────────
+        if (eventScope === 'Lintas Jurusan' && roomOwnerUnit.level !== 'Pusat') {
+            const pusat = findPusatUnit();
+            if (pusat) {
+                const wf = findUnitWorkflow(pusat.id);
+                if (!wf) {
+                    missingConfigurations.push(`Unit Pusat (${pusat.unit_name}) belum mengonfigurasi alur persetujuan umum.`);
+                } else {
+                    const wadir3Step = (wf.steps || []).find(step => step.position && (step.position.name.toLowerCase().includes('iii') || step.position.name.toLowerCase().includes('3')));
+                    if (wadir3Step) {
+                        chain.push({
+                            position_id: wadir3Step.position_id,
+                            position_name: wadir3Step.position.name,
+                            tier: `Pusat (${pusat.unit_name})`
+                        });
+                    } else {
+                        const lastStep = wf.steps[wf.steps.length - 1];
+                        if (lastStep) {
+                            chain.push({
+                                position_id: lastStep.position_id,
+                                position_name: lastStep.position ? lastStep.position.name : 'Wakil Direktur III',
+                                tier: `Pusat (${pusat.unit_name})`
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        // De-duplicate chain by position_id to prevent redundant consecutive approvals in preview
+        const uniqueChain = [];
+        const seenPositions = new Set();
+        for (const item of chain) {
+            if (item.position_id && !seenPositions.has(item.position_id)) {
+                uniqueChain.push(item);
+                seenPositions.add(item.position_id);
+            } else if (!item.position_id) {
+                if (!seenPositions.has(item.position_name)) {
+                    uniqueChain.push(item);
+                    seenPositions.add(item.position_name);
+                }
+            }
+        }
+
+        return { chain: uniqueChain, missingConfigurations };
+    }
+
+    // Fungsi Update SOP dinamis saat form berubah
+    function updateSOP() {
+        const selectedRoomId = roomSelect.value;
+        const eventScope = scopeSelect.value;
         
         if (!selectedRoomId) {
             workflowContainer.innerHTML = '<p class="col-span-2 text-sm text-slate-500 dark:text-gray-400">Pilih ruangan terlebih dahulu untuk melihat alur persetujuan</p>';
-            documentsContainer.innerHTML = '<p class="text-sm text-slate-500 dark:text-gray-400">Pilih ruangan dan workflow untuk melihat dokumen yang diperlukan</p>';
+            documentsContainer.innerHTML = '<p class="text-sm text-slate-500 dark:text-gray-400">Pilih ruangan dan skop untuk melihat dokumen yang diperlukan</p>';
             workflowIdInput.value = '';
             document.getElementById('submitBtn').disabled = true;
             document.getElementById('submitBtn').classList.add('opacity-50', 'cursor-not-allowed');
@@ -175,18 +430,23 @@
 
         if (!selectedRoom) return;
 
-        // Cari workflow dari daftar workflowsData yang memiliki room_id sesuai ruangan yang dipilih
-        const workflow = workflowsData.find(w => w.room_id == selectedRoom.id);
+        // Hitung dynamic chain
+        const result = resolveWorkflowChain(selectedRoom, eventScope);
 
-        if (!workflow) {
-            workflowContainer.innerHTML = `
+        // Jika ada unit di chain yang belum dikonfigurasi, tampilkan detail pesan spesifik
+        if (result.missingConfigurations.length > 0) {
+            let errorsHTML = `
                 <div class="col-span-2 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 rounded-xl p-4 flex items-start gap-3">
                     <i class="ph-fill ph-warning-circle text-rose-500 text-xl mt-0.5"></i>
                     <div>
-                        <h4 class="text-sm font-bold text-rose-800 dark:text-rose-300">SOP Belum Dikonfigurasi</h4>
-                        <p class="text-[11px] text-rose-600 dark:text-rose-400 mt-1">Unit Anda belum memiliki alur persetujuan (workflow) yang dikonfigurasi untuk ruangan ini. Silakan hubungi Admin Unit Anda untuk melakukan setup workflow agar ruangan ini dapat dipinjam.</p>
+                        <h4 class="text-sm font-bold text-rose-800 dark:text-rose-300">Konfigurasi Alur Belum Lengkap</h4>
+                        <ul class="text-[11px] text-rose-600 dark:text-rose-400 mt-2 list-disc list-inside space-y-1">
+                            ${result.missingConfigurations.map(err => `<li>${err}</li>`).join('')}
+                        </ul>
+                        <p class="text-[10px] text-rose-500 dark:text-rose-400 mt-2">Silakan hubungi admin unit terkait untuk menyelesaikan konfigurasi agar ruangan dapat dipinjam.</p>
                     </div>
                 </div>`;
+            workflowContainer.innerHTML = errorsHTML;
             documentsContainer.innerHTML = '';
             workflowIdInput.value = '';
             document.getElementById('submitBtn').disabled = true;
@@ -197,22 +457,28 @@
         document.getElementById('submitBtn').disabled = false;
         document.getElementById('submitBtn').classList.remove('opacity-50', 'cursor-not-allowed');
 
-        workflowIdInput.value = workflow.id;
+        // Gunakan alur unit pemilik sebagai workflow_id utama form
+        const ownerWorkflow = findUnitWorkflow(selectedRoom.unit_id);
+        workflowIdInput.value = ownerWorkflow.id;
 
+        // Render alur langkah visual
         let stepsHTML = '<div class="col-span-2 relative pl-2 pt-2">';
         stepsHTML += '<div class="absolute left-[19px] top-6 bottom-4 w-px bg-slate-200 dark:bg-[#2A2A2A]"></div>';
         stepsHTML += '<div class="space-y-4">';
         
-        if (workflow.steps && workflow.steps.length > 0) {
-            workflow.steps.forEach((step, index) => {
+        if (result.chain.length > 0) {
+            result.chain.forEach((step, index) => {
                 stepsHTML += `
                     <div class="relative flex items-center gap-4">
                         <div class="w-8 h-8 rounded-full bg-teal-50 dark:bg-kinetic-primary/10 border-2 border-kinetic-primary text-kinetic-primary flex items-center justify-center text-[11px] font-bold z-10 shrink-0 shadow-[0_0_10px_rgba(20,184,166,0.3)] bg-white dark:bg-[#151515]">
                             ${index + 1}
                         </div>
                         <div class="bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl px-4 py-3 flex-1 group hover:border-kinetic-primary/50 transition-colors">
-                            <p class="text-[9px] text-slate-400 dark:text-gray-500 font-bold uppercase tracking-widest mb-0.5">Langkah ${index + 1}</p>
-                            <p class="text-sm font-bold text-slate-900 dark:text-white">${step.position ? step.position.name : 'Posisi Tidak Diketahui'}</p>
+                            <div class="flex justify-between items-center mb-0.5">
+                                <p class="text-[9px] text-slate-400 dark:text-gray-500 font-bold uppercase tracking-widest">Langkah ${index + 1}</p>
+                                <span class="text-[8px] bg-teal-500/10 text-kinetic-primary px-1.5 py-0.5 rounded-full font-bold uppercase">${step.tier}</span>
+                            </div>
+                            <p class="text-sm font-bold text-slate-900 dark:text-white">${step.position_name}</p>
                         </div>
                     </div>
                 `;
@@ -234,11 +500,12 @@
         stepsHTML += '</div></div>';
         workflowContainer.innerHTML = stepsHTML;
 
-        displayDocuments(workflow.id);
-    });
+        // Render dokumen syarat dari unit pemilik ruangan
+        displayDocumentsForRoomOwner(selectedRoom.unit_id);
+    }
 
-    function displayDocuments(workflowId) {
-        const workflow = workflowsData.find(w => w.id == workflowId);
+    function displayDocumentsForRoomOwner(roomOwnerUnitId) {
+        const workflow = findUnitWorkflow(roomOwnerUnitId);
         if (!workflow || !workflow.requirements) {
             documentsContainer.innerHTML = '<p class="text-sm text-slate-500 dark:text-gray-400">Tidak ada dokumen yang diperlukan</p>';
             return;
@@ -276,6 +543,9 @@
         documentsContainer.innerHTML = documentsHTML;
     }
 
+    roomSelect.addEventListener('change', updateSOP);
+    scopeSelect.addEventListener('change', updateSOP);
+
     function updateFileName(input, textId, iconId) {
         const textElement = document.getElementById(textId);
         const iconElement = document.getElementById(iconId);
@@ -293,10 +563,30 @@
         }
     }
 
-    // LOGIKA BLOKIR 7 HARI & AUTO-FILL
+    // LOGIKA RENTANG HARI / SINGLE DAY & BLOKIR 7 HARI & AUTO-FILL
     document.addEventListener('DOMContentLoaded', function() {
         const dateInput = document.getElementById('bookingDate');
-        
+        const bookingEndDateInput = document.getElementById('bookingEndDate');
+        const endDateCol = document.getElementById('endDateCol');
+        const startDateCol = document.getElementById('startDateCol');
+        const rentalTypeRadios = document.querySelectorAll('input[name="rental_type"]');
+        const startDateLabel = document.getElementById('startDateLabel');
+
+        rentalTypeRadios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (this.value === 'range') {
+                    endDateCol.classList.remove('hidden');
+                    bookingEndDateInput.required = true;
+                    startDateLabel.innerHTML = 'Tanggal Mulai <span class="text-red-500">*</span>';
+                } else {
+                    endDateCol.classList.add('hidden');
+                    bookingEndDateInput.required = false;
+                    bookingEndDateInput.value = '';
+                    startDateLabel.innerHTML = 'Tanggal Kegiatan <span class="text-red-500">*</span>';
+                }
+            });
+        });
+
         // 1. Hitung tanggal Minimum (Hari ini + 7 Hari)
         const today = new Date();
         const minDate = new Date();
@@ -310,6 +600,18 @@
         // 2. Terapkan batas minimum ke input kalender
         if(dateInput) {
             dateInput.setAttribute('min', minDateString);
+            dateInput.addEventListener('change', function() {
+                if (bookingEndDateInput) {
+                    bookingEndDateInput.setAttribute('min', this.value);
+                    if (bookingEndDateInput.value && bookingEndDateInput.value < this.value) {
+                        bookingEndDateInput.value = this.value;
+                    }
+                }
+            });
+        }
+
+        if (bookingEndDateInput) {
+            bookingEndDateInput.setAttribute('min', minDateString);
         }
 
         // 3. Handle Auto-fill dari URL (Misal dari Rekomendasi)

@@ -17,7 +17,9 @@ class Booking extends Model
         'workflow_id',
         'event_name',
         'event_description',
+        'event_scope',
         'booking_date',
+        'booking_end_date',
         'start_time',
         'end_time',
         'current_step',
@@ -30,9 +32,19 @@ class Booking extends Model
     {
         return [
             'booking_date' => 'date',
+            'booking_end_date' => 'date',
             'start_time' => 'datetime:H:i:s',
             'end_time' => 'datetime:H:i:s',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::saving(function (Booking $booking) {
+            if (empty($booking->booking_end_date)) {
+                $booking->booking_end_date = $booking->booking_date;
+            }
+        });
     }
 
     public function user(): BelongsTo
@@ -65,6 +77,11 @@ class Booking extends Model
         return $this->hasMany(BookingLog::class);
     }
 
+    public function bookingSteps(): HasMany
+    {
+        return $this->hasMany(BookingStep::class)->orderBy('step_order', 'asc');
+    }
+
     public function getProgressPercentageAttribute(): int
     {
         if ($this->status === 'Approved') {
@@ -75,15 +92,19 @@ class Booking extends Model
             return 0;
         }
 
-        $totalSteps = $this->workflow->steps->count();
+        // Prefer instantiated booking_steps chain; fallback to workflow template steps.
+        $totalSteps = $this->bookingSteps->count();
+        if ($totalSteps === 0) {
+            $totalSteps = $this->workflow?->steps?->count() ?? 0;
+        }
+
         if ($totalSteps === 0) {
             return 0;
         }
 
         // current_step starts at 1. If it's at step 1, 0% is done.
-        // If it's at step 2, (2-1)/totalSteps is done.
         $completedSteps = $this->current_step - 1;
-        
+
         return (int) round(($completedSteps / $totalSteps) * 100);
     }
 }

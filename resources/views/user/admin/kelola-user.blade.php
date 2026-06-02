@@ -126,10 +126,12 @@
 
     </div>
 
-    <!-- Data Modals -->
-    @include('user.admin.modals.modal-user-form')
-    @include('user.admin.modals.modal-delete-confirm')
-    @include('user.admin.modals.modal-view-user')
+    @push('modals')
+        <!-- Data Modals -->
+        @include('user.admin.modals.modal-user-form')
+        @include('user.admin.modals.modal-delete-confirm')
+        @include('user.admin.modals.modal-view-user')
+    @endpush
 
 </x-app-layout>
 
@@ -171,6 +173,16 @@ document.addEventListener('DOMContentLoaded', function() {
     setupFilterListeners();
     loadUsers(1);
     loadUnitsAndRoles();
+
+    // Auto capitalize each word on custom position input when focus leaves
+    const inputPositionCustom = document.getElementById('inputPositionCustom');
+    if (inputPositionCustom) {
+        inputPositionCustom.addEventListener('blur', function() {
+            this.value = this.value.split(' ')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                .join(' ');
+        });
+    }
 });
 
 // Setup event listeners for filtering
@@ -582,6 +594,7 @@ function openAddUserModal() {
     if (inputPassword) inputPassword.required = true;
     submitBtn.textContent = 'Tambah User';
     clearErrors();
+    resetPositionMode();
     openModal('modalUserForm');
 }
 
@@ -627,6 +640,7 @@ function editUser(userId) {
             if (inputPassword) inputPassword.required = false;
             if (submitBtn) submitBtn.textContent = 'Simpan Perubahan';
             clearErrors();
+            resetPositionMode();
             openModal('modalUserForm');
         } else {
             showAlert('Gagal memuat data user', 'error');
@@ -668,11 +682,17 @@ function submitUserForm() {
     const isEdit = userIdValue && userIdValue !== '';
     const csrfToken = getCsrfToken();
     
+    // Check if custom input mode is active
+    const isCustomMode = !document.getElementById('containerPositionInput').classList.contains('hidden');
+    const positionValue = isCustomMode 
+        ? (document.getElementById('inputPositionCustom').value.trim() || null)
+        : (inputPosition.value || null);
+    
     const formData = {
         name: inputName.value,
         email: inputEmail.value,
         unit_id: inputUnit.value,
-        position_id: inputPosition.value || null,
+        position_id: positionValue,
         role_id: inputRole.value,
     };
 
@@ -930,5 +950,42 @@ function clearErrors() {
         el.classList.add('hidden');
         el.textContent = '';
     });
+}
+
+// Toggle Position Input Mode between Dropdown Select and Custom Text Input
+function togglePositionMode() {
+    const containerSelect = document.getElementById('containerPositionSelect');
+    const containerInput = document.getElementById('containerPositionInput');
+    const btnToggle = document.getElementById('btnTogglePositionMode');
+    
+    if (containerSelect.classList.contains('hidden')) {
+        // Switch to Select Dropdown Mode
+        containerSelect.classList.remove('hidden');
+        containerInput.classList.add('hidden');
+        btnToggle.textContent = '+ Buat Baru';
+        document.getElementById('inputPositionCustom').value = '';
+    } else {
+        // Switch to Custom Input Text Mode
+        containerSelect.classList.add('hidden');
+        containerInput.classList.remove('hidden');
+        btnToggle.textContent = '← Pilih Jabatan';
+        document.getElementById('inputPosition').value = '';
+    }
+}
+
+// Reset Position Input Mode to default Dropdown Select
+function resetPositionMode() {
+    const containerSelect = document.getElementById('containerPositionSelect');
+    const containerInput = document.getElementById('containerPositionInput');
+    const btnToggle = document.getElementById('btnTogglePositionMode');
+    
+    if (containerSelect) containerSelect.classList.remove('hidden');
+    if (containerInput) containerInput.classList.add('hidden');
+    if (btnToggle) btnToggle.textContent = '+ Buat Baru';
+    
+    const inputCustom = document.getElementById('inputPositionCustom');
+    const inputSelect = document.getElementById('inputPosition');
+    if (inputCustom) inputCustom.value = '';
+    if (inputSelect) inputSelect.value = '';
 }
 </script>

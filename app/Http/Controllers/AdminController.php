@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\BookingLog;
 use App\Models\Room;
+use App\Models\Workflow;
 use App\Services\LoggerService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -20,18 +20,18 @@ class AdminController extends Controller
             ->limit(10)
             ->get()
             ->map(fn ($log) => [
-                'id'         => $log->id,
-                'action'     => $log->action,
-                'notes'      => $log->notes,
-                'actor'      => $log->actor?->name ?? 'System',
+                'id' => $log->id,
+                'action' => $log->action,
+                'notes' => $log->notes,
+                'actor' => $log->actor?->name ?? 'System',
                 'booking_id' => $log->booking_id,
                 'event_name' => $log->booking?->event_name,
-                'room'       => $log->booking?->room?->room_name,
+                'room' => $log->booking?->room?->room_name,
                 'created_at' => $log->created_at->toIso8601String(),
             ]);
 
         return response()->json([
-            'success'     => true,
+            'success' => true,
             'recent_logs' => $recentLogs,
         ]);
     }
@@ -39,12 +39,12 @@ class AdminController extends Controller
     public function blockDate(Request $request)
     {
         $validated = $request->validate([
-            'block_date'  => 'required|date|after_or_equal:today',
-            'start_time'  => 'required|date_format:H:i',
-            'end_time'    => 'required|date_format:H:i|after:start_time',
+            'block_date' => 'required|date|after_or_equal:today',
+            'start_time' => 'required|date_format:H:i',
+            'end_time' => 'required|date_format:H:i|after:start_time',
             'description' => 'nullable|string|max:500',
-            'room_ids'    => 'nullable|array',       
-            'room_ids.*'  => 'exists:rooms,id',
+            'room_ids' => 'nullable|array',
+            'room_ids.*' => 'exists:rooms,id',
         ]);
 
         try {
@@ -54,12 +54,12 @@ class AdminController extends Controller
             DB::transaction(function () use ($validated, &$createdCount, &$skippedCount) {
 
                 $roomQuery = Room::query();
-                if (!empty($validated['room_ids'])) {
+                if (! empty($validated['room_ids'])) {
                     $roomQuery->whereIn('id', $validated['room_ids']);
                 }
                 $rooms = $roomQuery->get();
 
-                $defaultWorkflowId = \App\Models\Workflow::first()?->id ?? 1;
+                $defaultWorkflowId = Workflow::first()?->id ?? 1;
 
                 foreach ($rooms as $room) {
 
@@ -72,15 +72,17 @@ class AdminController extends Controller
 
                     if ($alreadyBlocked) {
                         $skippedCount++;
+
                         continue;
                     }
 
                     $conflict = Booking::where('room_id', $room->id)
-                        ->where('booking_date', $validated['block_date'])
                         ->whereNotIn('status', ['Rejected', 'Cancelled'])
+                        ->where('booking_date', '<=', $validated['block_date'])
+                        ->where('booking_end_date', '>=', $validated['block_date'])
                         ->where(function ($q) use ($validated) {
                             $q->where('start_time', '<', $validated['end_time'])
-                              ->where('end_time', '>', $validated['start_time']);
+                                ->where('end_time', '>', $validated['start_time']);
                         })
                         ->lockForUpdate()
                         ->first();
@@ -96,17 +98,18 @@ class AdminController extends Controller
                     }
 
                     $blocking = Booking::create([
-                        'user_id'           => Auth::id(),
-                        'room_id'           => $room->id,
-                        'workflow_id'       => $defaultWorkflowId,
-                        'event_name'        => 'Libur Nasional',
+                        'user_id' => Auth::id(),
+                        'room_id' => $room->id,
+                        'workflow_id' => $defaultWorkflowId,
+                        'event_name' => 'Libur Nasional',
                         'event_description' => $validated['description'] ?? 'Global Blocking oleh Admin.',
-                        'booking_date'      => $validated['block_date'],
-                        'start_time'        => $validated['start_time'],
-                        'end_time'          => $validated['end_time'],
-                        'current_step'      => 0,           // Bypass approval
-                        'status'            => 'Approved',  // Hard-Lock
-                        'revision_count'    => 0,
+                        'booking_date' => $validated['block_date'],
+                        'booking_end_date' => $validated['block_date'],
+                        'start_time' => $validated['start_time'],
+                        'end_time' => $validated['end_time'],
+                        'current_step' => 0,           // Bypass approval
+                        'status' => 'Approved',  // Hard-Lock
+                        'revision_count' => 0,
                     ]);
 
                     LoggerService::logAction(
@@ -123,10 +126,10 @@ class AdminController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => "Global Blocking berhasil. {$createdCount} room diblokir, {$skippedCount} room dilewati (sudah diblokir).",
-                'data'    => [
-                    'block_date'    => $validated['block_date'],
-                    'start_time'    => $validated['start_time'],
-                    'end_time'      => $validated['end_time'],
+                'data' => [
+                    'block_date' => $validated['block_date'],
+                    'start_time' => $validated['start_time'],
+                    'end_time' => $validated['end_time'],
                     'rooms_blocked' => $createdCount,
                     'rooms_skipped' => $skippedCount,
                 ],
@@ -135,7 +138,7 @@ class AdminController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'error'   => $e->getMessage(),
+                'error' => $e->getMessage(),
             ], 409);
         }
     }
@@ -144,7 +147,7 @@ class AdminController extends Controller
     {
         $validated = $request->validate([
             'block_date' => 'required|date',
-            'room_ids'   => 'nullable|array',
+            'room_ids' => 'nullable|array',
             'room_ids.*' => 'exists:rooms,id',
         ]);
 
@@ -152,7 +155,7 @@ class AdminController extends Controller
             ->where('booking_date', $validated['block_date'])
             ->where('status', 'Approved');
 
-        if (!empty($validated['room_ids'])) {
+        if (! empty($validated['room_ids'])) {
             $query->whereIn('room_id', $validated['room_ids']);
         }
 

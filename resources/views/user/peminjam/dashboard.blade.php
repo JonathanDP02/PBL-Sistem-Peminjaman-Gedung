@@ -60,7 +60,7 @@
         // (Agar tidak perlu mengubah route di web.php)
         $calendarBookings = \App\Models\Booking::with('room')
             ->where('user_id', auth()->id())
-            ->whereIn('status', ['Approved', 'Pending'])
+            ->whereIn('status', ['Approved', 'Pending', 'Revising'])
             ->get();
     @endphp
 
@@ -145,7 +145,8 @@
                                         $statusClasses = [
                                             'Approved' => 'bg-teal-50 dark:bg-kinetic-primary/10 text-teal-700 dark:text-kinetic-primary border-teal-200 dark:border-kinetic-primary/20',
                                             'Pending'  => 'bg-slate-100 dark:bg-gray-800 text-slate-600 dark:text-gray-400 border-slate-200 dark:border-gray-700',
-                                            'Rejected' => 'bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 border-red-200 dark:border-red-500/20'
+                                            'Rejected' => 'bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 border-red-200 dark:border-red-500/20',
+                                            'Revising' => 'bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 border-red-200 dark:border-red-500/20'
                                         ];
                                     @endphp
                                     <span class="px-3 py-1 border rounded-md text-[10px] font-bold tracking-wider uppercase {{ $statusClasses[$booking->status] ?? $statusClasses['Pending'] }}">
@@ -192,7 +193,7 @@
 
         const calendarEvents = rawBookings.map(b => {
             const statusLower = b.status ? b.status.toLowerCase() : '';
-            let bgColor = statusLower === 'approved' ? '#14b8a6' : '#3b82f6'; // Teal untuk Approved, Biru untuk Pending
+            let bgColor = statusLower === 'approved' ? '#14b8a6' : (statusLower === 'revising' ? '#ef4444' : '#3b82f6'); // Teal untuk Approved, Merah untuk Revising, Biru untuk Pending
             
             // Format split agar mendukung YYYY-MM-DD
             const datePart = b.booking_date.split('T')[0].split(' ')[0];

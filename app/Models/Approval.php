@@ -14,6 +14,7 @@ class Approval extends Model
         'booking_id',
         'approver_id',
         'step_id',
+        'booking_step_id',
         'approval_status',
         'notes',
         'signature_image',
@@ -42,5 +43,10 @@ class Approval extends Model
     public function step(): BelongsTo
     {
         return $this->belongsTo(WorkflowStep::class, 'step_id');
+    }
+
+    public function bookingStep(): BelongsTo
+    {
+        return $this->belongsTo(BookingStep::class, 'booking_step_id');
     }
 }

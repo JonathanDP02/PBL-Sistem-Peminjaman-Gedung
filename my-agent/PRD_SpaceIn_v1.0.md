@@ -134,7 +134,7 @@ Alur bisnis Space.in dirancang untuk menggantikan prosedur manual yang tidak efi
 | 1 | Pencarian Ruangan | Peminjam mencari ruangan yang dibutuhkan dan memeriksa ketersediaan jadwal secara real-time melalui kalender ketersediaan. |
 | 2 | Pengajuan Peminjaman | Peminjam mengisi detail acara (nama acara, estimasi peserta, durasi), memilih Workflow sesuai otoritas ruangan, dan mengunggah dokumen persyaratan. |
 | 3 | Validasi Anti-Overlap | Sistem secara otomatis memvalidasi bentrok jadwal (logika Anti-Overlap) dan menerapkan Soft-Lock agar jadwal tidak dapat diambil pengguna lain selama proses berlangsung. |
-| 4 | Antrean Persetujuan | Pengajuan masuk ke antrean Admin Unit dan Approver secara berurutan sesuai hirarki unit yang telah dikonfigurasi (Pusat, Jurusan, atau Organisasi). |
+| 4 | Antrean Persetujuan Berlapis (Multi-tier Workflow) | Pengajuan diproses melalui **Workflow Internal** (Ormawa/Unit Peminjam) untuk peninjauan kelayakan internal. Setelah disetujui penuh di Tier 1, booking otomatis diteruskan (promoted) ke **Workflow Eksternal** (Unit Pemilik Ruangan) di Tier 2 untuk persetujuan resmi kampus. |
 | 5 | Review Approver | Setiap Approver meninjau dokumen melalui dashboard; dapat menyetujui, meminta dokumen tambahan, atau menolak dengan catatan revisi. |
 | 6 | Revisi (jika ditolak) | Peminjam memperbaiki dokumen dan mengajukan revisi kembali tanpa mengulang proses dari awal; sistem mencatat log percobaan revisi beserta timestamp. |
 | 7 | Hard-Lock & Penerbitan Surat | Setelah seluruh rantai persetujuan selesai, status booking berubah menjadi Hard-Lock dan sistem menerbitkan Surat Izin Peminjaman PDF beserta QR Code unik. |
@@ -558,38 +558,43 @@ Setiap Admin Unit hanya dapat mengelola data dalam lingkup unitnya dan unit di b
 
 ## 10. Aturan Bisnis dan Logika Sistem Kritis
 
-### 10.1 Logika Anti-Overlap (Pencegahan Bentrok Jadwal)
+### 10.1 Logika Anti-Overlap (Pencegahan Bentrok Jadwal - Single & Multi-Day)
 
-Sistem wajib mengimplementasikan logika Anti-Overlap yang memastikan tidak ada dua pengajuan yang memiliki ruangan dan rentang waktu yang sama secara bersamaan. Aturan:
+Sistem wajib mengimplementasikan logika Anti-Overlap yang memastikan tidak ada dua pengajuan yang memiliki ruangan dan rentang waktu yang sama secara bersamaan, mendukung durasi peminjaman fleksibel baik **Satu Hari (Single Day)** maupun **Rentang Hari (Multi-Day)**. Aturan:
 
-- Saat pengajuan baru dibuat, sistem memeriksa semua booking dengan status Soft-Lock dan Hard-Lock pada ruangan dan waktu yang diminta.
-- Jika terdapat tumpang tindih, sistem menolak pengajuan dan menginformasikan kepada Peminjam untuk memilih waktu/ruangan lain.
-- Pengajuan yang ditolak karena bentrok tidak memasuki antrean Approver.
+- Logika validasi tumpang tindih dilakukan secara matematis menggunakan perbandingan rentang tanggal komparatif: `booking_date <= validated_booking_end_date AND booking_end_date >= validated_booking_date` dikombinasikan dengan irisan waktu `(start_time < validated_end_time AND end_time > validated_start_time)`.
+- Menggunakan Laravel's `DB::transaction()` dan pessimistic locking (`lockForUpdate()`) di tingkat basis data untuk menghindari race condition pada milidetik yang sama.
+- Jika terdapat tumpang tindih, sistem secara atomik menolak pengajuan dan menginformasikan detail bentrok jadwal kepada Peminjam secara transparan.
 
 ### 10.2 Mekanisme Soft-Lock dan Hard-Lock
 
-- **Soft-Lock:** Diterapkan secara otomatis saat pengajuan berhasil disubmit dan memasuki antrean persetujuan. Status ini mengunci jadwal sementara agar tidak dapat diambil pengguna lain, namun dapat dilepas jika pengajuan ditolak atau kedaluwarsa.
-- **Hard-Lock:** Diterapkan saat seluruh rantai persetujuan dalam workflow telah dipenuhi. Status ini mengunci jadwal secara permanen dan memicu penerbitan Surat Izin PDF + QR Code.
+- **Soft-Lock:** Diterapkan secara otomatis saat pengajuan berhasil disubmit (status: Pending, current_step: 1) dan memasuki antrean persetujuan. Status ini mengunci jadwal sementara agar tidak dapat diambil pengguna lain, namun dapat dilepas jika pengajuan ditolak atau kedaluwarsa.
+- **Hard-Lock:** Diterapkan saat seluruh rantai persetujuan dalam dynamic workflow telah dipenuhi (booking status: Approved). Status ini mengunci jadwal secara permanen dan memicu penerbitan Surat Izin PDF + QR Code.
 
 ### 10.3 Penerbitan Surat Izin dan QR Code
 
-- Surat Izin hanya diterbitkan setelah status booking mencapai Hard-Lock.
-- Setiap surat izin memiliki QR Code unik yang berisi informasi terenkripsi: ID booking, ruangan, tanggal, dan identitas Peminjam.
-- QR Code dapat dipindai melalui fitur scanner pada platform Space.in untuk verifikasi keabsahan izin secara instan oleh pengelola gedung.
+- Surat Izin resmi diterbitkan oleh sistem sebagai dokumen terpisah (tidak menimpa lampiran asli mahasiswa) setelah status booking mencapai Hard-Lock.
+- Setiap surat izin memiliki QR Code unik yang berisi URL Verifikasi Publik: `https://space.in/verify/BOOKING-ABC123DEF456`.
+- QR Code dapat dipindai untuk mengarahkan pengguna ke halaman validasi publik non-login guna melihat keabsahan status, nama kegiatan, dan tabel persetujuan resmi (Non-Repudiation).
 
-### 10.4 Aturan Workflow
+### 10.4 Aturan Workflow (3-Tier Dynamic Bridging Algorithm & Unique Position Guard)
 
-- Setiap workflow harus memiliki minimal satu langkah Approver; sistem menolak penyimpanan workflow tanpa Approver.
-- Approver diproses secara berurutan sesuai urutan yang dikonfigurasi Admin Unit; Approver berikutnya hanya dapat mengakses pengajuan setelah Approver sebelumnya menyetujui.
-- Jika Approver menolak, seluruh rantai berhenti dan pengajuan dikembalikan ke Peminjam dengan catatan revisi.
-- Workflow bersifat dinamis dan tersimpan di database; perubahan pada workflow hanya berlaku untuk pengajuan baru (tidak retroaktif).
+Sistem menggunakan algoritma penjembatan dinamis 3-Tier untuk mengompilasi rantai persetujuan unik (*custom snapshot*) per transaksi peminjaman berdasarkan unit peminjam dan pemilik ruangan:
+- **Tier 1 (Internal):** Alur persetujuan internal unit peminjam jika peminjam adalah level `Organisasi` (ormawa/UKM) ditambah langkah unit Induk (e.g. HMTI di bawah JTI).
+- **Tier 2 (BEM & Pemilik Ruangan):** Penyelarasan dinamis di mana ormawa wajib melewati gerbang BEM Polinema (Tier 2a) ditambah langkah persetujuan dari unit Pemilik Ruangan (Tier 2b) yang dituju.
+- **Tier 3 (Pusat):** Jika skop kegiatan adalah **Lintas Jurusan** dan pemilik ruangan bukan unit Pusat, sistem secara otomatis menyisipkan pejabat tingkat Pusat (Wakil Direktur III) di akhir rantai.
+- **Unique Position Guard (De-duplication) [CRITICAL]:**
+  - Untuk mencegah redundansi (seperti kasus di mana Presiden BEM Polinema bertindak sebagai organisasi induk sekaligus BEM gatekeeper), sistem secara otomatis melakukan de-duplikasi linear pada rantai langkah berdasarkan `position_id` yang unik.
+  - De-duplikasi ini diimplementasikan di backend saat persistensi database (`booking_steps` table) dan di frontend client-side Javascript (`resolveWorkflowChain`) saat mempratinjau diagram SOP visual di layar, memastikan konsistensi pratinjau 100%.
 
-### 10.5 Aturan Hierarki Unit
+### 10.5 Aturan Hierarki Unit (Maksimal 4 Tingkat)
 
-- Organisasi harus memiliki unit Jurusan sebagai parent.
-- Jurusan harus memiliki unit Pusat sebagai parent.
-- Admin Unit hanya dapat mengelola data (user, ruangan, workflow) dalam lingkup unitnya dan unit di bawahnya sesuai parent_id.
-- Super Admin adalah satu-satunya yang dapat mengubah struktur hierarki unit.
+- Struktur organisasi di Polinema bertipe self-referencing dengan batasan kedalaman **maksimal 4 tingkat**:
+  ```
+  Pusat (Level 1) -> Jurusan (Level 2) -> Organisasi (Level 3) -> Sub-Organisasi (Level 4)
+  ```
+- **Security Guard (Batas Tingkatan):** Backend (`UnitController`) dan frontend Alpine.js (`unit.blade.php`) secara ketat menolak dengan respon error `422 Unprocessable Content` jika pengguna mencoba membuat unit tingkat ke-5 di bawah Sub-Organisasi.
+- Admin Unit hanya dapat mengelola data (user, ruangan, workflow) dalam lingkup unitnya dan sub-unit di bawahnya sesuai parent_id. Super Admin adalah satu-satunya yang dapat mengelola data global secara penuh.
 
 ### 10.6 Manajemen Log dan Audit Trail
 

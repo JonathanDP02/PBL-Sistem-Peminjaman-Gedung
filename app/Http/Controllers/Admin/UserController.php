@@ -98,6 +98,16 @@ class UserController extends Controller
     {
         $authUser = $request->user();
 
+        // Dynamic Tagging: Jika position_id yang dikirim bukan numerik (misal: nama jabatan baru), buat secara otomatis
+        if ($request->filled('position_id') && ! is_numeric($request->position_id)) {
+            $formattedName = ucwords(strtolower(trim($request->position_id)));
+            $position = Position::firstOrCreate([
+                'name' => $formattedName,
+                'unit_id' => $request->unit_id,
+            ]);
+            $request->merge(['position_id' => $position->id]);
+        }
+
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
@@ -234,6 +244,17 @@ class UserController extends Controller
                     'message' => 'Anda tidak memiliki akses untuk mengedit user ini.',
                 ], 403);
             }
+        }
+
+        // Dynamic Tagging: Jika position_id yang dikirim bukan numerik (misal: nama jabatan baru), buat secara otomatis
+        if ($request->filled('position_id') && ! is_numeric($request->position_id)) {
+            $targetUnitId = $request->unit_id ?? $targetUser->unit_id;
+            $formattedName = ucwords(strtolower(trim($request->position_id)));
+            $position = Position::firstOrCreate([
+                'name' => $formattedName,
+                'unit_id' => $targetUnitId,
+            ]);
+            $request->merge(['position_id' => $position->id]);
         }
 
         $validator = Validator::make($request->all(), [

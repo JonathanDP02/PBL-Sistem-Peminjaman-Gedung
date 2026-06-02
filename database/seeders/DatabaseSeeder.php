@@ -2,8 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\Approval;
-use App\Models\Booking;
 use App\Models\Building;
 use App\Models\Position;
 use App\Models\Role;
@@ -62,11 +60,13 @@ class DatabaseSeeder extends Seeder
         $jurusanKimia = Unit::create(['parent_id' => $pusat->id, 'level' => 'Jurusan', 'unit_name' => 'Jurusan Teknik Kimia', 'description' => 'Jurusan Kimia']);
         $jurusanAkuntansi = Unit::create(['parent_id' => $pusat->id, 'level' => 'Jurusan', 'unit_name' => 'Jurusan Akuntansi', 'description' => 'Jurusan Akuntansi']);
         $jurusanAN = Unit::create(['parent_id' => $pusat->id, 'level' => 'Jurusan', 'unit_name' => 'Jurusan Administrasi Niaga', 'description' => 'Jurusan Administrasi Niaga']);
-
         // Level 3: Organisasi (parent = masing-masing Jurusan atau Pusat)
         $bemPusat = Unit::create(['parent_id' => $pusat->id, 'level' => 'Organisasi', 'unit_name' => 'BEM Polinema', 'description' => 'Badan Eksekutif Mahasiswa Pusat']);
+        $dpmPusat = Unit::create(['parent_id' => $pusat->id, 'level' => 'Organisasi', 'unit_name' => 'Dewan Perwakilan Mahasiswa', 'description' => 'Dewan Perwakilan Mahasiswa']);
+        $formadiksi = Unit::create(['parent_id' => $pusat->id, 'level' => 'Organisasi', 'unit_name' => 'Formadiksi', 'description' => 'Forum Mahasiswa Bidikmisi']);
 
         $hmti = Unit::create(['parent_id' => $jurusanTI->id, 'level' => 'Organisasi', 'unit_name' => 'HMTI', 'description' => 'Himpunan Mahasiswa TI']);
+        $wri = Unit::create(['parent_id' => $hmti->id, 'level' => 'Organisasi', 'unit_name' => 'Workshop Riset Informatika', 'description' => 'Workshop Riset Informatika']);
         $hms = Unit::create(['parent_id' => $jurusanSipil->id, 'level' => 'Organisasi', 'unit_name' => 'HMS', 'description' => 'Himpunan Mahasiswa Sipil']);
         $hme = Unit::create(['parent_id' => $jurusanElektro->id, 'level' => 'Organisasi', 'unit_name' => 'HME', 'description' => 'Himpunan Mahasiswa Elektro']);
         $hmm = Unit::create(['parent_id' => $jurusanMesin->id, 'level' => 'Organisasi', 'unit_name' => 'HMM', 'description' => 'Himpunan Mahasiswa Mesin']);
@@ -80,7 +80,8 @@ class DatabaseSeeder extends Seeder
         // ═══════════════════════════════════════════════════════
 
         // Jabatan di Pusat
-        $posWadir = Position::create(['unit_id' => $pusat->id,       'name' => 'Wakil Direktur']);
+        $posWadir2 = Position::create(['unit_id' => $pusat->id,       'name' => 'Wakil Direktur II']);
+        $posWadir3 = Position::create(['unit_id' => $pusat->id,       'name' => 'Wakil Direktur III']);
 
         // Jabatan di Jurusan TI
         $posKajurTI = Position::create(['unit_id' => $jurusanTI->id,    'name' => 'Ketua Jurusan TI']);
@@ -96,7 +97,14 @@ class DatabaseSeeder extends Seeder
 
         // Jabatan organisasi (untuk kelola data lokal)
         $posPresBEM = Position::create(['unit_id' => $bemPusat->id, 'name' => 'Presiden BEM Polinema']);
+        $posKetuaDPM = Position::create(['unit_id' => $dpmPusat->id, 'name' => 'Ketua Dewan Perwakilan Mahasiswa']);
+        $posKetuaFormadiksi = Position::create(['unit_id' => $formadiksi->id, 'name' => 'Ketua Formadiksi']);
+        $posHumasHMTI = Position::create(['unit_id' => $hmti->id, 'name' => 'Humas HMTI']);
         $posKetHMTI = Position::create(['unit_id' => $hmti->id, 'name' => 'Ketua HMTI']);
+        $posPembinaHMTI = Position::create(['unit_id' => $hmti->id, 'name' => 'Pembina HMTI']);
+        $posHumasWRI = Position::create(['unit_id' => $wri->id, 'name' => 'Humas WRI']);
+        $posKetuaWRI = Position::create(['unit_id' => $wri->id, 'name' => 'Ketua WRI']);
+        $posPembinaWRI = Position::create(['unit_id' => $wri->id, 'name' => 'Pembina WRI']);
         $posKetHMS = Position::create(['unit_id' => $hms->id, 'name' => 'Ketua HMS']);
         $posKetHME = Position::create(['unit_id' => $hme->id, 'name' => 'Ketua HME']);
         $posKetHMM = Position::create(['unit_id' => $hmm->id, 'name' => 'Ketua HMM']);
@@ -227,7 +235,10 @@ class DatabaseSeeder extends Seeder
         // Admin Unit untuk masing-masing Organisasi
         $orgs = [
             ['unit' => $bemPusat, 'name' => 'BEM Polinema', 'email' => 'admin.bem'],
+            ['unit' => $dpmPusat, 'name' => 'Dewan Perwakilan Mahasiswa', 'email' => 'admin.dpm'],
+            ['unit' => $formadiksi, 'name' => 'Formadiksi', 'email' => 'admin.formadiksi'],
             ['unit' => $hmti, 'name' => 'HMTI', 'email' => 'admin.hmti'],
+            ['unit' => $wri, 'name' => 'WRI', 'email' => 'admin.wri'],
             ['unit' => $hms, 'name' => 'HMS', 'email' => 'admin.hms'],
             ['unit' => $hme, 'name' => 'HME', 'email' => 'admin.hme'],
             ['unit' => $hmm, 'name' => 'HMM', 'email' => 'admin.hmm'],
@@ -247,6 +258,16 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
+        // Admin Unit untuk Admin Pusat
+        User::create([
+            'unit_id' => $pusat->id,
+            'position_id' => null,
+            'role_id' => $roleAdminUnit->id,
+            'name' => 'Admin Pusat',
+            'email' => 'admin.pusat@spacein.test',
+            'password' => Hash::make('12345'),
+        ]);
+
         // 3 Approver Utama (Digunakan di testing)
         User::create([
             'unit_id' => $jurusanTI->id,
@@ -258,10 +279,50 @@ class DatabaseSeeder extends Seeder
         ]);
         User::create([
             'unit_id' => $pusat->id,
-            'position_id' => $posWadir->id,
+            'position_id' => $posWadir3->id,
             'role_id' => $roleApprover->id,
             'name' => 'Dr. Siti Rahayu',
             'email' => 'wadir@spacein.test',
+            'password' => Hash::make('12345'),
+        ]);
+        User::create([
+            'unit_id' => $pusat->id,
+            'position_id' => $posWadir2->id,
+            'role_id' => $roleApprover->id,
+            'name' => 'Dr. Ahmad Subagyo',
+            'email' => 'wadir2@spacein.test',
+            'password' => Hash::make('12345'),
+        ]);
+        User::create([
+            'unit_id' => $hmti->id,
+            'position_id' => $posHumasHMTI->id,
+            'role_id' => $roleApprover->id,
+            'name' => 'Humas HMTI',
+            'email' => 'humas.hmti@spacein.test',
+            'password' => Hash::make('12345'),
+        ]);
+        User::create([
+            'unit_id' => $hmti->id,
+            'position_id' => $posPembinaHMTI->id,
+            'role_id' => $roleApprover->id,
+            'name' => 'Pembina HMTI',
+            'email' => 'pembina.hmti@spacein.test',
+            'password' => Hash::make('12345'),
+        ]);
+        User::create([
+            'unit_id' => $wri->id,
+            'position_id' => $posHumasWRI->id,
+            'role_id' => $roleApprover->id,
+            'name' => 'Humas WRI',
+            'email' => 'humas.wri@spacein.test',
+            'password' => Hash::make('12345'),
+        ]);
+        User::create([
+            'unit_id' => $wri->id,
+            'position_id' => $posPembinaWRI->id,
+            'role_id' => $roleApprover->id,
+            'name' => 'Pembina WRI',
+            'email' => 'pembina.wri@spacein.test',
             'password' => Hash::make('12345'),
         ]);
         User::create([
@@ -296,7 +357,10 @@ class DatabaseSeeder extends Seeder
         // Approver Tambahan untuk masing-masing Organisasi
         $ketuas = [
             ['unit' => $bemPusat, 'pos' => $posPresBEM, 'name' => 'BEM Polinema', 'email' => 'bem'],
+            ['unit' => $dpmPusat, 'pos' => $posKetuaDPM, 'name' => 'Dewan Perwakilan Mahasiswa', 'email' => 'dpm'],
+            ['unit' => $formadiksi, 'pos' => $posKetuaFormadiksi, 'name' => 'Formadiksi', 'email' => 'formadiksi'],
             ['unit' => $hmti, 'pos' => $posKetHMTI, 'name' => 'HMTI', 'email' => 'hmti'],
+            ['unit' => $wri, 'pos' => $posKetuaWRI, 'name' => 'WRI', 'email' => 'wri'],
             ['unit' => $hms, 'pos' => $posKetHMS, 'name' => 'HMS', 'email' => 'hms'],
             ['unit' => $hme, 'pos' => $posKetHME, 'name' => 'HME', 'email' => 'hme'],
             ['unit' => $hmm, 'pos' => $posKetHMM, 'name' => 'HMM', 'email' => 'hmm'],
@@ -340,6 +404,14 @@ class DatabaseSeeder extends Seeder
             'email' => 'citra@spacein.test',
             'password' => Hash::make('12345'),
         ]);
+        User::create([
+            'unit_id' => $wri->id,
+            'position_id' => null,
+            'role_id' => $roleUser->id,
+            'name' => 'Doni Mahasiswa WRI',
+            'email' => 'user.wri@spacein.test',
+            'password' => Hash::make('12345'),
+        ]);
 
         // User biasa tambahan untuk Organisasi dan Jurusan
         foreach ($jurusans as $j) {
@@ -367,7 +439,7 @@ class DatabaseSeeder extends Seeder
 
         // ═══════════════════════════════════════════════════════
         // STEP 6: SEED WORKFLOWS & WORKFLOW STEPS
-        // Contoh: Peminjaman JTI = Kaprodi -> Kajur -> Wadir
+        // Contoh: Peminjaman JTI = Kajur -> Wadir
         // ═══════════════════════════════════════════════════════
 
         // Workflow untuk peminjaman ruangan Jurusan TI
@@ -377,25 +449,11 @@ class DatabaseSeeder extends Seeder
             'description' => 'Alur persetujuan peminjaman ruangan Jurusan Teknologi Informasi',
         ]);
 
-        // Urutan: Kaprodi (Jurusan) -> Kajur (Jurusan) -> Wadir (Pusat)
-        WorkflowStep::create([
-            'workflow_id' => $wfJTI->id,
-            'position_id' => $posKaprodiTI->id,
-            'step_order' => 1,
-            'requires_attachment' => false,
-        ]);
-
+        // Urutan: Kajur (Jurusan) (Tanpa Wadir karena Pusat di-append dinamis)
         WorkflowStep::create([
             'workflow_id' => $wfJTI->id,
             'position_id' => $posKajurTI->id,
-            'step_order' => 2,
-            'requires_attachment' => false,
-        ]);
-
-        WorkflowStep::create([
-            'workflow_id' => $wfJTI->id,
-            'position_id' => $posWadir->id,
-            'step_order' => 3,
+            'step_order' => 1,
             'requires_attachment' => false,
         ]);
 
@@ -418,17 +476,17 @@ class DatabaseSeeder extends Seeder
             'description' => 'Alur persetujuan peminjaman Graha Polinema',
         ]);
 
-        // Urutan: Kajur TI (Jurusan) -> Wadir (Pusat)
+        // Urutan jika Pusat adalah Pemilik Ruang: Wakil Direktur II -> Wakil Direktur III
         WorkflowStep::create([
             'workflow_id' => $wfAuditorium->id,
-            'position_id' => $posKajurTI->id,
+            'position_id' => $posWadir2->id,
             'step_order' => 1,
             'requires_attachment' => false,
         ]);
 
         WorkflowStep::create([
             'workflow_id' => $wfAuditorium->id,
-            'position_id' => $posWadir->id,
+            'position_id' => $posWadir3->id,
             'step_order' => 2,
             'requires_attachment' => false,
         ]);
@@ -441,127 +499,92 @@ class DatabaseSeeder extends Seeder
         ]);
         WorkflowRequirement::create([
             'workflow_id' => $wfAuditorium->id,
-            'document_name' => 'Surat Disposisi Wadir',
+            'document_name' => 'Surat Disposini Wadir',
             'is_mandatory' => true,
         ]);
 
-        // Hubungkan ruangan ke alur persetujuan (workflow) yang sesuai
-        // Assign Workflow to Rooms via workflows.room_id
-        $jtiRoom = Room::where('unit_id', $jurusanTI->id)->first();
-        if ($jtiRoom) {
-            $wfJTI->update(['room_id' => $jtiRoom->id]);
-        }
-        
-        $pusatRoom = Room::where('unit_id', $pusat->id)->first();
-        if ($pusatRoom) {
-            $wfAuditorium->update(['room_id' => $pusatRoom->id]);
-        }
+        // Workflow umum untuk BEM Polinema (Tier 2a)
+        $wfBEM = Workflow::create([
+            'unit_id' => $bemPusat->id,
+            'name' => 'Alur BEM Polinema',
+            'description' => 'Alur umum persetujuan tingkat ormawa pusat',
+        ]);
+        WorkflowStep::create([
+            'workflow_id' => $wfBEM->id,
+            'position_id' => $posPresBEM->id,
+            'step_order' => 1,
+            'requires_attachment' => false,
+        ]);
+        WorkflowRequirement::create([
+            'workflow_id' => $wfBEM->id,
+            'document_name' => 'Proposal Kegiatan (BEM)',
+            'is_mandatory' => true,
+        ]);
 
-        // ═══════════════════════════════════════════════════════
-        // STEP 7: SEED TEST DATA MENGGUNAKAN FACTORIES
-        // Generate bookings & approvals untuk dashboard test
-        // ═══════════════════════════════════════════════════════
+        // Workflow umum untuk HMTI (Tier 1)
+        $wfHMTI = Workflow::create([
+            'unit_id' => $hmti->id,
+            'name' => 'Alur HMTI',
+            'description' => 'Alur umum persetujuan tingkat himpunan TI',
+        ]);
+        WorkflowStep::create([
+            'workflow_id' => $wfHMTI->id,
+            'position_id' => $posHumasHMTI->id,
+            'step_order' => 1,
+            'requires_attachment' => false,
+        ]);
+        WorkflowStep::create([
+            'workflow_id' => $wfHMTI->id,
+            'position_id' => $posKetHMTI->id,
+            'step_order' => 2,
+            'requires_attachment' => false,
+        ]);
+        WorkflowRequirement::create([
+            'workflow_id' => $wfHMTI->id,
+            'document_name' => 'Proposal Kegiatan (HMTI)',
+            'is_mandatory' => true,
+        ]);
 
-        //     // Get users & rooms untuk factory
-        //     $peminjam = User::where('email', 'user@spacein.test')->first();
-        //     $approverKaprodi = User::where('email', 'kaprodi.ti@spacein.test')->first();
-        //     $approverKajur = User::where('email', 'kajur.ti@spacein.test')->first();
-        //     $ruangKelas = Room::where('room_name', 'Ruang Kelas TI')->first();
+        // Workflow umum untuk Formadiksi (Tier 1)
+        $wfFormadiksi = Workflow::create([
+            'unit_id' => $formadiksi->id,
+            'name' => 'Alur Formadiksi',
+            'description' => 'Alur umum persetujuan tingkat Formadiksi',
+        ]);
+        WorkflowStep::create([
+            'workflow_id' => $wfFormadiksi->id,
+            'position_id' => $posKetuaFormadiksi->id,
+            'step_order' => 1,
+            'requires_attachment' => false,
+        ]);
+        WorkflowRequirement::create([
+            'workflow_id' => $wfFormadiksi->id,
+            'document_name' => 'Proposal Kegiatan (Formadiksi)',
+            'is_mandatory' => true,
+        ]);
 
-        //     // 1. Create 3 bookings pending di Kaprodi (Step 1)
-        //     $step1JTI = WorkflowStep::where('workflow_id', $wfJTI->id)->where('step_order', 1)->first();
-        //     for ($i = 0; $i < 3; $i++) {
-        //         $booking = Booking::factory()->create([
-        //             'user_id' => $peminjam->id,
-        //             'room_id' => $ruangKelas->id,
-        //             'workflow_id' => $wfJTI->id,
-        //             'current_step' => 1,
-        //             'status' => 'Pending',
-        //         ]);
-
-        //         Approval::create([
-        //             'booking_id' => $booking->id,
-        //             'approver_id' => $approverKaprodi->id,
-        //             'step_id' => $step1JTI->id,
-        //             'approval_status' => 'Pending',
-        //             'attempt' => 1,
-        //         ]);
-        //     }
-
-        //     // 2. Create 2 bookings pending di Kajur (Step 2)
-        //     $step2JTI = WorkflowStep::where('workflow_id', $wfJTI->id)->where('step_order', 2)->first();
-        //     for ($i = 0; $i < 2; $i++) {
-        //         $booking = Booking::factory()->create([
-        //             'user_id' => $peminjam->id,
-        //             'room_id' => $ruangKelas->id,
-        //             'workflow_id' => $wfJTI->id,
-        //             'current_step' => 2,
-        //             'status' => 'Pending',
-        //         ]);
-
-        //         // Approved by Kaprodi
-        //         Approval::create([
-        //             'booking_id' => $booking->id,
-        //             'approver_id' => $approverKaprodi->id,
-        //             'step_id' => $step1JTI->id,
-        //             'approval_status' => 'Approved',
-        //             'approved_at' => now()->subDay(),
-        //             'attempt' => 1,
-        //         ]);
-
-        //         // Pending at Kajur
-        //         Approval::create([
-        //             'booking_id' => $booking->id,
-        //             'approver_id' => $approverKajur->id,
-        //             'step_id' => $step2JTI->id,
-        //             'approval_status' => 'Pending',
-        //             'attempt' => 1,
-        //         ]);
-        //     }
-
-        //     // 3. Create approved booking (Hard-Lock)
-        //     $approvedBooking = Booking::factory()->create([
-        //         'user_id' => $peminjam->id,
-        //         'room_id' => $ruangKelas->id,
-        //         'workflow_id' => $wfJTI->id,
-        //         'status' => 'Approved',
-        //         'current_step' => 4, // Step setelah Wadir
-        //     ]);
-
-        //     foreach ($wfJTI->steps as $step) {
-        //         $approverId = match ($step->step_order) {
-        //             1 => $approverKaprodi->id,
-        //             2 => $approverKajur->id,
-        //             3 => User::where('email', 'wadir@spacein.test')->first()->id,
-        //         };
-
-        //         Approval::create([
-        //             'booking_id' => $approvedBooking->id,
-        //             'approver_id' => $approverId,
-        //             'step_id' => $step->id,
-        //             'approval_status' => 'Approved',
-        //             'approved_at' => now()->subDays(4 - $step->step_order),
-        //             'attempt' => 1,
-        //         ]);
-        //     }
-
-        //     // 4. Create rejected/revising booking
-        //     $revisingBooking = Booking::factory()->create([
-        //         'user_id' => $peminjam->id,
-        //         'room_id' => $ruangKelas->id,
-        //         'workflow_id' => $wfJTI->id,
-        //         'status' => 'Revising',
-        //         'current_step' => 1,
-        //         'revision_count' => 1,
-        //     ]);
-
-        //     Approval::create([
-        //         'booking_id' => $revisingBooking->id,
-        //         'approver_id' => $approverKaprodi->id,
-        //         'step_id' => $step1JTI->id,
-        //         'approval_status' => 'Rejected',
-        //         'notes' => 'Dokumen lampiran kurang jelas, mohon upload ulang.',
-        //         'attempt' => 1,
-        //     ]);
+        // Workflow umum untuk WRI (Tier 1)
+        $wfWRI = Workflow::create([
+            'unit_id' => $wri->id,
+            'name' => 'Alur WRI',
+            'description' => 'Alur umum persetujuan tingkat Workshop Riset Informatika',
+        ]);
+        WorkflowStep::create([
+            'workflow_id' => $wfWRI->id,
+            'position_id' => $posHumasWRI->id,
+            'step_order' => 1,
+            'requires_attachment' => false,
+        ]);
+        WorkflowStep::create([
+            'workflow_id' => $wfWRI->id,
+            'position_id' => $posKetuaWRI->id,
+            'step_order' => 2,
+            'requires_attachment' => false,
+        ]);
+        WorkflowRequirement::create([
+            'workflow_id' => $wfWRI->id,
+            'document_name' => 'Proposal Kegiatan (WRI)',
+            'is_mandatory' => true,
+        ]);
     }
 }

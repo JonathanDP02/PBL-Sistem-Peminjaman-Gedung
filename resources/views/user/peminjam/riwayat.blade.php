@@ -61,7 +61,7 @@
                                             $statusClass = 'text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
                                         } elseif ($booking->status === 'Pending') {
                                             $statusClass = 'text-amber-700 dark:text-amber-400 bg-amber-500/10 border-amber-500/20';
-                                        } elseif (in_array($booking->status, ['Rejected', 'Cancelled'])) {
+                                        } elseif (in_array($booking->status, ['Rejected', 'Cancelled', 'Revising'])) {
                                             $statusClass = 'text-rose-700 dark:text-rose-400 bg-rose-500/10 border-rose-500/20';
                                         } else {
                                             $statusClass = 'text-slate-700 dark:text-slate-400 bg-slate-500/10 border-slate-500/20';
