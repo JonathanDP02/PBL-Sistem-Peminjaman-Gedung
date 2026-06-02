@@ -60,12 +60,10 @@ class DatabaseSeeder extends Seeder
         $jurusanKimia = Unit::create(['parent_id' => $pusat->id, 'level' => 'Jurusan', 'unit_name' => 'Jurusan Teknik Kimia', 'description' => 'Jurusan Kimia']);
         $jurusanAkuntansi = Unit::create(['parent_id' => $pusat->id, 'level' => 'Jurusan', 'unit_name' => 'Jurusan Akuntansi', 'description' => 'Jurusan Akuntansi']);
         $jurusanAN = Unit::create(['parent_id' => $pusat->id, 'level' => 'Jurusan', 'unit_name' => 'Jurusan Administrasi Niaga', 'description' => 'Jurusan Administrasi Niaga']);
-        $adminUnit = Unit::create(['parent_id' => $pusat->id, 'level' => 'Jurusan', 'unit_name' => 'Admin Pusat', 'description' => 'Admin Unit Pusat']);
-
-        // Level 3: Organisasi (parent = masing-masing Jurusan atau Pusat atau Admin Unit)
-        $bemPusat = Unit::create(['parent_id' => $adminUnit->id, 'level' => 'Organisasi', 'unit_name' => 'BEM Polinema', 'description' => 'Badan Eksekutif Mahasiswa Pusat']);
-        $dpmPusat = Unit::create(['parent_id' => $adminUnit->id, 'level' => 'Organisasi', 'unit_name' => 'Dewan Perwakilan Mahasiswa', 'description' => 'Dewan Perwakilan Mahasiswa']);
-        $formadiksi = Unit::create(['parent_id' => $adminUnit->id, 'level' => 'Organisasi', 'unit_name' => 'Formadiksi', 'description' => 'Forum Mahasiswa Bidikmisi']);
+        // Level 3: Organisasi (parent = masing-masing Jurusan atau Pusat)
+        $bemPusat = Unit::create(['parent_id' => $pusat->id, 'level' => 'Organisasi', 'unit_name' => 'BEM Polinema', 'description' => 'Badan Eksekutif Mahasiswa Pusat']);
+        $dpmPusat = Unit::create(['parent_id' => $pusat->id, 'level' => 'Organisasi', 'unit_name' => 'Dewan Perwakilan Mahasiswa', 'description' => 'Dewan Perwakilan Mahasiswa']);
+        $formadiksi = Unit::create(['parent_id' => $pusat->id, 'level' => 'Organisasi', 'unit_name' => 'Formadiksi', 'description' => 'Forum Mahasiswa Bidikmisi']);
 
         $hmti = Unit::create(['parent_id' => $jurusanTI->id, 'level' => 'Organisasi', 'unit_name' => 'HMTI', 'description' => 'Himpunan Mahasiswa TI']);
         $wri = Unit::create(['parent_id' => $hmti->id, 'level' => 'Organisasi', 'unit_name' => 'Workshop Riset Informatika', 'description' => 'Workshop Riset Informatika']);
@@ -262,7 +260,7 @@ class DatabaseSeeder extends Seeder
 
         // Admin Unit untuk Admin Pusat
         User::create([
-            'unit_id' => $adminUnit->id,
+            'unit_id' => $pusat->id,
             'position_id' => null,
             'role_id' => $roleAdminUnit->id,
             'name' => 'Admin Pusat',

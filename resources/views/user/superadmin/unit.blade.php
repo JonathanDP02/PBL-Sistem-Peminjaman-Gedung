@@ -97,7 +97,7 @@
                                 </div>
                             </div>
 
-                            {{-- Jurusan Level --}}
+                            {{-- Children of Pusat (Jurusan OR Organisasi langsung di bawah Pusat) --}}
                             <div x-show="isOpen(pusat.id) && pusat.children && pusat.children.length > 0"
                                  x-transition:enter="transition ease-out duration-200"
                                  x-transition:enter-start="opacity-0 -translate-y-2"
@@ -105,52 +105,83 @@
                                  class="relative ml-8 pb-2 mt-3">
                                 <div class="absolute -left-6 top-0 bottom-4 w-px bg-slate-200 dark:bg-[#2A2A2A] z-0"></div>
 
-                                <template x-for="jurusan in (pusat.children || [])" :key="jurusan.id">
+                                <template x-for="child in (pusat.children || [])" :key="child.id">
                                     <div class="relative mb-3">
                                         <div class="absolute -left-6 top-6 w-6 h-px bg-slate-200 dark:bg-[#2A2A2A] z-0"></div>
 
-                                        {{-- Jurusan Row --}}
-                                        <div class="bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] rounded-xl p-4 flex items-center justify-between z-10 relative">
+                                        {{-- Jurusan Row (jika level === 'Jurusan') --}}
+                                        <div x-show="child.level === 'Jurusan'"
+                                             class="bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] rounded-xl p-4 flex items-center justify-between z-10 relative">
                                             <div class="flex items-center gap-3">
-                                                <button @click="toggleNode(jurusan.id)"
+                                                <button @click="toggleNode(child.id)"
                                                         class="w-7 h-7 flex items-center justify-center rounded-lg transition"
-                                                        :class="(jurusan.children && jurusan.children.length > 0)
+                                                        :class="(child.children && child.children.length > 0)
                                                             ? 'text-cyan-500 hover:bg-cyan-500/10 cursor-pointer'
                                                             : 'text-slate-300 dark:text-gray-700 cursor-default'">
                                                     <i class="ph-bold text-sm"
-                                                       :class="isOpen(jurusan.id) ? 'ph-caret-down' : 'ph-caret-right'"></i>
+                                                       :class="isOpen(child.id) ? 'ph-caret-down' : 'ph-caret-right'"></i>
                                                 </button>
-                                                <i class="ph-fill ph-users-three text-xl text-cyan-500"></i>
+                                                <i class="ph-fill ph-buildings text-xl text-cyan-500"></i>
                                                 <div>
-                                                    <h4 class="text-sm font-bold text-slate-900 dark:text-white mb-0.5" x-text="jurusan.unit_name"></h4>
+                                                    <h4 class="text-sm font-bold text-slate-900 dark:text-white mb-0.5" x-text="child.unit_name"></h4>
                                                     <p class="text-[10px] text-slate-500 uppercase tracking-wider">
-                                                        Jurusan &bull; <span x-text="jurusan.description || 'Sub Unit'"></span>
+                                                        Jurusan &bull; <span x-text="child.description || 'Sub Unit'"></span>
                                                     </p>
                                                 </div>
                                             </div>
                                             <div class="flex items-center gap-2 shrink-0">
                                                 <span class="px-2.5 py-1 bg-slate-100 dark:bg-[#222] text-slate-500 dark:text-gray-400 rounded-md text-[10px] font-bold"
-                                                      x-text="'+' + (jurusan.children ? jurusan.children.length : 0) + ' Org'"></span>
-                                                <button @click="editUnit(jurusan)"
+                                                      x-text="'+' + (child.children ? child.children.length : 0) + ' Org'"></span>
+                                                <button @click="editUnit(child)"
                                                         class="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-kinetic-primary/10 text-slate-400 hover:text-kinetic-primary transition">
                                                     <i class="ph ph-pencil-simple text-sm"></i>
                                                 </button>
-                                                <button @click="deleteUnit(jurusan)"
+                                                <button @click="deleteUnit(child)"
                                                         class="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-red-500/10 text-slate-400 hover:text-red-500 transition">
                                                     <i class="ph ph-trash text-sm"></i>
                                                 </button>
                                             </div>
                                         </div>
 
-                                        {{-- Organisasi Level --}}
-                                        <div x-show="isOpen(jurusan.id) && jurusan.children && jurusan.children.length > 0"
+                                        {{-- Organisasi Row langsung di bawah Pusat (jika level === 'Organisasi') --}}
+                                        <div x-show="child.level === 'Organisasi'"
+                                             class="bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] rounded-xl p-3 flex items-center justify-between z-10 relative group">
+                                            <div class="flex items-center gap-3">
+                                                <button @click="toggleNode(child.id)"
+                                                        class="w-6 h-6 flex items-center justify-center rounded-md transition"
+                                                        :class="(child.children && child.children.length > 0)
+                                                            ? 'text-teal-500 hover:bg-teal-500/10 cursor-pointer'
+                                                            : 'text-slate-300 dark:text-gray-700 cursor-default'">
+                                                    <i class="ph-bold text-xs"
+                                                       :class="isOpen(child.id) ? 'ph-caret-down' : 'ph-caret-right'"></i>
+                                                </button>
+                                                <span class="w-2 h-2 rounded-full bg-teal-500 dark:bg-kinetic-primary shrink-0"></span>
+                                                <div>
+                                                    <h4 class="text-xs font-bold text-slate-700 dark:text-gray-300 group-hover:text-kinetic-primary transition-colors" x-text="child.unit_name"></h4>
+                                                    <p class="text-[9px] text-slate-400 dark:text-gray-600 uppercase tracking-wider" x-text="child.description ? 'Organisasi (Pusat) • ' + child.description : 'Organisasi (Pusat)'"></p>
+                                                </div>
+                                            </div>
+                                            <div class="flex items-center gap-1.5 relative z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button @click="editUnit(child)"
+                                                        class="w-6 h-6 flex items-center justify-center rounded-md hover:bg-kinetic-primary/10 text-slate-400 hover:text-kinetic-primary transition">
+                                                    <i class="ph ph-pencil-simple text-xs"></i>
+                                                </button>
+                                                <button @click="deleteUnit(child)"
+                                                        class="w-6 h-6 flex items-center justify-center rounded-md hover:bg-red-500/10 text-slate-400 hover:text-red-500 transition">
+                                                    <i class="ph ph-trash text-xs"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {{-- Sub-children (Organisasi di bawah Jurusan, atau Sub-Org di bawah Org) --}}
+                                        <div x-show="isOpen(child.id) && child.children && child.children.length > 0"
                                              x-transition:enter="transition ease-out duration-200"
                                              x-transition:enter-start="opacity-0 -translate-y-1"
                                              x-transition:enter-end="opacity-100 translate-y-0"
                                              class="ml-10 mt-2 relative">
                                             <div class="absolute -left-6 top-0 bottom-4 w-px bg-slate-200 dark:bg-[#2A2A2A] z-0"></div>
 
-                                            <template x-for="org in (jurusan.children || [])" :key="org.id">
+                                            <template x-for="org in (child.children || [])" :key="org.id">
                                                 <div class="relative mb-3">
                                                     <div class="absolute -left-6 top-6 w-6 h-px bg-slate-200 dark:bg-[#2A2A2A] z-0"></div>
 
@@ -303,7 +334,7 @@
                              x-transition:enter-end="opacity-100 translate-y-0">
                             <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">
                                 Unit Induk
-                                <span x-text="form.level === 'Jurusan' ? '(Pilih Pusat)' : '(Pilih Jurusan)'"></span>
+                                <span x-text="form.level === 'Jurusan' ? '(Pilih Pusat)' : '(Pilih Pusat atau Jurusan)'"></span>
                             </label>
                             <div class="relative">
                                 <select x-model="form.parent_id"
@@ -515,14 +546,14 @@
                     if (this.form.level === 'Jurusan') {
                         this.filteredParents = this.allUnits.filter(u => u.level === 'Pusat' && u.id !== excludeId);
                     } else if (this.form.level === 'Organisasi') {
-                        // Parents can be Jurusan (Level 2) or Organisasi (Level 3), but block Sub-Organizations (Level 4)
+                        // Parents can be: Pusat (Level 1), Jurusan (Level 2), or Organisasi Level-3 (not sub-org)
                         this.filteredParents = this.allUnits.filter(u => {
                             if (u.id === excludeId) return false;
+                            if (u.level === 'Pusat') return true;
                             if (u.level === 'Jurusan') return true;
                             if (u.level === 'Organisasi') {
-                                // Find parent of u
+                                // Find parent of u — if u's parent is also Organisasi, it's a Level-4 Sub-Org (exclude)
                                 const parent = this.allUnits.find(p => p.id === u.parent_id);
-                                // If u's parent is also an Organisasi, then u is Level 4 (Sub-Organization), so exclude it
                                 return !parent || parent.level !== 'Organisasi';
                             }
                             return false;

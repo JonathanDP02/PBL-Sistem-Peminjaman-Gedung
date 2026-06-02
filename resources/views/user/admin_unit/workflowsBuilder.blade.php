@@ -4,7 +4,7 @@
     <div x-data="workflowManager()" x-init="fetchWorkflows()"
         class="bg-slate-50 dark:bg-kinetic-bg min-h-screen py-8 text-slate-800 dark:text-gray-200 font-sans transition-colors duration-300">
         
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-full px-8">
             
             <div class="mb-8">
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
@@ -21,7 +21,7 @@
                 </div>
             </template>
 
-            <div x-show="!loading" class="max-w-xl mx-auto">
+            <div x-show="!loading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <template x-for="workflow in filteredWorkflows" :key="workflow.id">
                     
                     <div @click="window.location.href = '/admin_unit/workflows-index?id=' + workflow.id" class="group block h-full relative cursor-pointer">

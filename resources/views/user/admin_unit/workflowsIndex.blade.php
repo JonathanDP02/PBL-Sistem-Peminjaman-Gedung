@@ -8,7 +8,7 @@
     <div x-data="workflowBuilder()" x-init="initBuilder()"
         class="bg-slate-50 dark:bg-kinetic-bg min-h-screen py-8 text-slate-800 dark:text-gray-200 font-sans transition-colors duration-300">
         
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-full px-8">
             
             <div class="mb-6 flex items-center gap-2 text-sm">
                 <a href="{{ route('workflowsBuilder') }}" class="text-slate-500 dark:text-gray-400 hover:text-slate-700 dark:hover:text-gray-300 transition-colors">Manajemen Workflow</a>
@@ -84,7 +84,7 @@
                     </div>
 
                     <div x-show="activeTab === 'alur'" class="space-y-8">
-                        <div class="relative max-w-4xl">
+                        <div class="relative max-w-full">
                             <div class="absolute left-7 top-12 bottom-0 w-0.5 bg-gradient-to-b from-teal-500 to-teal-500/30"></div>
 
                             <div class="space-y-6">

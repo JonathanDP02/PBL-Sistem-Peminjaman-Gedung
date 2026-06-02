@@ -84,6 +84,9 @@ class WorkflowBridgeService
         // Only apply when the borrower's unit is level 'Organisasi'
         if ($borrowerUnit->level === 'Organisasi') {
             $tier1Steps = $this->fetchWorkflowSteps($borrowerUnit->id, 'Internal');
+            if ($tier1Steps->isEmpty()) {
+                throw new \Exception("Unit Anda ({$borrowerUnit->unit_name}) belum mengonfigurasi alur persetujuan umum.");
+            }
             foreach ($tier1Steps as $s) {
                 $steps[] = [
                     'position_id' => $s->position_id,
@@ -117,8 +120,14 @@ class WorkflowBridgeService
             && ! str_contains(strtolower($borrowerUnit->unit_name), 'perwakilan')
         ) {
             $bemUnit = $this->findBemUnit();
-            if ($bemUnit && $bemUnit->id !== $borrowerUnit->id) {
+            if (! $bemUnit) {
+                throw new \Exception('Unit BEM Polinema tidak ditemukan.');
+            }
+            if ($bemUnit->id !== $borrowerUnit->id) {
                 $bemSteps = $this->fetchWorkflowSteps($bemUnit->id, 'Internal');
+                if ($bemSteps->isEmpty()) {
+                    throw new \Exception("Unit BEM Polinema ({$bemUnit->unit_name}) belum mengonfigurasi alur persetujuan umum.");
+                }
                 foreach ($bemSteps as $s) {
                     $steps[] = [
                         'position_id' => $s->position_id,
@@ -147,6 +156,9 @@ class WorkflowBridgeService
         // Avoid duplicating if borrower == room owner (e.g. Kajur meminjam ruangannya sendiri)
         if ($roomOwnerUnit->id !== $borrowerUnit->id) {
             $ownerSteps = $this->fetchWorkflowSteps($roomOwnerUnit->id, 'Internal');
+            if ($ownerSteps->isEmpty()) {
+                throw new \Exception("Unit pemilik ruangan ({$roomOwnerUnit->unit_name}) belum mengonfigurasi alur persetujuan umum.");
+            }
             foreach ($ownerSteps as $s) {
                 $steps[] = [
                     'position_id' => $s->position_id,
@@ -162,29 +174,33 @@ class WorkflowBridgeService
         //   - AND room owner is not already Pusat (no double-counting)
         if ($eventScope === 'Lintas Jurusan' && $roomOwnerUnit->level !== 'Pusat') {
             $pusatUnit = $this->findPusatUnit();
-            if ($pusatUnit) {
-                $pusatSteps = $this->fetchWorkflowSteps($pusatUnit->id, 'Internal');
-                $wadir3Step = null;
-                foreach ($pusatSteps as $s) {
-                    $pos = Position::find($s->position_id);
-                    if ($pos && str_contains(strtolower($pos->name), 'iii')) {
-                        $wadir3Step = $s;
-                        break;
-                    }
+            if (! $pusatUnit) {
+                throw new \Exception('Unit Pusat tidak ditemukan.');
+            }
+            $pusatSteps = $this->fetchWorkflowSteps($pusatUnit->id, 'Internal');
+            if ($pusatSteps->isEmpty()) {
+                throw new \Exception("Unit Pusat ({$pusatUnit->unit_name}) belum mengonfigurasi alur persetujuan umum.");
+            }
+            $wadir3Step = null;
+            foreach ($pusatSteps as $s) {
+                $pos = Position::find($s->position_id);
+                if ($pos && str_contains(strtolower($pos->name), 'iii')) {
+                    $wadir3Step = $s;
+                    break;
                 }
+            }
 
-                // Fallback to the last step if name 'III' not matched
-                if (! $wadir3Step && $pusatSteps->isNotEmpty()) {
-                    $wadir3Step = $pusatSteps->last();
-                }
+            // Fallback to the last step if name 'III' not matched
+            if (! $wadir3Step && $pusatSteps->isNotEmpty()) {
+                $wadir3Step = $pusatSteps->last();
+            }
 
-                if ($wadir3Step) {
-                    $steps[] = [
-                        'position_id' => $wadir3Step->position_id,
-                        'requires_attachment' => $wadir3Step->requires_attachment,
-                        'tier_label' => 'Pusat ('.$pusatUnit->unit_name.')',
-                    ];
-                }
+            if ($wadir3Step) {
+                $steps[] = [
+                    'position_id' => $wadir3Step->position_id,
+                    'requires_attachment' => $wadir3Step->requires_attachment,
+                    'tier_label' => 'Pusat ('.$pusatUnit->unit_name.')',
+                ];
             }
         }
 
