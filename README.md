@@ -84,6 +84,7 @@ Semua akun menggunakan password: **`12345`**
 ### Admin Unit
 | Nama                  | Email                   | Role       | Unit                       |
 |-----------------------|-------------------------|------------|----------------------------|
+| Admin Pusat           | admin.pusat@spacein.test| Admin_Unit | Admin Pusat                |
 | Admin Jurusan TI      | admin.ti@spacein.test   | Admin_Unit | Jurusan Teknologi Informasi|
 | Admin Jurusan Sipil   | admin.sipil@spacein.test| Admin_Unit | Jurusan Teknik Sipil       |
 | Admin Jurusan Elektro | admin.elektro@spacein.test| Admin_Unit | Jurusan Teknik Elektro     |
@@ -92,7 +93,10 @@ Semua akun menggunakan password: **`12345`**
 | Admin Jurusan Akuntansi| admin.akuntansi@spacein.test| Admin_Unit | Jurusan Akuntansi        |
 | Admin Jurusan Administrasi Niaga| admin.an@spacein.test| Admin_Unit | Jurusan Administrasi Niaga|
 | Admin BEM Polinema    | admin.bem@spacein.test  | Admin_Unit | BEM Polinema               |
+| Admin Dewan Perwakilan Mahasiswa| admin.dpm@spacein.test| Admin_Unit | Dewan Perwakilan Mahasiswa|
+| Admin Formadiksi      | admin.formadiksi@spacein.test| Admin_Unit | Formadiksi                 |
 | Admin HMTI            | admin.hmti@spacein.test | Admin_Unit | HMTI                       |
+| Admin WRI             | admin.wri@spacein.test  | Admin_Unit | Workshop Riset Informatika |
 | Admin HMS             | admin.hms@spacein.test  | Admin_Unit | HMS                        |
 | Admin HME             | admin.hme@spacein.test  | Admin_Unit | HME                        |
 | Admin HMM             | admin.hmm@spacein.test  | Admin_Unit | HMM                        |
@@ -103,16 +107,24 @@ Semua akun menggunakan password: **`12345`**
 ### Approver
 | Nama              | Email                   | Role     | Posisi          | Unit           |
 |-------------------|-------------------------|----------|-----------------|----------------|
-| Dr. Siti Rahayu   | wadir@spacein.test      | Approver | Wakil Direktur  | Pusat          |
+| Dr. Siti Rahayu   | wadir@spacein.test      | Approver | Wakil Direktur III  | Pusat          |
+| Dr. Ahmad Subagyo | wadir2@spacein.test     | Approver | Wakil Direktur II   | Pusat          |
 | Dr. Budi Santoso  | kajur.ti@spacein.test   | Approver | Ketua Jurusan TI| Jurusan TI     |
 | Ir. Agus Wijaya   | kaprodi.ti@spacein.test | Approver | Kaprodi TI      | Jurusan TI     |
+| Humas HMTI        | humas.hmti@spacein.test | Approver | Humas HMTI      | HMTI           |
 | Ketua Jurusan Sipil | kajur.sipil@spacein.test | Approver | Ketua Jurusan Sipil | Jurusan Teknik Sipil |
 | Ketua Jurusan Elektro | kajur.elektro@spacein.test | Approver | Ketua Jurusan Elektro | Jurusan Teknik Elektro |
 | Ketua Jurusan Mesin | kajur.mesin@spacein.test | Approver | Ketua Jurusan Mesin | Jurusan Teknik Mesin |
 | Ketua Jurusan Kimia | kajur.kimia@spacein.test | Approver | Ketua Jurusan Kimia | Jurusan Teknik Kimia |
 | Ketua Jurusan Akuntansi | kajur.akuntansi@spacein.test | Approver | Ketua Jurusan Akuntansi | Jurusan Akuntansi |
 | Ketua Jurusan Administrasi Niaga | kajur.an@spacein.test | Approver | Ketua Jurusan Administrasi Niaga | Jurusan Administrasi Niaga |
+| Pembina HMTI      | pembina.hmti@spacein.test| Approver | Pembina HMTI    | HMTI           |
+| Humas WRI         | humas.wri@spacein.test  | Approver | Humas WRI       | WRI            |
+| Ketua WRI         | ketua.wri@spacein.test  | Approver | Ketua WRI       | WRI            |
+| Pembina WRI       | pembina.wri@spacein.test| Approver | Pembina WRI     | WRI            |
 | Ketua BEM Polinema| ketua.bem@spacein.test  | Approver | Presiden BEM Polinema | BEM Polinema |
+| Ketua Dewan Perwakilan Mahasiswa| ketua.dpm@spacein.test| Approver | Ketua Dewan Perwakilan Mahasiswa | Dewan Perwakilan Mahasiswa |
+| Ketua Formadiksi  | ketua.formadiksi@spacein.test | Approver | Ketua Formadiksi | Formadiksi |
 | Ketua HMTI        | ketua.hmti@spacein.test | Approver | Ketua HMTI      | HMTI           |
 | Ketua HMS         | ketua.hms@spacein.test  | Approver | Ketua HMS       | HMS            |
 | Ketua HME         | ketua.hme@spacein.test  | Approver | Ketua HME       | HME            |
@@ -125,6 +137,7 @@ Semua akun menggunakan password: **`12345`**
 | Nama                    | Email              | Role | Unit         |
 |-------------------------|--------------------|------|--------------|
 | Andi Mahasiswa TI       | user@spacein.test  | User | HMTI         |
+| Doni Mahasiswa WRI      | user.wri@spacein.test | User | Workshop Riset Informatika |
 | Budi Mahasiswa Sipil    | budi@spacein.test  | User | HMS          |
 | Citra Mahasiswi Elektro | citra@spacein.test | User | HME          |
 | Staf Jurusan TI         | staf.ti@spacein.test | User | Jurusan Teknologi Informasi |
@@ -135,6 +148,8 @@ Semua akun menggunakan password: **`12345`**
 | Staf Jurusan Akuntansi  | staf.akuntansi@spacein.test | User | Jurusan Akuntansi |
 | Staf Jurusan Administrasi Niaga | staf.an@spacein.test | User | Jurusan Administrasi Niaga |
 | Mahasiswa BEM Polinema  | mhs.bem@spacein.test | User | BEM Polinema |
+| Mahasiswa Dewan Perwakilan Mahasiswa| mhs.dpm@spacein.test | User | Dewan Perwakilan Mahasiswa |
+| Mahasiswa Formadiksi    | mhs.formadiksi@spacein.test | User | Formadiksi |
 | Mahasiswa HMM           | mhs.hmm@spacein.test | User | HMM          |
 | Mahasiswa HMK           | mhs.hmk@spacein.test | User | HMK          |
 | Mahasiswa HMA           | mhs.hma@spacein.test | User | HMA          |
@@ -142,9 +157,13 @@ Semua akun menggunakan password: **`12345`**
 
 ## Hierarki Unit
 Pusat (Politeknik Negeri Malang)
-├── BEM Polinema
+├── Admin Pusat
+│   ├── BEM Polinema
+│   ├── Dewan Perwakilan Mahasiswa
+│   └── Formadiksi
 ├── Jurusan Teknologi Informasi
 │   └── HMTI
+│       └── Workshop Riset Informatika (WRI)
 ├── Jurusan Teknik Sipil
 │   └── HMS
 ├── Jurusan Teknik Elektro
