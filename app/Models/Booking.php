@@ -19,6 +19,7 @@ class Booking extends Model
         'event_description',
         'event_scope',
         'booking_date',
+        'booking_end_date',
         'start_time',
         'end_time',
         'current_step',
@@ -31,9 +32,19 @@ class Booking extends Model
     {
         return [
             'booking_date' => 'date',
+            'booking_end_date' => 'date',
             'start_time' => 'datetime:H:i:s',
             'end_time' => 'datetime:H:i:s',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::saving(function (Booking $booking) {
+            if (empty($booking->booking_end_date)) {
+                $booking->booking_end_date = $booking->booking_date;
+            }
+        });
     }
 
     public function user(): BelongsTo

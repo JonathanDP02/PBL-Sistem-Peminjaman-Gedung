@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Booking;
 use App\Models\BookingStep;
+use App\Models\Position;
 use App\Models\Unit;
 use App\Models\Workflow;
 use App\Models\WorkflowStep;
@@ -92,14 +93,28 @@ class WorkflowBridgeService
             }
         }
 
-        // ─── Tier 2a: BEM Polinema ───────────────────────────────────────────
-        // Insert BEM steps when:
-        //   - Borrower is an 'Organisasi'
-        //   - AND scope is 'Lintas Jurusan'
-        //   - AND borrower is NOT the BEM itself
+        // Jika memiliki unit induk yang juga bertipe Organisasi (e.g. HMTI sebagai induk WRI)
+        if ($borrowerUnit->parent_id) {
+            $parentOrg = Unit::find($borrowerUnit->parent_id);
+            if ($parentOrg && $parentOrg->level === 'Organisasi') {
+                $parentSteps = $this->fetchWorkflowSteps($parentOrg->id, 'Internal');
+                $lastParentStep = $parentSteps->last();
+                if ($lastParentStep) {
+                    $steps[] = [
+                        'position_id' => $lastParentStep->position_id,
+                        'requires_attachment' => $lastParentStep->requires_attachment,
+                        'tier_label' => 'Induk ('.$parentOrg->unit_name.')',
+                    ];
+                }
+            }
+        }
+
+        // ─── Tier 2a: BEM Polinema & Pembina (Mekanisme Dinamis) ─────────────
+        // Ormawa (kecuali BEM & DPM) selalu melewati BEM Polinema (Internal & Lintas Jurusan)
         if (
             $borrowerUnit->level === 'Organisasi'
-            && $eventScope === 'Lintas Jurusan'
+            && ! str_contains(strtolower($borrowerUnit->unit_name), 'bem')
+            && ! str_contains(strtolower($borrowerUnit->unit_name), 'perwakilan')
         ) {
             $bemUnit = $this->findBemUnit();
             if ($bemUnit && $bemUnit->id !== $borrowerUnit->id) {
@@ -111,6 +126,20 @@ class WorkflowBridgeService
                         'tier_label' => 'BEM ('.$bemUnit->unit_name.')',
                     ];
                 }
+            }
+
+            // Setelah BEM, periksa jika ormawa peminjam memiliki jabatan dengan kata kunci 'Pembina'
+            $operator = config('database.default') === 'sqlite' ? 'like' : 'ilike';
+            $pembinaPos = Position::where('unit_id', $borrowerUnit->id)
+                ->where('name', $operator, '%Pembina%')
+                ->first();
+
+            if ($pembinaPos) {
+                $steps[] = [
+                    'position_id' => $pembinaPos->id,
+                    'requires_attachment' => false,
+                    'tier_label' => 'Pembina ('.$borrowerUnit->unit_name.')',
+                ];
             }
         }
 
@@ -137,13 +166,13 @@ class WorkflowBridgeService
                 $pusatSteps = $this->fetchWorkflowSteps($pusatUnit->id, 'Internal');
                 $wadir3Step = null;
                 foreach ($pusatSteps as $s) {
-                    $pos = \App\Models\Position::find($s->position_id);
+                    $pos = Position::find($s->position_id);
                     if ($pos && str_contains(strtolower($pos->name), 'iii')) {
                         $wadir3Step = $s;
                         break;
                     }
                 }
-                
+
                 // Fallback to the last step if name 'III' not matched
                 if (! $wadir3Step && $pusatSteps->isNotEmpty()) {
                     $wadir3Step = $pusatSteps->last();
@@ -220,7 +249,6 @@ class WorkflowBridgeService
                 $q->where('unit_name', $operator, '%BEM Polinema%')
                     ->orWhere('unit_name', $operator, '%BEM%');
             })
-            ->whereNull('parent_id')
             ->first();
 
         // Strategy 2: Fallback - Organisasi with no parent jurusan

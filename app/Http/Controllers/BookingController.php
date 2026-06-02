@@ -9,6 +9,7 @@ use App\Models\BookingAttachment;
 use App\Models\BookingLog;
 use App\Models\Building;
 use App\Models\Room;
+use App\Models\Unit;
 use App\Models\User;
 use App\Models\Workflow;
 use App\Models\WorkflowRequirement;
@@ -51,8 +52,8 @@ class BookingController extends Controller
             ->whereNull('room_id')
             ->get();
 
-        // Ambil data semua unit untuk pemetaan dinamis di client-side
-        $units = \App\Models\Unit::all();
+        // Ambil data semua unit beserta jabatannya untuk pemetaan dinamis di client-side
+        $units = Unit::with('positions')->get();
 
         // Mengirimkan variabel $buildings, $workflows, dan $units ke halaman view
         return view('user.peminjam.booking', compact('buildings', 'workflows', 'units'));
@@ -73,9 +74,14 @@ class BookingController extends Controller
             'event_description' => 'nullable|string',
             'event_scope' => 'required|in:Internal,Lintas Jurusan',
             'booking_date' => 'required|date|after_or_equal:today',
+            'booking_end_date' => 'nullable|date|after_or_equal:booking_date',
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'required|date_format:H:i|after:start_time',
         ]);
+
+        if (empty($validated['booking_end_date'])) {
+            $validated['booking_end_date'] = $validated['booking_date'];
+        }
 
         $room = Room::findOrFail($validated['room_id']);
         $eventScope = $validated['event_scope'];
@@ -110,8 +116,9 @@ class BookingController extends Controller
             $booking = DB::transaction(function () use ($validated, $request, $mandatoryRequirements, $eventScope) {
 
                 $conflict = Booking::where('room_id', $validated['room_id'])
-                    ->where('booking_date', $validated['booking_date'])
                     ->whereNotIn('status', ['Rejected', 'Cancelled'])
+                    ->where('booking_date', '<=', $validated['booking_end_date'])
+                    ->where('booking_end_date', '>=', $validated['booking_date'])
                     ->where(function ($q) use ($validated) {
                         $q->where('start_time', '<', $validated['end_time'])
                             ->where('end_time', '>', $validated['start_time']);
@@ -121,9 +128,14 @@ class BookingController extends Controller
 
                 if ($conflict) {
                     $isBlocked = $conflict->event_name === 'Libur Nasional';
+
+                    $conflictDates = $conflict->booking_date->format('Y-m-d') === $conflict->booking_end_date->format('Y-m-d')
+                        ? $conflict->booking_date->format('Y-m-d')
+                        : $conflict->booking_date->format('Y-m-d').' s/d '.$conflict->booking_end_date->format('Y-m-d');
+
                     $message = $isBlocked
-                        ? "Tanggal {$validated['booking_date']} diblokir sebagai Libur Nasional. Peminjaman tidak dapat dilakukan."
-                        : "Ruangan sudah dibooking pada waktu tersebut. Konflik dengan booking #{$conflict->id} ({$conflict->start_time} - {$conflict->end_time}).";
+                        ? "Tanggal {$conflictDates} diblokir sebagai Libur Nasional. Peminjaman tidak dapat dilakukan."
+                        : "Ruangan sudah dibooking pada waktu tersebut. Konflik dengan booking #{$conflict->id} ({$conflictDates}, {$conflict->start_time} - {$conflict->end_time}).";
 
                     throw new \Exception($message);
                 }
@@ -138,6 +150,7 @@ class BookingController extends Controller
                     'event_description' => $validated['event_description'] ?? null,
                     'event_scope' => $eventScope,
                     'booking_date' => $validated['booking_date'],
+                    'booking_end_date' => $validated['booking_end_date'],
                     'start_time' => $validated['start_time'],
                     'end_time' => $validated['end_time'],
                     'current_step' => $isMaintenance ? 0 : 1,
@@ -411,6 +424,7 @@ class BookingController extends Controller
             'user',
             'workflow.requirements',
             'workflow.steps.position',
+            'bookingSteps.position',
             'approvals',
             'logs.actor',
             'attachments',

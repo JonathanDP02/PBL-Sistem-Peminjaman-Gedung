@@ -23,7 +23,7 @@ class ApproverWorkflowEnhancedTest extends TestCase
         parent::setUp();
         $this->seed(DatabaseSeeder::class);
 
-        $this->approver = User::where('email', 'kaprodi.ti@spacein.test')->first();
+        $this->approver = User::where('email', 'kajur.ti@spacein.test')->first();
         $this->borrower = User::where('email', 'user@spacein.test')->first();
 
         $this->room = Room::where('room_name', 'Ruang Kelas TI')->first();
@@ -33,7 +33,7 @@ class ApproverWorkflowEnhancedTest extends TestCase
             throw new \Exception('Room or Workflow not found in seeded data. Check DatabaseSeeder.');
         }
 
-        // Cache the kaprodi position_id for creating booking_steps
+        // Cache the kajur position_id for creating booking_steps
         $this->approverPositionId = $this->approver->position_id;
     }
 
@@ -154,9 +154,10 @@ class ApproverWorkflowEnhancedTest extends TestCase
         ]);
         $this->createBookingStepsFor($booking);
 
-        $this->actingAs($this->approver)->postJson(route('approval.approve', $booking->id), [
+        $responseApprove = $this->actingAs($this->approver)->postJson(route('approval.approve', $booking->id), [
             'notes' => 'Sesuai prosedur.',
         ]);
+        $responseApprove->assertStatus(200);
 
         // 2. Check history page
         $response = $this->actingAs($this->approver)->get(route('riwayat'));

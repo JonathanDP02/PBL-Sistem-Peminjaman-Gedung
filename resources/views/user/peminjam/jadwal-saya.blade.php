@@ -111,15 +111,6 @@
                         <p class="font-heading text-2xl font-bold text-slate-900 dark:text-white transition-colors">{{ $hoursUsed }} <span class="text-sm font-normal text-slate-500 dark:text-gray-400">Jam</span></p>
                     </div>
                 </div>
-                <div class="bg-white dark:bg-[#151515] border border-slate-200 dark:border-kinetic-border rounded-2xl p-4 flex items-center gap-4 shadow-sm dark:shadow-none min-w-[220px] transition-colors">
-                    <div class="w-12 h-12 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center border border-blue-100 dark:border-transparent transition-colors">
-                        <i class="ph ph-shield-check text-2xl"></i>
-                    </div>
-                    <div>
-                        <p class="text-[10px] font-bold tracking-widest text-slate-400 dark:text-gray-500 uppercase">Skor Kepatuhan</p>
-                        <p class="font-heading text-2xl font-bold text-slate-900 dark:text-white transition-colors">{{ number_format($complianceScore, 1) }} <span class="text-sm font-normal text-slate-500 dark:text-gray-400">/ 5.0</span></p>
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -157,58 +148,40 @@
             <div id="calendar" class="text-slate-800 dark:text-slate-200"></div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 pb-4">
-            {{-- REKOMENDASI --}}
-            <div class="lg:col-span-2 bg-white dark:bg-[#151515] rounded-3xl p-6 md:p-8 border border-slate-200 dark:border-kinetic-border shadow-sm dark:shadow-none flex flex-col transition-colors">
-                <div class="flex justify-between items-center mb-6">
-                    <h3 class="font-heading font-bold flex items-center gap-2 text-slate-900 dark:text-white transition-colors">
-                        <i class="ph-fill ph-sparkle text-kinetic-primary text-lg"></i> Rekomendasi Slot Hari Ini
-                    </h3>
-                </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    @php
-                        $recommendedRooms = \App\Models\Room::take(2)->get();
-                        $recTimes = [['start' => '15:00', 'end' => '17:00'], ['start' => '08:30', 'end' => '10:00']];
-                        $todayStr = now()->format('Y-m-d');
-                    @endphp
-
-                    @foreach($recommendedRooms as $index => $room)
-                        @if(isset($recTimes[$index]))
-                        <a href="{{ route('booking', ['room_id' => $room->id, 'date' => $todayStr, 'start_time' => $recTimes[$index]['start']]) }}" class="bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-2xl p-5 flex justify-between items-center group cursor-pointer hover:border-teal-400 dark:hover:border-kinetic-primary transition-colors">
-                            <div>
-                                <p class="text-[10px] font-bold text-slate-500 dark:text-gray-400 uppercase tracking-widest mb-1">{{ $room->room_name }}</p>
-                                <p class="font-bold text-sm text-slate-900 dark:text-white mb-3 transition-colors">{{ $recTimes[$index]['start'] }} - {{ $recTimes[$index]['end'] }}</p>
-                                <span class="px-2.5 py-1 bg-teal-100/50 dark:bg-kinetic-primary/10 text-teal-700 dark:text-kinetic-primary text-[10px] font-bold rounded uppercase tracking-wider">Tersedia</span>
-                            </div>
-                            <div class="w-8 h-8 rounded-full bg-white dark:bg-[#222] flex items-center justify-center border border-slate-200 dark:border-[#333] group-hover:bg-teal-50 dark:group-hover:bg-kinetic-primary/10 transition-colors">
-                                <i class="ph ph-arrow-right text-slate-400 dark:text-gray-500 group-hover:text-kinetic-primary transition-colors"></i>
-                            </div>
-                        </a>
-                        @endif
-                    @endforeach
-                </div>
-            </div>
-
-            {{-- KAPASITAS MINGGUAN --}}
-            <div class="bg-white dark:bg-[#151515] rounded-3xl p-6 md:p-8 border border-slate-200 dark:border-kinetic-border shadow-sm dark:shadow-none flex flex-col justify-center relative overflow-hidden transition-colors">
-                <div class="absolute -right-10 -bottom-10 opacity-5 dark:opacity-10 pointer-events-none">
-                    <i class="ph-fill ph-chart-bar text-9xl text-slate-900 dark:text-white"></i>
-                </div>
-                
-                <p class="text-[10px] font-bold text-slate-500 dark:text-gray-400 uppercase tracking-widest mb-3 relative z-10">Kapasitas Mingguan</p>
-                <div class="flex items-end gap-3 mb-6 relative z-10">
-                    <h2 class="font-heading text-6xl font-extrabold text-slate-900 dark:text-white transition-colors">84<span class="text-3xl text-slate-400">%</span></h2>
-                    <span class="text-xs font-bold text-teal-600 dark:text-kinetic-primary mb-2.5 flex items-center gap-1 bg-teal-50 dark:bg-kinetic-primary/10 px-2 py-1 rounded-md">
-                        <i class="ph-bold ph-arrow-up text-[10px]"></i> 12% dari bln lalu
-                    </span>
-                </div>
-                
-                <div class="h-2.5 w-full bg-slate-100 dark:bg-[#2A2A2A] rounded-full overflow-hidden relative z-10 transition-colors">
-                    <div class="h-full bg-gradient-to-r from-kinetic-primary to-kinetic-secondary rounded-full shadow-[0_0_10px_rgba(20,184,166,0.5)]" style="width: 84%"></div>
-                </div>
+        <div class="bg-white dark:bg-[#151515] rounded-3xl p-6 md:p-8 border border-slate-200 dark:border-kinetic-border shadow-sm dark:shadow-none flex flex-col transition-colors pb-8">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="font-heading font-bold flex items-center gap-2 text-slate-900 dark:text-white transition-colors">
+                    <i class="ph-fill ph-sparkle text-kinetic-primary text-lg"></i> Rekomendasi Slot Hari Ini
+                </h3>
             </div>
             
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                @php
+                    $recommendedRooms = \App\Models\Room::take(4)->get();
+                    $recTimes = [
+                        ['start' => '15:00', 'end' => '17:00'], 
+                        ['start' => '08:30', 'end' => '10:00'],
+                        ['start' => '10:30', 'end' => '12:00'],
+                        ['start' => '13:00', 'end' => '15:00']
+                    ];
+                    $todayStr = now()->format('Y-m-d');
+                @endphp
+
+                @foreach($recommendedRooms as $index => $room)
+                    @if(isset($recTimes[$index]))
+                    <a href="{{ route('booking', ['room_id' => $room->id, 'date' => $todayStr, 'start_time' => $recTimes[$index]['start']]) }}" class="bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-2xl p-5 flex justify-between items-center group cursor-pointer hover:border-teal-400 dark:hover:border-kinetic-primary transition-colors">
+                        <div>
+                            <p class="text-[10px] font-bold text-slate-500 dark:text-gray-400 uppercase tracking-widest mb-1">{{ $room->room_name }}</p>
+                            <p class="font-bold text-sm text-slate-900 dark:text-white mb-3 transition-colors">{{ $recTimes[$index]['start'] }} - {{ $recTimes[$index]['end'] }}</p>
+                            <span class="px-2.5 py-1 bg-teal-100/50 dark:bg-kinetic-primary/10 text-teal-700 dark:text-kinetic-primary text-[10px] font-bold rounded uppercase tracking-wider">Tersedia</span>
+                        </div>
+                        <div class="w-8 h-8 rounded-full bg-white dark:bg-[#222] flex items-center justify-center border border-slate-200 dark:border-[#333] group-hover:bg-teal-50 dark:group-hover:bg-kinetic-primary/10 transition-colors">
+                            <i class="ph ph-arrow-right text-slate-400 dark:text-gray-500 group-hover:text-kinetic-primary transition-colors"></i>
+                        </div>
+                    </a>
+                    @endif
+                @endforeach
+            </div>
         </div>
 
 

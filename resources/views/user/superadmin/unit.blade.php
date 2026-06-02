@@ -151,24 +151,68 @@
                                             <div class="absolute -left-6 top-0 bottom-4 w-px bg-slate-200 dark:bg-[#2A2A2A] z-0"></div>
 
                                             <template x-for="org in (jurusan.children || [])" :key="org.id">
-                                                <div class="relative flex items-center justify-between py-2.5 group">
-                                                    <div class="absolute -left-6 top-1/2 w-6 h-px bg-slate-200 dark:bg-[#2A2A2A] z-0"></div>
-                                                    <div class="flex items-center gap-3 relative z-10">
-                                                        <span class="w-2 h-2 rounded-full bg-teal-500 dark:bg-kinetic-primary group-hover:scale-150 transition-transform shrink-0"></span>
-                                                        <div>
-                                                            <h4 class="text-xs font-bold text-slate-700 dark:text-gray-300 group-hover:text-kinetic-primary transition-colors" x-text="org.unit_name"></h4>
-                                                            <p class="text-[9px] text-slate-400 dark:text-gray-600 uppercase tracking-wider" x-text="org.description ? 'Organisasi • ' + org.description : 'Organisasi'"></p>
+                                                <div class="relative mb-3">
+                                                    <div class="absolute -left-6 top-6 w-6 h-px bg-slate-200 dark:bg-[#2A2A2A] z-0"></div>
+
+                                                    {{-- Organisasi Row --}}
+                                                    <div class="bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] rounded-xl p-3 flex items-center justify-between z-10 relative group">
+                                                        <div class="flex items-center gap-3">
+                                                            <button @click="toggleNode(org.id)"
+                                                                    class="w-6 h-6 flex items-center justify-center rounded-md transition"
+                                                                    :class="(org.children && org.children.length > 0)
+                                                                        ? 'text-teal-500 hover:bg-teal-500/10 cursor-pointer'
+                                                                        : 'text-slate-300 dark:text-gray-700 cursor-default'">
+                                                                <i class="ph-bold text-xs"
+                                                                   :class="isOpen(org.id) ? 'ph-caret-down' : 'ph-caret-right'"></i>
+                                                            </button>
+                                                            <span class="w-2 h-2 rounded-full bg-teal-500 dark:bg-kinetic-primary shrink-0"></span>
+                                                            <div>
+                                                                <h4 class="text-xs font-bold text-slate-700 dark:text-gray-300 group-hover:text-kinetic-primary transition-colors" x-text="org.unit_name"></h4>
+                                                                <p class="text-[9px] text-slate-400 dark:text-gray-600 uppercase tracking-wider" x-text="org.description ? 'Organisasi • ' + org.description : 'Organisasi'"></p>
+                                                            </div>
+                                                        </div>
+                                                        <div class="flex items-center gap-1.5 relative z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <button @click="editUnit(org)"
+                                                                    class="w-6 h-6 flex items-center justify-center rounded-md hover:bg-kinetic-primary/10 text-slate-400 hover:text-kinetic-primary transition">
+                                                                <i class="ph ph-pencil-simple text-xs"></i>
+                                                            </button>
+                                                            <button @click="deleteUnit(org)"
+                                                                    class="w-6 h-6 flex items-center justify-center rounded-md hover:bg-red-500/10 text-slate-400 hover:text-red-500 transition">
+                                                                <i class="ph ph-trash text-xs"></i>
+                                                            </button>
                                                         </div>
                                                     </div>
-                                                    <div class="flex items-center gap-1.5 relative z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                        <button @click="editUnit(org)"
-                                                                class="w-6 h-6 flex items-center justify-center rounded-md hover:bg-kinetic-primary/10 text-slate-400 hover:text-kinetic-primary transition">
-                                                            <i class="ph ph-pencil-simple text-xs"></i>
-                                                        </button>
-                                                        <button @click="deleteUnit(org)"
-                                                                class="w-6 h-6 flex items-center justify-center rounded-md hover:bg-red-500/10 text-slate-400 hover:text-red-500 transition">
-                                                            <i class="ph ph-trash text-xs"></i>
-                                                        </button>
+
+                                                    {{-- Sub-Organisasi Level --}}
+                                                    <div x-show="isOpen(org.id) && org.children && org.children.length > 0"
+                                                         x-transition:enter="transition ease-out duration-200"
+                                                         x-transition:enter-start="opacity-0 -translate-y-1"
+                                                         x-transition:enter-end="opacity-100 translate-y-0"
+                                                         class="ml-8 mt-2 relative">
+                                                        <div class="absolute -left-6 top-0 bottom-4 w-px bg-slate-200 dark:bg-[#2A2A2A] z-0"></div>
+
+                                                        <template x-for="subOrg in (org.children || [])" :key="subOrg.id">
+                                                            <div class="relative flex items-center justify-between py-2 group">
+                                                                <div class="absolute -left-6 top-1/2 w-6 h-px bg-slate-200 dark:bg-[#2A2A2A] z-0"></div>
+                                                                <div class="flex items-center gap-3 relative z-10">
+                                                                    <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 group-hover:scale-150 transition-transform shrink-0"></span>
+                                                                    <div>
+                                                                        <h4 class="text-[11px] font-bold text-slate-600 dark:text-gray-400 group-hover:text-kinetic-primary transition-colors" x-text="subOrg.unit_name"></h4>
+                                                                        <p class="text-[8px] text-slate-400 dark:text-gray-600 uppercase tracking-wider" x-text="subOrg.description ? 'Sub-Organisasi • ' + subOrg.description : 'Sub-Organisasi'"></p>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="flex items-center gap-1.5 relative z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                    <button @click="editUnit(subOrg)"
+                                                                            class="w-5 h-5 flex items-center justify-center rounded-md hover:bg-kinetic-primary/10 text-slate-400 hover:text-kinetic-primary transition">
+                                                                        <i class="ph ph-pencil-simple text-[10px]"></i>
+                                                                    </button>
+                                                                    <button @click="deleteUnit(subOrg)"
+                                                                            class="w-5 h-5 flex items-center justify-center rounded-md hover:bg-red-500/10 text-slate-400 hover:text-red-500 transition">
+                                                                        <i class="ph ph-trash text-[10px]"></i>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </template>
                                                     </div>
                                                 </div>
                                             </template>

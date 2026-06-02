@@ -59,6 +59,6 @@ class GenerateApprovalCertificateJob implements ShouldQueue
         ]);
 
         // Kirim email ke peminjam dengan PDF attachment
-        Mail::send(new ApprovalCertificateMail($booking, $pdfPath));
+        Mail::to($booking->user->email)->send(new ApprovalCertificateMail($booking, $pdfPath));
     }
 }

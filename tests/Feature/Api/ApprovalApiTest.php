@@ -3,6 +3,7 @@
 namespace Tests\Feature\Api;
 
 use App\Models\Booking;
+use App\Models\BookingStep;
 use App\Models\Building;
 use App\Models\Position;
 use App\Models\Role;
@@ -88,6 +89,15 @@ class ApprovalApiTest extends TestCase
             'booking_date' => now()->addDays(5)->toDateString(),
             'start_time' => '09:00:00',
             'end_time' => '12:00:00',
+        ]);
+
+        // Create immutable booking_steps snapshot (required by ApprovalController)
+        BookingStep::create([
+            'booking_id' => $this->booking->id,
+            'position_id' => $position->id,
+            'step_order' => 1,
+            'requires_attachment' => false,
+            'tier_label' => 'Unit Pengelola',
         ]);
     }
 

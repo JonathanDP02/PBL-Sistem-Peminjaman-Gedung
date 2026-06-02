@@ -662,13 +662,16 @@ class ApprovalController extends Controller
             'room.building',
             'user.unit',
             'workflow.steps.position',
+            'bookingSteps.position',
             'attachments',
             'approvals.approver.position',
-            'approvals.step',
+            'approvals.bookingStep',
         ])->findOrFail($id);
 
-        // Verify approver can access this booking (must have position in workflow)
-        $hasAccess = $booking->workflow->steps
+        // Verify approver can access this booking via instantiated booking_steps
+        // (NOT workflow.steps — WRI approvers exist in booking_steps but not in the
+        //  room-owner's workflow template, e.g. Graha Polinema owned by Pusat)
+        $hasAccess = $booking->bookingSteps
             ->where('position_id', $positionId)
             ->isNotEmpty();
 

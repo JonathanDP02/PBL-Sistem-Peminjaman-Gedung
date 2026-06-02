@@ -8,8 +8,8 @@ use App\Mail\BookingRejectedMail;
 use App\Models\Approval;
 use App\Models\Booking;
 use App\Models\BookingLog;
+use App\Models\BookingStep;
 use App\Models\User;
-use App\Models\WorkflowStep;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -19,6 +19,11 @@ use Illuminate\Support\Facades\Mail;
  * API v1 ApprovalController
  * Handles approval operations for Approver role
  * All endpoints return JSON responses matching API_DOCUMENTATION.md
+ *
+ * IMPORTANT: All approval logic reads from `booking_steps` (immutable snapshot
+ * created at booking submission time), NOT from `workflow_steps` (mutable template).
+ * This ensures changes to workflow templates after a booking is submitted have no
+ * effect on in-flight bookings.
  */
 class ApprovalController extends Controller
 {
@@ -43,12 +48,13 @@ class ApprovalController extends Controller
             'room.building',
             'user.unit',
             'workflow.steps.position',
+            'bookingSteps.position',
             'attachments',
             'approvals.approver.position',
-            'approvals.step',
+            'approvals.bookingStep',
         ])
             ->whereIn('status', ['Pending', 'Revising'])
-            ->whereHas('workflow.steps', function ($q) use ($positionId) {
+            ->whereHas('bookingSteps', function ($q) use ($positionId) {
                 $q->where('position_id', $positionId)
                     ->whereColumn('step_order', 'bookings.current_step');
             })
@@ -78,13 +84,14 @@ class ApprovalController extends Controller
             'room.building',
             'user.unit',
             'workflow.steps.position',
+            'bookingSteps.position',
             'attachments',
             'approvals.approver.position',
-            'approvals.step',
+            'approvals.bookingStep',
         ])->findOrFail($bookingId);
 
-        // Verify approver has access to this booking
-        $currentStep = $booking->workflow->steps
+        // Verify approver has access to this booking via instantiated booking_steps
+        $currentStep = $booking->bookingSteps
             ->where('step_order', $booking->current_step)
             ->first();
 
@@ -121,12 +128,14 @@ class ApprovalController extends Controller
             DB::transaction(function () use ($request, $bookingId, $approver, $positionId, &$booking, &$approval) {
                 $booking = Booking::lockForUpdate()->findOrFail($bookingId);
 
-                $currentStep = WorkflowStep::where('workflow_id', $booking->workflow_id)
+                // Use immutable booking_steps snapshot — not the mutable workflow template
+                $currentStep = BookingStep::where('booking_id', $booking->id)
                     ->where('step_order', $booking->current_step)
                     ->where('position_id', $positionId)
                     ->firstOrFail();
 
-                $nextStep = WorkflowStep::where('workflow_id', $booking->workflow_id)
+                // Check if there is a next step in the instantiated chain
+                $nextStep = BookingStep::where('booking_id', $booking->id)
                     ->where('step_order', '>', $booking->current_step)
                     ->orderBy('step_order')
                     ->first();
@@ -145,7 +154,8 @@ class ApprovalController extends Controller
                 $approval = Approval::create([
                     'booking_id' => $booking->id,
                     'approver_id' => $approver->id,
-                    'step_id' => $currentStep->id,
+                    'booking_step_id' => $currentStep->id,
+                    'step_id' => null,
                     'approval_status' => 'Approved',
                     'notes' => $request->notes,
                     'approved_at' => now(),
@@ -155,7 +165,7 @@ class ApprovalController extends Controller
                 BookingLog::create([
                     'booking_id' => $booking->id,
                     'actor_id' => $approver->id,
-                    'step_id' => $currentStep->id,
+                    'step_id' => null,
                     'action' => 'APPROVED',
                     'notes' => $request->notes ?? 'Disetujui.',
                 ]);
@@ -166,13 +176,12 @@ class ApprovalController extends Controller
             // Dispatch intermediate email notifications outside transaction
             try {
                 if ($booking->status === 'Pending') {
-                    $nextStepOrder = $booking->current_step;
-                    $nextWorkflowStep = WorkflowStep::where('workflow_id', $booking->workflow_id)
-                        ->where('step_order', $nextStepOrder)
+                    $nextBookingStep = BookingStep::where('booking_id', $booking->id)
+                        ->where('step_order', $booking->current_step)
                         ->first();
 
-                    if ($nextWorkflowStep) {
-                        $nextApprovers = User::where('position_id', $nextWorkflowStep->position_id)->get();
+                    if ($nextBookingStep) {
+                        $nextApprovers = User::where('position_id', $nextBookingStep->position_id)->get();
                         \Log::info('Attempting to send intermediate email to '.$nextApprovers->count().' approvers for booking #'.$booking->id);
                         foreach ($nextApprovers as $nextApprover) {
                             Mail::to($nextApprover->email)->send(new ApprovalNeededMail($booking, $nextApprover));
@@ -184,6 +193,21 @@ class ApprovalController extends Controller
                 \Log::error('Mail Error (Intermediate Approval Needed booking #'.$booking->id.'): '.$e->getMessage());
             }
 
+            // Build next_approver info from booking_steps
+            $nextStepInfo = null;
+            if ($booking->status !== 'Approved') {
+                $nextBs = BookingStep::where('booking_id', $booking->id)
+                    ->where('step_order', $booking->current_step)
+                    ->with('position')
+                    ->first();
+                $nextStepInfo = $nextBs ? [
+                    'step_order' => $nextBs->step_order,
+                    'tier_label' => $nextBs->tier_label,
+                    'position' => $nextBs->position?->name,
+                    'requires_attachment' => $nextBs->requires_attachment,
+                ] : null;
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Booking berhasil disetujui.',
@@ -191,17 +215,7 @@ class ApprovalController extends Controller
                     'id' => $booking->id,
                     'status' => $booking->status,
                     'current_step' => $booking->current_step,
-                    'next_approver' => $booking->status !== 'Approved' ? [
-                        'step_order' => $booking->workflow->steps
-                            ->where('step_order', $booking->current_step)
-                            ->first()?->step_order,
-                        'position' => $booking->workflow->steps
-                            ->where('step_order', $booking->current_step)
-                            ->first()?->position->name,
-                        'requires_attachment' => $booking->workflow->steps
-                            ->where('step_order', $booking->current_step)
-                            ->first()?->requires_attachment,
-                    ] : null,
+                    'next_approver' => $nextStepInfo,
                 ],
                 'log' => [
                     'id' => $approval->id,
@@ -240,7 +254,8 @@ class ApprovalController extends Controller
             DB::transaction(function () use ($request, $bookingId, $approver, $positionId, &$booking, &$approval) {
                 $booking = Booking::lockForUpdate()->findOrFail($bookingId);
 
-                $currentStep = WorkflowStep::where('workflow_id', $booking->workflow_id)
+                // Use immutable booking_steps snapshot — not the mutable workflow template
+                $currentStep = BookingStep::where('booking_id', $booking->id)
                     ->where('step_order', $booking->current_step)
                     ->where('position_id', $positionId)
                     ->firstOrFail();
@@ -253,7 +268,8 @@ class ApprovalController extends Controller
                 $approval = Approval::create([
                     'booking_id' => $booking->id,
                     'approver_id' => $approver->id,
-                    'step_id' => $currentStep->id,
+                    'booking_step_id' => $currentStep->id,
+                    'step_id' => null,
                     'approval_status' => 'Rejected',
                     'notes' => $request->notes,
                     'approved_at' => now(),
@@ -263,7 +279,7 @@ class ApprovalController extends Controller
                 BookingLog::create([
                     'booking_id' => $booking->id,
                     'actor_id' => $approver->id,
-                    'step_id' => $currentStep->id,
+                    'step_id' => null,
                     'action' => 'REJECTED',
                     'notes' => $request->notes,
                 ]);
@@ -309,33 +325,40 @@ class ApprovalController extends Controller
     /**
      * Format single booking menjadi approval response format
      * Sesuai API_DOCUMENTATION.md
+     * Prefers booking_steps (immutable) over workflow.steps (mutable template).
      */
     private function formatApprovalResponse($booking, $positionId)
     {
-        $currentStep = $booking->workflow->steps
+        // Prefer instantiated booking_steps; fallback to workflow template
+        $currentStep = $booking->bookingSteps
             ->where('step_order', $booking->current_step)
             ->where('position_id', $positionId)
-            ->first();
+            ->first()
+            ?? $booking->workflow?->steps
+                ->where('step_order', $booking->current_step)
+                ->where('position_id', $positionId)
+                ->first();
 
         $previousApprovals = $booking->approvals
-            ->sortBy('step_id')
+            ->sortBy('created_at')
             ->map(function ($approval) {
+                $stepRecord = $approval->bookingStep ?? $approval->step;
+
                 return [
-                    'step_order' => $approval->step->step_order,
-                    'position' => $approval->step->position->name ?? null,
-                    'approver_name' => $approval->approver->name,
+                    'step_order' => $stepRecord?->step_order ?? null,
+                    'position' => $stepRecord?->position?->name ?? null,
+                    'approver_name' => $approval->approver?->name,
                     'approval_status' => ucfirst($approval->approval_status),
                     'approved_at' => $approval->approved_at->toIso8601String(),
                     'notes' => $approval->notes,
                 ];
             })
-            ->values()
             ->filter(function ($approval) use ($currentStep) {
-                return $approval['step_order'] < $currentStep->step_order;
+                return $currentStep && $approval['step_order'] < $currentStep->step_order;
             })
             ->values();
 
-        $documentsUploaded = $booking->attachments->map(function ($attachment) {
+        $documentsUploaded = $booking->attachments->map(function ($attachment) use ($booking) {
             return [
                 'id' => $attachment->id,
                 'document_name' => $attachment->document_name,
@@ -346,6 +369,9 @@ class ApprovalController extends Controller
                 'uploaded_by' => $booking->user->name,
             ];
         })->values();
+
+        // Total steps from immutable booking chain
+        $totalSteps = $booking->bookingSteps->count() ?: $booking->workflow?->steps->count() ?? 0;
 
         return [
             'id' => $this->generateApprovalId($booking->id, $currentStep?->id),
@@ -378,19 +404,19 @@ class ApprovalController extends Controller
                 'email' => $booking->user->email,
                 'unit' => [
                     'id' => $booking->user->unit->id,
-                    'name' => $booking->user->unit->name,
+                    'name' => $booking->user->unit->unit_name,
                 ],
             ],
             'workflow' => [
                 'id' => $booking->workflow->id,
                 'name' => $booking->workflow->name,
-                'total_steps' => $booking->workflow->steps->count(),
+                'total_steps' => $totalSteps,
             ],
             'current_approver_required' => [
                 'step_order' => $currentStep?->step_order,
                 'position' => [
                     'id' => $currentStep?->position_id,
-                    'name' => $currentStep?->position->name,
+                    'name' => $currentStep?->position?->name,
                 ],
                 'requires_attachment' => (bool) $currentStep?->requires_attachment,
                 'attachment_type' => $currentStep?->attachment_type ?? null,
@@ -407,6 +433,21 @@ class ApprovalController extends Controller
      */
     private function formatDetailResponse($booking)
     {
+        // Use immutable booking_steps for the steps list
+        $steps = $booking->bookingSteps->count()
+            ? $booking->bookingSteps->map(fn ($step) => [
+                'step_order' => $step->step_order,
+                'tier_label' => $step->tier_label,
+                'position' => $step->position?->name,
+                'requires_attachment' => $step->requires_attachment,
+            ])
+            : $booking->workflow->steps->map(fn ($step) => [
+                'step_order' => $step->step_order,
+                'tier_label' => null,
+                'position' => $step->position->name,
+                'requires_attachment' => $step->requires_attachment,
+            ]);
+
         return [
             'id' => $booking->id,
             'event_name' => $booking->event_name,
@@ -420,9 +461,9 @@ class ApprovalController extends Controller
             'room' => [
                 'id' => $booking->room->id,
                 'room_name' => $booking->room->room_name,
-                'room_code' => $booking->room->room_code,
+                'room_code' => $booking->room->room_code ?? null,
                 'capacity' => $booking->room->capacity,
-                'floor' => $booking->room->floor,
+                'floor' => $booking->room->floor ?? null,
                 'building' => [
                     'id' => $booking->room->building->id,
                     'building_name' => $booking->room->building->building_name,
@@ -436,34 +477,29 @@ class ApprovalController extends Controller
                 'phone' => $booking->user->phone ?? null,
                 'unit' => [
                     'id' => $booking->user->unit->id,
-                    'name' => $booking->user->unit->name,
+                    'name' => $booking->user->unit->unit_name,
                 ],
             ],
             'workflow' => [
                 'id' => $booking->workflow->id,
                 'name' => $booking->workflow->name,
-                'total_steps' => $booking->workflow->steps->count(),
-                'steps' => $booking->workflow->steps->map(fn ($step) => [
-                    'step_order' => $step->step_order,
-                    'position' => $step->position->name,
-                    'requires_attachment' => $step->requires_attachment,
-                ]),
+                'total_steps' => $steps->count(),
+                'steps' => $steps->values(),
             ],
             'approval_timeline' => $booking->approvals
-                ->groupBy('step_id')
-                ->map(function ($approvalsForStep) {
-                    $firstApproval = $approvalsForStep->first();
+                ->sortBy('created_at')
+                ->map(function ($approval) {
+                    $stepRecord = $approval->bookingStep ?? $approval->step;
 
                     return [
-                        'step_order' => $firstApproval->step->step_order,
-                        'position' => $firstApproval->step->position->name,
-                        'approver_name' => $firstApproval->approver->name,
-                        'approval_status' => ucfirst($firstApproval->approval_status),
-                        'approved_at' => $firstApproval->approved_at?->toIso8601String(),
-                        'notes' => $firstApproval->notes,
+                        'step_order' => $stepRecord?->step_order,
+                        'position' => $stepRecord?->position?->name,
+                        'approver_name' => $approval->approver?->name,
+                        'approval_status' => ucfirst($approval->approval_status),
+                        'approved_at' => $approval->approved_at?->toIso8601String(),
+                        'notes' => $approval->notes,
                     ];
                 })
-                ->sortBy('step_order')
                 ->values(),
             'documents' => $booking->attachments->map(fn ($doc) => [
                 'id' => $doc->id,

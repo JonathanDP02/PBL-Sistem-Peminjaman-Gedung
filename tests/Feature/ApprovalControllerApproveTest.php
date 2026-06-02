@@ -269,4 +269,86 @@ class ApprovalControllerApproveTest extends TestCase
         // Sementara: pastikan Mail::fake() tidak throw error (email tidak crash)
         Mail::assertNothingSent(); // Ganti dengan assertSent setelah mail class dibuat
     }
+
+    // =========================================================================
+    // TEST 8 (IMMUTABILITY): Admin mengubah workflow template SETELAH booking
+    // diajukan — booking harus tetap berjalan dengan booking_steps lama,
+    // bukan mengikuti template baru. Ini adalah test keamanan kritis.
+    // =========================================================================
+    public function test_workflow_change_after_submission_does_not_affect_booking(): void
+    {
+        $this->actingAs($this->approver);
+
+        // Simulasi admin menghapus step 2 dari workflow template
+        // (hanya dari workflow_steps, bukan booking_steps)
+        $this->step2->delete();
+
+        // Approve step 1 — harus berhasil meski template sudah diubah
+        $response = $this->postJson(
+            "/approver/approvals/{$this->booking->id}/approve",
+            ['notes' => 'Approve step 1 meski template diubah']
+        );
+
+        $response->assertStatus(200)
+            ->assertJsonPath('success', true);
+
+        $this->booking->refresh();
+
+        // Harus maju ke step 2 (dari booking_steps snapshot), BUKAN langsung Approved
+        // karena step 2 masih ada di booking_steps meski sudah dihapus dari workflow_steps
+        $this->assertEquals(2, $this->booking->current_step);
+        $this->assertEquals('Pending', $this->booking->status);
+
+        // booking_steps snapshot harus masih ada (immutable)
+        $this->assertDatabaseHas('booking_steps', [
+            'booking_id' => $this->booking->id,
+            'step_order' => 2,
+        ]);
+    }
+
+    // =========================================================================
+    // TEST 9 (IMMUTABILITY): Admin menambah step baru ke workflow template
+    // SETELAH booking diajukan — booking harus TIDAK mengikuti step baru,
+    // hanya melanjutkan sesuai booking_steps snapshot-nya.
+    // =========================================================================
+    public function test_new_workflow_step_added_after_submission_is_ignored(): void
+    {
+        $this->actingAs($this->approver);
+
+        // Admin menambah step 3 ke workflow template (setelah booking sudah jalan)
+        $extraPosition = Position::factory()->create(['name' => 'Rektor']);
+        WorkflowStep::create([
+            'workflow_id' => $this->booking->workflow_id,
+            'position_id' => $extraPosition->id,
+            'step_order' => 3,
+            'requires_attachment' => false,
+        ]);
+
+        // Approve step 1 → harus maju ke step 2 (dari booking_steps, bukan template)
+        $this->postJson(
+            "/approver/approvals/{$this->booking->id}/approve",
+            ['notes' => 'Step 1']
+        );
+
+        $this->booking->refresh();
+        $this->assertEquals(2, $this->booking->current_step);
+
+        // Approve step 2 (step terakhir di booking_steps) → harus Hard-Lock
+        $this->booking->update(['current_step' => 2]);
+        $response = $this->postJson(
+            "/approver/approvals/{$this->booking->id}/approve",
+            ['notes' => 'Step 2 terakhir']
+        );
+
+        $response->assertStatus(200)
+            ->assertJsonPath('booking.status', 'Approved');
+
+        $this->booking->refresh();
+
+        // Harus Approved, BUKAN maju ke step 3 (dari template baru yang ditambah admin)
+        $this->assertEquals('Approved', $this->booking->status);
+
+        // Booking_steps snapshot tetap hanya 2 langkah, tidak ada step 3
+        $this->assertCount(2, $this->booking->bookingSteps);
+    }
 }

@@ -46,27 +46,16 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">Pemilik (Unit)</label>
-                    <select id="editUnitPemilik" name="unit_id" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-kinetic-primary transition-colors appearance-none" required>
-                        <option value="">Pilih Unit</option>
-                        @foreach(App\Models\Unit::whereIn('level', ['Pusat', 'Jurusan'])->orderBy('unit_name', 'asc')->get() as $unit)
-                            <option value="{{ $unit->id }}">{{ $unit->unit_name }} ({{ $unit->level }})</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">Alur Persetujuan (SOP)</label>
-                    <select id="editWorkflowId" name="workflow_id" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-kinetic-primary transition-colors appearance-none">
-                        <option value="">-- Tidak Ada Alur (Ruangan Tidak Dapat Dipinjam) --</option>
-                        @foreach(App\Models\Workflow::with('unit')->get() as $workflow)
-                            <option value="{{ $workflow->id }}">{{ $workflow->unit->unit_name ?? 'Global' }} - {{ $workflow->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
+            <div>
+                <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">Pemilik (Unit)</label>
+                <select id="editUnitPemilik" name="unit_id" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-kinetic-primary transition-colors appearance-none" required>
+                    <option value="">Pilih Unit</option>
+                    @foreach(App\Models\Unit::whereIn('level', ['Pusat', 'Jurusan'])->orderBy('unit_name', 'asc')->get() as $unit)
+                        <option value="{{ $unit->id }}">{{ $unit->unit_name }} ({{ $unit->level }})</option>
+                    @endforeach
+                </select>
             </div>
-
+            
             <div>
                 <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">Deskripsi Ruangan</label>
                 <input type="text" id="editDeskripsi" name="description" placeholder="Contoh: Ruang rapat VVIP" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-kinetic-primary transition-colors">

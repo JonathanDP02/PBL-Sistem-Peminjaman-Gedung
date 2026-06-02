@@ -1,4 +1,35 @@
 <x-app-layout title="Booking">
+    <style>
+        /* Sembunyikan default dropdown arrow bawaan OS/browser */
+        select {
+            -webkit-appearance: none !important;
+            -moz-appearance: none !important;
+            appearance: none !important;
+        }
+        select::-ms-expand {
+            display: none !important;
+        }
+
+        /* Sembunyikan native calendar & time picker icons bawaan browser agar tidak double */
+        input[type="date"]::-webkit-calendar-picker-indicator,
+        input[type="time"]::-webkit-calendar-picker-indicator {
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            opacity: 0 !important;
+            cursor: pointer !important;
+            z-index: 20 !important;
+        }
+
+        /* Perbaiki transform scale dot untuk custom radio button */
+        input[name="rental_type"]:checked ~ div .bg-kinetic-primary {
+            transform: scale(1) !important;
+        }
+    </style>
     <div class="relative px-8 pt-4 pb-8 space-y-10 z-10 flex flex-col min-h-full">
         
         <div>
@@ -17,70 +48,116 @@
             @csrf
             <input type="hidden" name="workflow_id" id="workflowIdInput" value="">
 
-            <div class="bg-white dark:bg-[#151515] border border-slate-200 dark:border-kinetic-border shadow-sm dark:shadow-none rounded-3xl p-8 lg:p-10 transition-colors duration-300">
+            <div class="bg-white dark:bg-[#151515] border border-slate-100 dark:border-kinetic-border shadow-xl dark:shadow-none rounded-3xl p-8 lg:p-10 transition-all duration-300">
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
                     
                     <div class="space-y-8">
                         <div>
                             <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-400 tracking-widest uppercase mb-3">Nama Kegiatan <span class="text-red-500">*</span></label>
-                            <div class="relative">
-                                <i class="ph ph-text-t absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-gray-500 text-lg"></i>
+                            <div class="relative group">
+                                <i class="ph ph-text-t absolute left-4 top-1/2 -translate-y-1/4 text-slate-400 dark:text-gray-500 text-lg group-focus-within:text-kinetic-primary transition-colors"></i>
                                 <input type="text" name="event_name" id="eventName" required placeholder="Cth: Rapat Evaluasi Bulanan"
-                                    class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl pl-12 pr-4 py-3.5 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-600 focus:outline-none focus:border-kinetic-primary transition-colors">
+                                    class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl pl-12 pr-4 py-3.5 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-600 focus:outline-none focus:border-kinetic-primary focus:ring-2 focus:ring-kinetic-primary/20 hover:border-slate-300 dark:hover:border-[#3A3A3A] transition-all duration-300">
                             </div>
                         </div>
 
                         <div>
                             <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-400 tracking-widest uppercase mb-3">Pilih Ruangan <span class="text-red-500">*</span></label>
-                            <div class="relative">
-                                <i class="ph ph-buildings absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-gray-500 text-lg"></i>
-                                <select id="roomSelect" name="room_id" required
-                                        class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl pl-12 pr-4 py-3.5 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-600 focus:outline-none focus:border-kinetic-primary transition-colors">
+                            <div class="relative group">
+                                <i class="ph ph-buildings absolute left-4 top-1/2 -translate-y-1/4 text-slate-400 dark:text-gray-500 text-lg group-focus-within:text-kinetic-primary transition-colors"></i>
+                                <select id="roomSelect" name="room_id" required style="appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important;"
+                                        class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl pl-12 pr-10 py-3.5 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-600 focus:outline-none focus:border-kinetic-primary focus:ring-2 focus:ring-kinetic-primary/20 hover:border-slate-300 dark:hover:border-[#3A3A3A] transition-all duration-300 appearance-none cursor-pointer">
                                     <option value="">-- Pilih Ruangan --</option>
                                     @foreach($buildings as $building)
-                                        <optgroup label="{{ $building->building_name }}">
+                                        <optgroup label="{{ $building->building_name }}" class="bg-white dark:bg-[#151515] font-semibold text-xs text-slate-400 dark:text-gray-500">
                                             @foreach($building->rooms as $room)
-                                                <option value="{{ $room->id }}" data-unit-id="{{ $room->unit_id }}" data-capacity="{{ $room->capacity }}">
+                                                <option value="{{ $room->id }}" data-unit-id="{{ $room->unit_id }}" data-capacity="{{ $room->capacity }}" class="bg-white dark:bg-[#1A1A1A] text-sm text-slate-900 dark:text-white py-2">
                                                     {{ $room->room_name }} (Kapasitas: {{ $room->capacity }} orang)
                                                 </option>
                                             @endforeach
                                         </optgroup>
                                     @endforeach
                                 </select>
-                            </div>
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-400 tracking-widest uppercase mb-3">Skop Kegiatan <span class="text-red-500">*</span></label>
-                            <div class="relative">
-                                <i class="ph ph-globe absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-gray-500 text-lg"></i>
-                                <select id="scopeSelect" name="event_scope" required
-                                        class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl pl-12 pr-4 py-3.5 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-600 focus:outline-none focus:border-kinetic-primary transition-colors">
-                                    <option value="Internal">Internal (Hanya lingkup unit/jurusan sendiri)</option>
-                                    <option value="Lintas Jurusan">Lintas Jurusan (Melibatkan BEM & Pusat/Wadir 3)</option>
-                                </select>
+                                <i class="ph-caret-down absolute right-4 top-1/2 -translate-y-1/4 text-slate-400 dark:text-gray-500 pointer-events-none text-sm"></i>
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div>
-                                <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-400 tracking-widest uppercase mb-3">Tanggal <span class="text-red-500">*</span></label>
-                                <div class="relative">
-                                    <i class="ph ph-calendar-blank absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-gray-500 text-lg"></i>
-                                    <input type="date" name="booking_date" id="bookingDate" required class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl pl-12 pr-4 py-3.5 text-sm text-slate-900 dark:text-gray-400 focus:outline-none focus:border-kinetic-primary transition-colors [color-scheme:light] dark:[color-scheme:dark]">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-400 tracking-widest uppercase mb-3">Skop Kegiatan <span class="text-red-500">*</span></label>
+                            <div class="relative group">
+                                <i class="ph ph-globe absolute left-4 top-1/2 -translate-y-1/4 text-slate-400 dark:text-gray-500 text-lg group-focus-within:text-kinetic-primary transition-colors"></i>
+                                <select id="scopeSelect" name="event_scope" required style="appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important;"
+                                        class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl pl-12 pr-10 py-3.5 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-600 focus:outline-none focus:border-kinetic-primary focus:ring-2 focus:ring-kinetic-primary/20 hover:border-slate-300 dark:hover:border-[#3A3A3A] transition-all duration-300 appearance-none cursor-pointer">
+                                    <option value="Internal">Internal (Lingkup unit/jurusan sendiri)</option>
+                                    <option value="Lintas Jurusan">Lintas Jurusan (Melibatkan Wakil Direktur 3)</option>
+                                </select>
+                                <i class="ph-caret-down absolute right-4 top-1/2 -translate-y-1/4 text-slate-400 dark:text-gray-500 pointer-events-none text-sm"></i>
+                            </div>
+                        </div>
+
+                        <!-- Durasi Sewa Toggle -->
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-400 tracking-widest uppercase mb-3">Durasi Sewa <span class="text-red-500">*</span></label>
+                            <div class="grid grid-cols-2 gap-4">
+                                <label class="relative flex items-center gap-4 bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-2xl p-5 cursor-pointer hover:border-kinetic-primary/40 hover:bg-slate-100/50 dark:hover:bg-[#222] transition-all group duration-300 select-none">
+                                    <input type="radio" name="rental_type" value="single" checked class="peer sr-only">
+                                    <div class="absolute inset-0 rounded-2xl border border-transparent peer-checked:border-kinetic-primary peer-checked:bg-kinetic-primary/[0.02] dark:peer-checked:bg-kinetic-primary/[0.04] transition-all duration-300"></div>
+                                    <div class="w-5 h-5 rounded-full border border-slate-300 dark:border-[#333] peer-checked:border-kinetic-primary flex items-center justify-center shrink-0 transition-colors z-10 duration-300">
+                                        <div class="w-2.5 h-2.5 rounded-full bg-kinetic-primary scale-0 peer-checked:scale-100 transition-transform duration-300"></div>
+                                    </div>
+                                    <div class="z-10">
+                                        <p class="text-sm font-bold text-slate-900 dark:text-white transition-colors group-hover:text-kinetic-primary duration-300">Satu Hari</p>
+                                        <p class="text-[10px] text-slate-500 dark:text-gray-500 leading-relaxed mt-0.5">Peminjaman selesai di hari yang sama</p>
+                                    </div>
+                                </label>
+                                <label class="relative flex items-center gap-4 bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-2xl p-5 cursor-pointer hover:border-kinetic-primary/40 hover:bg-slate-100/50 dark:hover:bg-[#222] transition-all group duration-300 select-none">
+                                    <input type="radio" name="rental_type" value="range" class="peer sr-only">
+                                    <div class="absolute inset-0 rounded-2xl border border-transparent peer-checked:border-kinetic-primary peer-checked:bg-kinetic-primary/[0.02] dark:peer-checked:bg-kinetic-primary/[0.04] transition-all duration-300"></div>
+                                    <div class="w-5 h-5 rounded-full border border-slate-300 dark:border-[#333] peer-checked:border-kinetic-primary flex items-center justify-center shrink-0 transition-colors z-10 duration-300">
+                                        <div class="w-2.5 h-2.5 rounded-full bg-kinetic-primary scale-0 peer-checked:scale-100 transition-transform duration-300"></div>
+                                    </div>
+                                    <div class="z-10">
+                                        <p class="text-sm font-bold text-slate-900 dark:text-white transition-colors group-hover:text-kinetic-primary duration-300">Rentang Hari</p>
+                                        <p class="text-[10px] text-slate-500 dark:text-gray-500 leading-relaxed mt-0.5">Peminjaman berlangsung multi-hari berturut-turut</p>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="dateAndTimeGrid">
+                            <!-- Block Tanggal (Kiri) -->
+                            <div class="flex flex-col gap-4">
+                                <div id="startDateCol" class="transition-all duration-300">
+                                    <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-400 tracking-widest uppercase mb-3" id="startDateLabel">Tanggal Kegiatan <span class="text-red-500">*</span></label>
+                                    <div class="relative group">
+                                        <i class="ph ph-calendar-blank absolute left-4 top-1/2 -translate-y-1/4 text-slate-400 dark:text-gray-500 text-lg group-focus-within:text-kinetic-primary transition-colors"></i>
+                                        <input type="date" name="booking_date" id="bookingDate" required class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl pl-12 pr-4 py-3.5 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-600 focus:outline-none focus:border-kinetic-primary focus:ring-2 focus:ring-kinetic-primary/20 hover:border-slate-300 dark:hover:border-[#3A3A3A] transition-all duration-300 [color-scheme:light] dark:[color-scheme:dark]">
+                                    </div>
+                                </div>
+                                <div id="endDateCol" class="hidden transition-all duration-300">
+                                    <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-400 tracking-widest uppercase mb-3">Tanggal Selesai <span class="text-red-500">*</span></label>
+                                    <div class="relative group">
+                                        <i class="ph ph-calendar-blank absolute left-4 top-1/2 -translate-y-1/4 text-slate-400 dark:text-gray-500 text-lg group-focus-within:text-kinetic-primary transition-colors"></i>
+                                        <input type="date" name="booking_end_date" id="bookingEndDate" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl pl-12 pr-4 py-3.5 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-600 focus:outline-none focus:border-kinetic-primary focus:ring-2 focus:ring-kinetic-primary/20 hover:border-slate-300 dark:hover:border-[#3A3A3A] transition-all duration-300 [color-scheme:light] dark:[color-scheme:dark]">
+                                    </div>
                                 </div>
                             </div>
-                            <div>
-                                <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-400 tracking-widest uppercase mb-3">Mulai <span class="text-red-500">*</span></label>
-                                <div class="relative">
-                                    <i class="ph ph-clock absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-gray-500 text-lg"></i>
-                                    <input type="time" name="start_time" id="startTime" required class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl pl-12 pr-4 py-3.5 text-sm text-slate-900 dark:text-gray-400 focus:outline-none focus:border-kinetic-primary transition-colors [color-scheme:light] dark:[color-scheme:dark]">
+
+                            <!-- Block Waktu (Kanan) -->
+                            <div class="flex flex-col gap-4">
+                                <div class="transition-all duration-300">
+                                    <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-400 tracking-widest uppercase mb-3">Waktu Mulai <span class="text-red-500">*</span></label>
+                                    <div class="relative group">
+                                        <i class="ph ph-clock absolute left-4 top-1/2 -translate-y-1/4 text-slate-400 dark:text-gray-500 text-lg group-focus-within:text-kinetic-primary transition-colors"></i>
+                                        <input type="time" name="start_time" id="startTime" required class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl pl-12 pr-4 py-3.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-kinetic-primary focus:ring-2 focus:ring-kinetic-primary/20 hover:border-slate-300 dark:hover:border-[#3A3A3A] transition-all duration-300 [color-scheme:light] dark:[color-scheme:dark]">
+                                    </div>
                                 </div>
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-400 tracking-widest uppercase mb-3">Selesai <span class="text-red-500">*</span></label>
-                                <div class="relative">
-                                    <i class="ph ph-clock absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-gray-500 text-lg"></i>
-                                    <input type="time" name="end_time" id="endTime" required class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl pl-12 pr-4 py-3.5 text-sm text-slate-900 dark:text-gray-400 focus:outline-none focus:border-kinetic-primary transition-colors [color-scheme:light] dark:[color-scheme:dark]">
+                                <div class="transition-all duration-300">
+                                    <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-400 tracking-widest uppercase mb-3">Waktu Selesai <span class="text-red-500">*</span></label>
+                                    <div class="relative group">
+                                        <i class="ph ph-clock absolute left-4 top-1/2 -translate-y-1/4 text-slate-400 dark:text-gray-500 text-lg group-focus-within:text-kinetic-primary transition-colors"></i>
+                                        <input type="time" name="end_time" id="endTime" required class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl pl-12 pr-4 py-3.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-kinetic-primary focus:ring-2 focus:ring-kinetic-primary/20 hover:border-slate-300 dark:hover:border-[#3A3A3A] transition-all duration-300 [color-scheme:light] dark:[color-scheme:dark]">
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -215,8 +292,27 @@
             }
         }
 
-        // ─── Tier 2a: BEM Polinema ───────────────────────────────────────────
-        if (borrowerUnit.level === 'Organisasi' && eventScope === 'Lintas Jurusan') {
+        // Jika memiliki unit induk yang juga bertipe Organisasi (e.g. HMTI sebagai induk WRI)
+        if (borrowerUnit.parent_id) {
+            const parentOrg = findUnit(borrowerUnit.parent_id);
+            if (parentOrg && parentOrg.level === 'Organisasi') {
+                const wf = findUnitWorkflow(parentOrg.id);
+                if (wf && wf.steps && wf.steps.length > 0) {
+                    const lastStep = wf.steps[wf.steps.length - 1];
+                    chain.push({
+                        position_name: lastStep.position ? lastStep.position.name : 'Ketua Unit Induk',
+                        tier: `Induk (${parentOrg.unit_name})`
+                    });
+                }
+            }
+        }
+
+        // ─── Tier 2a: BEM Polinema & Pembina ─────────────────────────────────
+        if (
+            borrowerUnit.level === 'Organisasi'
+            && !borrowerUnit.unit_name.toLowerCase().includes('bem')
+            && !borrowerUnit.unit_name.toLowerCase().includes('perwakilan')
+        ) {
             const bem = findBemUnit();
             if (bem && bem.id !== borrowerUnit.id) {
                 const wf = findUnitWorkflow(bem.id);
@@ -228,6 +324,18 @@
                             position_name: step.position ? step.position.name : 'Posisi Tidak Diketahui',
                             tier: `BEM (${bem.unit_name})`
                         });
+                    });
+                }
+            }
+
+            // Cari jika unit peminjam memiliki jabatan dengan kata kunci 'Pembina'
+            const fullBorrowerUnit = findUnit(borrowerUnit.id);
+            if (fullBorrowerUnit && fullBorrowerUnit.positions) {
+                const pembina = fullBorrowerUnit.positions.find(p => p.name.toLowerCase().includes('pembina'));
+                if (pembina) {
+                    chain.push({
+                        position_name: pembina.name,
+                        tier: `Pembina (${borrowerUnit.unit_name})`
                     });
                 }
             }
@@ -433,10 +541,30 @@
         }
     }
 
-    // LOGIKA BLOKIR 7 HARI & AUTO-FILL
+    // LOGIKA RENTANG HARI / SINGLE DAY & BLOKIR 7 HARI & AUTO-FILL
     document.addEventListener('DOMContentLoaded', function() {
         const dateInput = document.getElementById('bookingDate');
-        
+        const bookingEndDateInput = document.getElementById('bookingEndDate');
+        const endDateCol = document.getElementById('endDateCol');
+        const startDateCol = document.getElementById('startDateCol');
+        const rentalTypeRadios = document.querySelectorAll('input[name="rental_type"]');
+        const startDateLabel = document.getElementById('startDateLabel');
+
+        rentalTypeRadios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (this.value === 'range') {
+                    endDateCol.classList.remove('hidden');
+                    bookingEndDateInput.required = true;
+                    startDateLabel.innerHTML = 'Tanggal Mulai <span class="text-red-500">*</span>';
+                } else {
+                    endDateCol.classList.add('hidden');
+                    bookingEndDateInput.required = false;
+                    bookingEndDateInput.value = '';
+                    startDateLabel.innerHTML = 'Tanggal Kegiatan <span class="text-red-500">*</span>';
+                }
+            });
+        });
+
         // 1. Hitung tanggal Minimum (Hari ini + 7 Hari)
         const today = new Date();
         const minDate = new Date();
@@ -450,6 +578,18 @@
         // 2. Terapkan batas minimum ke input kalender
         if(dateInput) {
             dateInput.setAttribute('min', minDateString);
+            dateInput.addEventListener('change', function() {
+                if (bookingEndDateInput) {
+                    bookingEndDateInput.setAttribute('min', this.value);
+                    if (bookingEndDateInput.value && bookingEndDateInput.value < this.value) {
+                        bookingEndDateInput.value = this.value;
+                    }
+                }
+            });
+        }
+
+        if (bookingEndDateInput) {
+            bookingEndDateInput.setAttribute('min', minDateString);
         }
 
         // 3. Handle Auto-fill dari URL (Misal dari Rekomendasi)

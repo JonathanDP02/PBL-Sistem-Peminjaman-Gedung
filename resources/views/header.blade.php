@@ -6,7 +6,7 @@
             </a>
         </div>
         <div class="flex items-center gap-5">
-            <a href="{{ route('welcome') }}" class="text-white hover:text-[#5EEAD4] font-semibold text-sm px-4 py-2 transition-colors">
+            <a href="{{ route('welcome') }}" class="text-slate-700 dark:text-white  hover:text-[#5EEAD4] font-semibold text-sm px-4 py-2 transition-colors">
                 <!-- Home -->
                 Beranda
             </a>

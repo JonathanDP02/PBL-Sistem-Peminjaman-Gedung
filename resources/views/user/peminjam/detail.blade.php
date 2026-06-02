@@ -147,9 +147,12 @@
                             <div class="opacity-70">
                                 <p class="text-[10px] font-bold text-amber-500 mb-1 uppercase tracking-widest">PENDING</p>
                                 @php
-                                    $currentStep = $booking->workflow->steps->where('step_order', $booking->current_step)->first();
+                                    // Use dynamically built bookingSteps first, fallback to workflow template steps
+                                    $currentBookingStep = $booking->bookingSteps->where('step_order', $booking->current_step)->first();
+                                    $currentStepPosition = $currentBookingStep?->position?->name
+                                        ?? $booking->workflow->steps->where('step_order', $booking->current_step)->first()?->position?->name;
                                 @endphp
-                                <h4 class="text-sm font-bold text-slate-900 dark:text-white mb-1">{{ $currentStep ? 'Persetujuan ' . $currentStep->position->name : 'Menunggu Proses' }}</h4>
+                                <h4 class="text-sm font-bold text-slate-900 dark:text-white mb-1">{{ $currentStepPosition ? 'Persetujuan ' . $currentStepPosition : 'Menunggu Proses' }}</h4>
                                 <p class="text-xs text-slate-500 dark:text-gray-500 leading-relaxed">Verifikasi oleh pejabat terkait</p>
                             </div>
                         </div>
@@ -276,7 +279,8 @@
         if (!confirm('Apakah Anda yakin ingin membatalkan peminjaman ini?')) return;
         
         try {
-            const response = await fetch(`/user/bookings/${id}/cancel`, {
+            const cancelUrl = `{{ route('booking.cancel', ['id' => '__ID__']) }}`.replace('__ID__', id);
+        const response = await fetch(cancelUrl, {
                 method: 'PATCH',
                 headers: {
                     'X-CSRF-TOKEN': '{{ csrf_token() }}',
