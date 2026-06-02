@@ -15,9 +15,6 @@
                     <i class="ph-bold ph-plus-circle text-lg"></i> Tambah Ruangan
                 </button>
 
-                @include('user.admin_unit.modal-tambah-ruang')
-                @include('user.admin_unit.modal-edit-ruang')
-                @include('user.admin_unit.modal-delete-ruang')
             </div>
         </section>
 
@@ -95,6 +92,12 @@
             </button>
         </div>
     </div>
+
+    @push('modals')
+        @include('user.admin_unit.modal-tambah-ruang')
+        @include('user.admin_unit.modal-edit-ruang')
+        @include('user.admin_unit.modal-delete-ruang')
+    @endpush
 
     @push('scripts')
     <script>

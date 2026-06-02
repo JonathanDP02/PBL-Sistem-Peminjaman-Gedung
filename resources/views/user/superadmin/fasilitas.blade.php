@@ -154,66 +154,68 @@
 
     </div>
 
-    <!-- Includes Modals untuk Ruangan -->
-    @include('user.superadmin.modal-tambah-ruang')
-    @include('user.superadmin.modal-edit-ruang')
-    @include('user.superadmin.modal-delete-ruang')
+    @push('modals')
+        <!-- Includes Modals untuk Ruangan -->
+        @include('user.superadmin.modal-tambah-ruang')
+        @include('user.superadmin.modal-edit-ruang')
+        @include('user.superadmin.modal-delete-ruang')
 
-    <!-- Modals untuk Gedung -->
-    <!-- Modal Tambah Gedung -->
-    <div id="modalTambahGedung" class="hidden fixed inset-0 z-[99] flex items-center justify-center bg-black/60 backdrop-blur-sm transition-opacity duration-300 opacity-0">
-        <div class="bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] rounded-2xl w-full max-w-md p-6 relative shadow-2xl transform scale-95 transition-transform duration-300">
-            <button onclick="closeModalGedung()" class="absolute top-4 right-4 text-slate-400 hover:text-red-500"><i class="ph-bold ph-x text-xl"></i></button>
-            <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-4">Tambah Gedung Baru</h3>
-            <form action="{{ route('superadmin.buildings.store') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
-                @csrf
-                <div>
-                    <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-1.5">Nama Gedung</label>
-                    <input type="text" name="building_name" placeholder="Contoh: Gedung Sipil Terpadu" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-lg px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-teal-500 transition-colors" required>
-                </div>
-                <div>
-                    <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-1.5">Lokasi / Keterangan</label>
-                    <input type="text" name="location" placeholder="Contoh: Area Barat Kampus" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-lg px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-teal-500 transition-colors" required>
-                </div>
-                <div>
-                    <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-1.5">Gambar Gedung</label>
-                    <input type="file" name="image" accept="image/*" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-lg px-4 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-teal-500 transition-colors">
-                </div>
-                <div class="flex gap-3 pt-4">
-                    <button type="button" onclick="closeModalGedung()" class="w-1/2 bg-slate-100 dark:bg-[#1A1A1A] text-slate-700 dark:text-white hover:bg-slate-200 py-3 rounded-xl font-bold transition text-sm">Batal</button>
-                    <button type="submit" class="w-1/2 bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 rounded-xl transition text-sm">Simpan</button>
-                </div>
-            </form>
+        <!-- Modals untuk Gedung -->
+        <!-- Modal Tambah Gedung -->
+        <div id="modalTambahGedung" class="hidden fixed inset-0 z-[99] flex items-center justify-center bg-black/60 backdrop-blur-sm transition-opacity duration-300 opacity-0">
+            <div class="bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] rounded-2xl w-full max-w-md p-6 relative shadow-2xl transform scale-95 transition-transform duration-300">
+                <button onclick="closeModalGedung()" class="absolute top-4 right-4 text-slate-400 hover:text-red-500"><i class="ph-bold ph-x text-xl"></i></button>
+                <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-4">Tambah Gedung Baru</h3>
+                <form action="{{ route('superadmin.buildings.store') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+                    @csrf
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-1.5">Nama Gedung</label>
+                        <input type="text" name="building_name" placeholder="Contoh: Gedung Sipil Terpadu" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-lg px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-teal-500 transition-colors" required>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-1.5">Lokasi / Keterangan</label>
+                        <input type="text" name="location" placeholder="Contoh: Area Barat Kampus" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-lg px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-teal-500 transition-colors" required>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-1.5">Gambar Gedung</label>
+                        <input type="file" name="image" accept="image/*" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-lg px-4 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-teal-500 transition-colors">
+                    </div>
+                    <div class="flex gap-3 pt-4">
+                        <button type="button" onclick="closeModalGedung()" class="w-1/2 bg-slate-100 dark:bg-[#1A1A1A] text-slate-700 dark:text-white hover:bg-slate-200 py-3 rounded-xl font-bold transition text-sm">Batal</button>
+                        <button type="submit" class="w-1/2 bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 rounded-xl transition text-sm">Simpan</button>
+                    </div>
+                </form>
+            </div>
         </div>
-    </div>
 
-    <!-- Modal Edit Gedung -->
-    <div id="modalEditGedung" class="hidden fixed inset-0 z-[99] flex items-center justify-center bg-black/60 backdrop-blur-sm transition-opacity duration-300 opacity-0">
-        <div class="bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] rounded-2xl w-full max-w-md p-6 relative shadow-2xl transform scale-95 transition-transform duration-300">
-            <button onclick="closeEditModalGedung()" class="absolute top-4 right-4 text-slate-400 hover:text-red-500"><i class="ph-bold ph-x text-xl"></i></button>
-            <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-4">Edit Gedung</h3>
-            <form id="formEditGedung" action="#" method="POST" enctype="multipart/form-data" class="space-y-4">
-                @csrf
-                @method('PUT')
-                <div>
-                    <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-1.5">Nama Gedung</label>
-                    <input type="text" id="editBuildingName" name="building_name" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-lg px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-teal-500 transition-colors" required>
-                </div>
-                <div>
-                    <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-1.5">Lokasi / Keterangan</label>
-                    <input type="text" id="editBuildingLocation" name="location" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-lg px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-teal-500 transition-colors" required>
-                </div>
-                <div>
-                    <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-1.5">Ubah Gambar Gedung</label>
-                    <input type="file" name="image" accept="image/*" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-lg px-4 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-teal-500 transition-colors">
-                </div>
-                <div class="flex gap-3 pt-4">
-                    <button type="button" onclick="closeEditModalGedung()" class="w-1/2 bg-slate-100 dark:bg-[#1A1A1A] text-slate-700 dark:text-white hover:bg-slate-200 py-3 rounded-xl font-bold transition text-sm">Batal</button>
-                    <button type="submit" class="w-1/2 bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 rounded-xl transition text-sm">Simpan</button>
-                </div>
-            </form>
+        <!-- Modal Edit Gedung -->
+        <div id="modalEditGedung" class="hidden fixed inset-0 z-[99] flex items-center justify-center bg-black/60 backdrop-blur-sm transition-opacity duration-300 opacity-0">
+            <div class="bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] rounded-2xl w-full max-w-md p-6 relative shadow-2xl transform scale-95 transition-transform duration-300">
+                <button onclick="closeEditModalGedung()" class="absolute top-4 right-4 text-slate-400 hover:text-red-500"><i class="ph-bold ph-x text-xl"></i></button>
+                <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-4">Edit Gedung</h3>
+                <form id="formEditGedung" action="#" method="POST" enctype="multipart/form-data" class="space-y-4">
+                    @csrf
+                    @method('PUT')
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-1.5">Nama Gedung</label>
+                        <input type="text" id="editBuildingName" name="building_name" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-lg px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-teal-500 transition-colors" required>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-1.5">Lokasi / Keterangan</label>
+                        <input type="text" id="editBuildingLocation" name="location" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-lg px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-teal-500 transition-colors" required>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-1.5">Ubah Gambar Gedung</label>
+                        <input type="file" name="image" accept="image/*" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-lg px-4 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-teal-500 transition-colors">
+                    </div>
+                    <div class="flex gap-3 pt-4">
+                        <button type="button" onclick="closeEditModalGedung()" class="w-1/2 bg-slate-100 dark:bg-[#1A1A1A] text-slate-700 dark:text-white hover:bg-slate-200 py-3 rounded-xl font-bold transition text-sm">Batal</button>
+                        <button type="submit" class="w-1/2 bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 rounded-xl transition text-sm">Simpan</button>
+                    </div>
+                </form>
+            </div>
         </div>
-    </div>
+    @endpush
 
     @push('scripts')
     <script>

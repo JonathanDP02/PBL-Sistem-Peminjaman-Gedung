@@ -511,10 +511,22 @@
 
                 onLevelChange() {
                     this.form.parent_id = '';
+                    const excludeId = this.editingUnit ? this.editingUnit.id : null;
                     if (this.form.level === 'Jurusan') {
-                        this.filteredParents = this.allUnits.filter(u => u.level === 'Pusat');
+                        this.filteredParents = this.allUnits.filter(u => u.level === 'Pusat' && u.id !== excludeId);
                     } else if (this.form.level === 'Organisasi') {
-                        this.filteredParents = this.allUnits.filter(u => u.level === 'Jurusan');
+                        // Parents can be Jurusan (Level 2) or Organisasi (Level 3), but block Sub-Organizations (Level 4)
+                        this.filteredParents = this.allUnits.filter(u => {
+                            if (u.id === excludeId) return false;
+                            if (u.level === 'Jurusan') return true;
+                            if (u.level === 'Organisasi') {
+                                // Find parent of u
+                                const parent = this.allUnits.find(p => p.id === u.parent_id);
+                                // If u's parent is also an Organisasi, then u is Level 4 (Sub-Organization), so exclude it
+                                return !parent || parent.level !== 'Organisasi';
+                            }
+                            return false;
+                        });
                     } else {
                         this.filteredParents = [];
                     }

@@ -212,19 +212,14 @@ You are working on **Space.in**, a modern, action-oriented Workflow Engine for R
 
 ## 2. ARSITEKTUR DATABASE (PostgreSQL)
 
-### Hierarki Unit (Self-referencing)
+### Hierarki Unit (Self-referencing - MAKSIMAL 4 TINGKAT)
 ```
-Pusat (root)
-├── Jurusan TI
-│   ├── HMTI (Organisasi)
-│   └── BEM TI (Organisasi)
-├── Jurusan Sipil
-│   ├── HM Sipil (Organisasi)
-│   └── BEM Sipil (Organisasi)
-└── Jurusan Elektro
-    ├── HM Elektro (Organisasi)
-    └── BEM Elektro (Organisasi)
+Pusat (root - Level 1)
+└── Jurusan TI (Level 2)
+    └── HMTI (Organisasi - Level 3)
+        └── WRI (Sub-Organisasi - Level 4)
 ```
+* **Aturan Batasan Kedalaman:** Sistem secara ketat membatasi hierarki unit agar hanya bernilai maksimal sampai 4 tingkat kedalaman (Sub-Organisasi). Backend (`UnitController`) dan frontend (`unit.blade.php`) secara otomatis menolak dengan error `422 Unprocessable Content` jika mencoba membuat tingkat ke-5.
 
 ### Kunci Model Relations
 - **Roles (4 tipe):** SuperAdmin, Admin_Unit, Approver, User
@@ -233,7 +228,8 @@ Pusat (root)
 - **Rooms:** building_id FK, unit_id FK (CRUCIAL: pemilik ruang)
 - **Workflow:** unit_id FK (alur kerja per unit), hasMany WorkflowSteps
 - **WorkflowSteps:** workflow_id FK, position_id FK, requires_attachment bool, step_order
-- **Bookings:** user_id, room_id, workflow_id, current_step, status, revision_count
+- **Bookings:** user_id, room_id, workflow_id, current_step, status, revision_count, booking_date, booking_end_date (untuk peminjaman multi-hari/rentang tanggal)
+- **BookingSteps:** booking_id FK, position_id FK, step_order, requires_attachment bool, tier_label (CRUCIAL: snapshot rantai persetujuan dinamis per transaksi peminjaman)
 - **Approvals:** booking_id, approver_id, step_id, approval_status, signature_image, qr_code, attempt
 
 ## 3. EMPAT PERAN & JOB DESK
@@ -298,14 +294,17 @@ WorkflowRequirements (Kewajiban Peminjam)
 **Aturan Emas:** Admin Organisasi (BEM/HMTI) TIDAK boleh setup workflow untuk ruangan milik Pusat/Jurusan. Sistem auto-apply workflow pemilik ruangan berdasarkan unit_id rooms table.
 
 ### Fase 2: PENGAJUAN (Peminjam)
-User membuat booking dengan validasi ketat
+User membuat booking dengan validasi ketat dan durasi sewa fleksibel (Single-Day maupun Multi-Day / Rentang Hari)
 ```
 1. Pilih Ruangan → Sistem auto-detect: unit_id → Cari workflow untuk unit ini
-2. Pilih Jadwal → Query: SELECT * FROM bookings WHERE room_id = ? 
-   AND booking_date = ? AND ((start_time <= ? AND end_time > ?) OR (...))
-   → Conflict? Jika ya: Reject. Jika tidak: Soft-Lock (buat record temp).
+2. Pilih Jadwal (Single atau Rentang Hari) → Anti-Overlap Guard Query dengan lockForUpdate():
+   SELECT * FROM bookings WHERE room_id = ? 
+   AND status NOT IN ('Rejected', 'Cancelled')
+   AND booking_date <= ? AND booking_end_date >= ?
+   AND (start_time < ? AND end_time > ?)
+   → Conflict? Jika ya: Batalkan & Tampilkan detail bentrok. Jika tidak: Lanjut.
 3. Upload Dokumen Syarat → Validasi vs WorkflowRequirements (Proposal & Disposisi Wadir) 
-4. Submit → Status: Pending, current_step: 1, revision_count: 0
+4. Submit → Memasukkan snapshot langkah persetujuan ter-de-duplikasi ke tabel `booking_steps`, status: Pending, current_step: 1, revision_count: 0
 ```
 
 ### Fase 3: PERSETUJUAN (Approver Chain)
@@ -378,6 +377,12 @@ Semua setuju? → Hard-Lock
 3. User see notification: "Dokumen ditolak, alasan: [notes]"
 4. User upload dokumen baru
 5. Re-submit → Reset current_step = 1, attempt++ (di approvals table)
+
+### Penyaringan Jabatan Unik (Unique Position Guard / De-duplication)
+**Kasus Nyata:** Ormawa tingkat bawah memiliki ormawa tingkat induk yang dipimpin oleh pejabat yang sama dengan ormawa tingkat gerbang (misal: Presiden BEM bertindak sebagai ormawa induk ormawa anakan, sekaligus bertindak sebagai verifikator BEM pusat).
+**Logika Penanganan:**
+- **Backend Guard:** Saat membuat snapshot langkah (`booking_steps`), `WorkflowBridgeService` memproses array langkah dan menyaring langkah-langkah yang memiliki `position_id` yang sama, menyisakan hanya satu kemunculan pertama.
+- **Frontend Guard:** Fungsi Javascript `resolveWorkflowChain` di file `booking.blade.php` melakukan de-duplikasi array langkah berdasarkan `position_id` secara real-time sebelum menampilkan diagram alur SOP visual di layar, memastikan konsistensi pratinjau 100%.
 
 ## 7. DATABASE INDICES (Performance)
 - `idx_bookings_conflict` pada (room_id, booking_date, start_time, end_time, status)
@@ -503,4 +508,27 @@ GET /verify/{booking_code}  → ApprovalController@verify
 
 Halaman ini **PUBLIK** (tidak perlu login) agar siapa pun bisa verifikasi keaslian dokumen.
 
-</laravel-boost-guidelines>
+=== custom git and documentation rules ===
+
+# Git Commit & Dynamic Documentation Guard
+
+Untuk efisiensi token dan kerapian dokumentasi proyek, AI Agent harus mematuhi alur kerja pembaruan berkas berikut:
+
+## 1. Alur Pengingat Git Commit
+- **JANGAN** langsung membuat dokumentasi berkas pembaruan di folder `docs/updates/` secara otomatis di tengah-tengah pekerjaan.
+- Di akhir implementasi fitur/perbaikan bug, ingatkan pengguna untuk melakukan Git Commit terlebih dahulu (contoh: `"Saya telah menyelesaikan perubahan. Silakan lakukan git commit terlebih dahulu..."`).
+
+## 2. Alur Konfirmasi Dokumentasi
+- Setelah pengguna mengonfirmasi bahwa mereka telah melakukan commit atau siap mendokumentasikan, jalankan perintah Git (seperti `git diff` atau `git log -1 --name-only`) untuk melihat berkas apa saja yang telah diubah.
+- Sajikan ringkasan berkas yang terdeteksi diubah secara singkat dan ajukan **konfirmasi eksplisit** kepada pengguna:
+  > *"Apakah Anda ingin saya membuat berkas dokumentasi perubahan resmi untuk sesi ini di folder `docs/updates/`?"*
+- **HANYA** tulis berkas dokumentasi di folder `docs/updates/` setelah pengguna memberikan persetujuan eksplisit (seperti *"Ya"*, *"Boleh"*, atau *"Tolong buatkan"*).
+
+## 3. Standar Format Dokumentasi (`docs/updates/YYYY-MM-DD_[topik].md`)
+Jika pengguna menyetujui, buat berkas dokumentasi dengan struktur berikut:
+- **📅 Informasi Umum:** Tanggal, Kategori, Status Pengujian.
+- **🛠️ Berkas yang Diperbarui:** Daftar berkas lengkap dengan link absolut (e.g. `[filename](file:///path/to/file)`).
+- **📝 Detail Perubahan & Penjelasan Teknis:** Penjelasan komparatif Sebelum vs Sesudah dari kode yang diubah.
+- **💡 Rationale & Dampak Sistem:** Alasan arsitektural dan implikasinya pada sistem.
+- **🧪 Hasil Pengujian:** Cuplikan hasil tes unit/fitur (Pest).
+

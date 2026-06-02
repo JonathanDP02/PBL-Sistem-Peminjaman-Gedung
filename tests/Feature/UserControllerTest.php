@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Position;
 use App\Models\Role;
 use App\Models\Unit;
 use App\Models\User;
@@ -271,4 +272,58 @@ test('Admin_Unit can only see users within their unit scope', function () {
     $names = collect($response->json('data.data'))->pluck('name');
     expect($names)->toContain('In Scope');
     expect($names)->not->toContain('Out of Scope');
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Dynamic Position Tagging
+// ──────────────────────────────────────────────────────────────────────────────
+
+test('dynamic tagging creates a new position when position_id is a string name during user creation', function () {
+    ['superAdmin' => $superAdmin, 'unit' => $unit] = setupSuperAdminAndUnit();
+    $peminjamRole = Role::where('name', 'Peminjam')->first();
+
+    $response = actingAs($superAdmin)
+        ->postJson('/admin/api/users', [
+            'name' => 'John Doe',
+            'email' => 'johndoe@example.com',
+            'password' => 'password123',
+            'role_id' => $peminjamRole->id,
+            'unit_id' => $unit->id,
+            'position_id' => 'Ketua Jurusan Baru AN', // String name!
+        ])
+        ->assertCreated();
+
+    // Verify position was created in database
+    $position = Position::where('name', 'Ketua Jurusan Baru An')->first();
+    expect($position)->not->toBeNull();
+    expect($position->unit_id)->toBe($unit->id);
+
+    // Verify user is assigned to the new position
+    $user = User::where('email', 'johndoe@example.com')->first();
+    expect($user->position_id)->toBe($position->id);
+});
+
+test('dynamic tagging creates a new position when position_id is a string name during user update', function () {
+    ['superAdmin' => $superAdmin, 'unit' => $unit] = setupSuperAdminAndUnit();
+    $peminjamRole = Role::where('name', 'Peminjam')->first();
+
+    $user = User::factory()->create([
+        'unit_id' => $unit->id,
+        'role_id' => $peminjamRole->id,
+        'position_id' => null,
+    ]);
+
+    actingAs($superAdmin)
+        ->putJson("/admin/api/users/{$user->id}", [
+            'position_id' => 'Wakil Kajur Baru TI', // String name!
+        ])
+        ->assertOk();
+
+    // Verify position was created
+    $position = Position::where('name', 'Wakil Kajur Baru Ti')->first();
+    expect($position)->not->toBeNull();
+    expect($position->unit_id)->toBe($unit->id);
+
+    // Verify user is assigned to it
+    expect($user->fresh()->position_id)->toBe($position->id);
 });

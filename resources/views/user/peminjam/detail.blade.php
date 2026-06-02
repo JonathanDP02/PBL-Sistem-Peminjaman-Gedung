@@ -69,12 +69,20 @@
                         <div class="w-10 h-10 rounded-xl bg-red-500 text-white flex items-center justify-center shrink-0 shadow-lg shadow-red-500/20">
                             <i class="ph-fill ph-warning text-xl"></i>
                         </div>
-                        <div>
+                        <div class="flex-1">
                             <h4 class="text-sm font-bold text-red-500 mb-1">Butuh Revisi Dokumen</h4>
                             @php
                                 $lastRejectLog = $booking->logs->where('action', 'REJECTED')->last();
                             @endphp
-                            <p class="text-[11px] text-red-400 leading-relaxed">{{ $lastRejectLog ? $lastRejectLog->notes : 'Dokumen Anda perlu diperbaiki. Silakan unggah ulang dokumen yang sesuai.' }}</p>
+                            <div x-data="{ expanded: false, isTruncated: false }" x-init="$nextTick(() => { isTruncated = $refs.revisionNote.scrollHeight > $refs.revisionNote.clientHeight })" class="relative">
+                                <p x-ref="revisionNote" class="text-[11px] text-red-400 leading-relaxed break-words" :class="expanded ? '' : 'line-clamp-2'">
+                                    {{ $lastRejectLog ? $lastRejectLog->notes : 'Dokumen Anda perlu diperbaiki. Silakan unggah ulang dokumen yang sesuai.' }}
+                                </p>
+                                <button x-show="isTruncated" @click="expanded = !expanded" class="text-[10px] font-bold text-red-400 hover:text-red-500 transition-colors mt-1 focus:outline-none inline-flex items-center gap-0.5" style="display: none;">
+                                    <span x-text="expanded ? 'Sembunyikan' : 'Selengkapnya'"></span>
+                                    <i class="ph-bold" :class="expanded ? 'ph-caret-up' : 'ph-caret-down'"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
                     
@@ -130,10 +138,18 @@
                             <div class="w-8 h-8 rounded-full {{ $bg }} text-white flex items-center justify-center z-10 shadow-lg {{ str_replace('bg-', 'shadow-', $bg) }}/20">
                                 <i class="ph-bold {{ $icon }} text-sm"></i>
                             </div>
-                            <div>
+                            <div class="flex-1">
                                 <p class="text-[10px] font-bold {{ $textColor }} mb-1 uppercase tracking-widest">{{ $log->created_at->translatedFormat('d M Y • H:i') }}</p>
                                 <h4 class="text-sm font-bold text-slate-900 dark:text-white mb-1">{{ $log->action }}</h4>
-                                <p class="text-xs text-slate-500 dark:text-gray-500 leading-relaxed">{{ $log->notes ?: 'Tindakan dicatat oleh sistem.' }}</p>
+                                <div x-data="{ expanded: false, isTruncated: false }" x-init="$nextTick(() => { isTruncated = $refs.noteText.scrollHeight > $refs.noteText.clientHeight })" class="relative">
+                                    <p x-ref="noteText" class="text-xs text-slate-500 dark:text-gray-500 leading-relaxed break-words" :class="expanded ? '' : 'line-clamp-2'">
+                                        {{ $log->notes ?: 'Tindakan dicatat oleh sistem.' }}
+                                    </p>
+                                    <button x-show="isTruncated" @click="expanded = !expanded" class="text-[10px] font-bold text-teal-600 dark:text-kinetic-primary hover:text-teal-700 dark:hover:text-kinetic-secondary transition-colors mt-1 focus:outline-none inline-flex items-center gap-0.5" style="display: none;">
+                                        <span x-text="expanded ? 'Sembunyikan' : 'Selengkapnya'"></span>
+                                        <i class="ph-bold" :class="expanded ? 'ph-caret-up' : 'ph-caret-down'"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                         @endforeach

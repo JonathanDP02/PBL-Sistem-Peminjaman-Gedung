@@ -79,10 +79,10 @@ it('allows admin_unit to get filtered positions via api', function () {
 
     $names = collect($data)->pluck('name')->toArray();
 
-    // Harus memuat posisi dari unit Pusat dan Unit lokal (jurusanTI)
-    expect($names)->toContain('Wadir Pusat');
+    // Harus memuat posisi dari unit lokal (jurusanTI)
     expect($names)->toContain('Kaprodi Local');
-    // Dan tidak boleh memuat posisi dari unit lain yang tidak relevan (otherUnit)
+    // Dan tidak boleh memuat posisi dari unit Pusat (approver pusat) atau unit lain yang tidak relevan (otherUnit)
+    expect($names)->not->toContain('Wadir Pusat');
     expect($names)->not->toContain('Kaprodi Other');
 });
 

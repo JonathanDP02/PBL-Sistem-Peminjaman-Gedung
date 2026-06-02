@@ -200,7 +200,17 @@ class WorkflowBridgeService
             }
         }
 
-        return $steps;
+        // De-duplicate steps by position_id to prevent redundant consecutive approvals from the same position
+        $uniqueSteps = [];
+        $seenPositions = [];
+        foreach ($steps as $step) {
+            if (! in_array($step['position_id'], $seenPositions)) {
+                $uniqueSteps[] = $step;
+                $seenPositions[] = $step['position_id'];
+            }
+        }
+
+        return $uniqueSteps;
     }
 
     /**

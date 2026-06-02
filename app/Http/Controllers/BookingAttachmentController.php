@@ -13,7 +13,7 @@ class BookingAttachmentController extends Controller
         $user = Auth::user();
         \Log::info("Accessing attachment {$attachmentId} for booking {$id}. User: {$user->email} (Role: {$user->role->name})");
 
-        $attachment = BookingAttachment::with(['booking.workflow.steps', 'booking.room'])
+        $attachment = BookingAttachment::with(['booking.workflow.steps', 'booking.room', 'booking.bookingSteps'])
             ->where('id', $attachmentId)
             ->where('booking_id', $id)
             ->firstOrFail();
@@ -23,9 +23,11 @@ class BookingAttachmentController extends Controller
         // 1. Borrower Check
         $isBorrower = $booking->user_id === $user->id;
 
-        // 2. Approver Check (Must have a position in the workflow)
-        $isApprover = $user->role->name === 'Penyetuju' &&
-            $booking->workflow->steps->pluck('position_id')->contains($user->position_id);
+        // 2. Approver Check (Must have a position in the booking steps or the workflow template)
+        $isApprover = $user->role->name === 'Penyetuju' && (
+            $booking->bookingSteps->pluck('position_id')->contains($user->position_id) ||
+            ($booking->workflow && $booking->workflow->steps->pluck('position_id')->contains($user->position_id))
+        );
 
         // 3. Admin Unit Check (Must manage the room's unit)
         $isAdminUnit = $user->role->name === 'Administrator Unit' &&

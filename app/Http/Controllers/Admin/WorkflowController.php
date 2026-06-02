@@ -205,27 +205,18 @@ class WorkflowController extends Controller
 
         $userUnit = Unit::find($user->unit_id);
 
-        if ($userUnit && $userUnit->level === 'Organisasi') {
-            // Ormawa (HMTI/Formadiksi) hanya boleh melihat jabatan milik unitnya sendiri
-            $positions = Position::where('unit_id', $user->unit_id)
-                ->orderBy('name', 'asc')
-                ->get(['id', 'name']);
-        } else {
-            // Jurusan dan Pusat boleh melihat unit sendiri, parent unit, dan level Pusat
-            $unitIds = [$user->unit_id];
-            $unit = $userUnit;
-            while ($unit && $unit->parent_id) {
-                $unitIds[] = $unit->parent_id;
-                $unit = Unit::find($unit->parent_id);
-            }
-
+        if ($userUnit && $userUnit->level === 'Pusat') {
+            // Pusat can see positions belonging to Pusat level
             $positions = Position::query()
-                ->where(function ($query) use ($unitIds) {
-                    $query->whereIn('unit_id', $unitIds);
-                })
+                ->where('unit_id', $user->unit_id)
                 ->orWhereHas('unit', function ($query) {
                     $query->where('level', 'Pusat');
                 })
+                ->orderBy('name', 'asc')
+                ->get(['id', 'name']);
+        } else {
+            // Jurusan and Organisasi can ONLY see positions within their own exact unit
+            $positions = Position::where('unit_id', $user->unit_id)
                 ->orderBy('name', 'asc')
                 ->get(['id', 'name']);
         }

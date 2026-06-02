@@ -83,7 +83,7 @@ Route::middleware('auth')->group(function () {
             // Statistik
             $stats['approved'] = Booking::where('user_id', $user->id)->where('status', 'Approved')->count();
             $stats['pending'] = Booking::where('user_id', $user->id)->where('status', 'Pending')->count();
-            $stats['rejected'] = Booking::where('user_id', $user->id)->where('status', 'Rejected')->count();
+            $stats['rejected'] = Booking::where('user_id', $user->id)->whereIn('status', ['Rejected', 'Revising'])->count();
 
             // Ambil 5 booking terbaru
             $recentBookings = Booking::with('room')
@@ -150,15 +150,8 @@ Route::middleware('auth')->group(function () {
                 // SuperAdmin can see all bookings
                 $bookings = $query->get();
             } elseif ($user->role->name === 'Administrator Unit') {
-                // Admin_Unit can see bookings belonging to their unit's rooms, parent's rooms, or child's rooms
+                // Admin_Unit can see bookings belonging to their unit's rooms or child's rooms
                 $unitIds = [$user->unit_id];
-
-                // Dapatkan seluruh parent unit secara rekursif (ancestors)
-                $unit = $user->unit;
-                while ($unit && $unit->parent_id) {
-                    $unitIds[] = $unit->parent_id;
-                    $unit = $unit->parent;
-                }
 
                 // Dapatkan seluruh child unit (descendants)
                 if ($user->unit) {
@@ -270,13 +263,6 @@ Route::middleware('auth')->group(function () {
             $user = Auth::user();
             $unitIds = [$user->unit_id];
 
-            // Dapatkan seluruh parent unit secara rekursif (ancestors)
-            $unit = $user->unit;
-            while ($unit && $unit->parent_id) {
-                $unitIds[] = $unit->parent_id;
-                $unit = $unit->parent;
-            }
-
             // Dapatkan seluruh child unit (descendants)
             if ($user->unit) {
                 $childIds = Unit::where('parent_id', $user->unit_id)->pluck('id')->toArray();
@@ -298,13 +284,6 @@ Route::middleware('auth')->group(function () {
         Route::get('/pemblokiran-ruangan', function () {
             $user = Auth::user();
             $unitIds = [$user->unit_id];
-
-            // Dapatkan seluruh parent unit secara rekursif (ancestors)
-            $unit = $user->unit;
-            while ($unit && $unit->parent_id) {
-                $unitIds[] = $unit->parent_id;
-                $unit = $unit->parent;
-            }
 
             // Dapatkan seluruh child unit (descendants)
             if ($user->unit) {

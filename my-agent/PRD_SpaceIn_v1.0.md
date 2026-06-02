@@ -558,43 +558,43 @@ Setiap Admin Unit hanya dapat mengelola data dalam lingkup unitnya dan unit di b
 
 ## 10. Aturan Bisnis dan Logika Sistem Kritis
 
-### 10.1 Logika Anti-Overlap (Pencegahan Bentrok Jadwal)
+### 10.1 Logika Anti-Overlap (Pencegahan Bentrok Jadwal - Single & Multi-Day)
 
-Sistem wajib mengimplementasikan logika Anti-Overlap yang memastikan tidak ada dua pengajuan yang memiliki ruangan dan rentang waktu yang sama secara bersamaan. Aturan:
+Sistem wajib mengimplementasikan logika Anti-Overlap yang memastikan tidak ada dua pengajuan yang memiliki ruangan dan rentang waktu yang sama secara bersamaan, mendukung durasi peminjaman fleksibel baik **Satu Hari (Single Day)** maupun **Rentang Hari (Multi-Day)**. Aturan:
 
-- Saat pengajuan baru dibuat, sistem memeriksa semua booking dengan status Soft-Lock dan Hard-Lock pada ruangan dan waktu yang diminta.
-- Jika terdapat tumpang tindih, sistem menolak pengajuan dan menginformasikan kepada Peminjam untuk memilih waktu/ruangan lain.
-- Pengajuan yang ditolak karena bentrok tidak memasuki antrean Approver.
+- Logika validasi tumpang tindih dilakukan secara matematis menggunakan perbandingan rentang tanggal komparatif: `booking_date <= validated_booking_end_date AND booking_end_date >= validated_booking_date` dikombinasikan dengan irisan waktu `(start_time < validated_end_time AND end_time > validated_start_time)`.
+- Menggunakan Laravel's `DB::transaction()` dan pessimistic locking (`lockForUpdate()`) di tingkat basis data untuk menghindari race condition pada milidetik yang sama.
+- Jika terdapat tumpang tindih, sistem secara atomik menolak pengajuan dan menginformasikan detail bentrok jadwal kepada Peminjam secara transparan.
 
 ### 10.2 Mekanisme Soft-Lock dan Hard-Lock
 
-- **Soft-Lock:** Diterapkan secara otomatis saat pengajuan berhasil disubmit dan memasuki antrean persetujuan. Status ini mengunci jadwal sementara agar tidak dapat diambil pengguna lain, namun dapat dilepas jika pengajuan ditolak atau kedaluwarsa.
-- **Hard-Lock:** Diterapkan saat seluruh rantai persetujuan dalam workflow telah dipenuhi. Status ini mengunci jadwal secara permanen dan memicu penerbitan Surat Izin PDF + QR Code.
+- **Soft-Lock:** Diterapkan secara otomatis saat pengajuan berhasil disubmit (status: Pending, current_step: 1) dan memasuki antrean persetujuan. Status ini mengunci jadwal sementara agar tidak dapat diambil pengguna lain, namun dapat dilepas jika pengajuan ditolak atau kedaluwarsa.
+- **Hard-Lock:** Diterapkan saat seluruh rantai persetujuan dalam dynamic workflow telah dipenuhi (booking status: Approved). Status ini mengunci jadwal secara permanen dan memicu penerbitan Surat Izin PDF + QR Code.
 
 ### 10.3 Penerbitan Surat Izin dan QR Code
 
-- Surat Izin hanya diterbitkan setelah status booking mencapai Hard-Lock.
-- Setiap surat izin memiliki QR Code unik yang berisi informasi terenkripsi: ID booking, ruangan, tanggal, dan identitas Peminjam.
-- QR Code dapat dipindai melalui fitur scanner pada platform Space.in untuk verifikasi keabsahan izin secara instan oleh pengelola gedung.
+- Surat Izin resmi diterbitkan oleh sistem sebagai dokumen terpisah (tidak menimpa lampiran asli mahasiswa) setelah status booking mencapai Hard-Lock.
+- Setiap surat izin memiliki QR Code unik yang berisi URL Verifikasi Publik: `https://space.in/verify/BOOKING-ABC123DEF456`.
+- QR Code dapat dipindai untuk mengarahkan pengguna ke halaman validasi publik non-login guna melihat keabsahan status, nama kegiatan, dan tabel persetujuan resmi (Non-Repudiation).
 
-### 10.4 Aturan Workflow (Multi-tier Workflow)
+### 10.4 Aturan Workflow (3-Tier Dynamic Bridging Algorithm & Unique Position Guard)
 
-Sistem mengimplementasikan alur persetujuan dua tingkat (Multi-tier/Alur Berlapis):
-- **Workflow Internal (Tier 1):** Dibuat dan dikonfigurasi oleh Admin Unit asal peminjam (misal: HMTI/BEM) untuk penyaringan kelayakan internal mahasiswa. Jika unit peminjam tidak mengaktifkan alur internal, sistem otomatis langsung melompat ke Tier 2.
-- **Workflow Eksternal (Tier 2):** Dibuat dan dikonfigurasi oleh Admin Unit pemilik ruangan (misal: Jurusan TI atau Pusat) untuk persetujuan akhir resmi kampus.
-- **Mekanisme Poin Evaluasi (Chain of Promotion):**
-  - Booking berstatus `Pending` saat memasuki Tier 1. Setelah langkah terakhir di Tier 1 menyetujui, booking tetap berstatus `Pending` tetapi tingkatannya dinaikkan (promoted) ke Tier 2 dengan `current_step` di-reset kembali ke `1`.
-  - Status `Approved (Hard-Lock)` hanya akan dipicu dan dicapai setelah langkah persetujuan terakhir pada Tier 2 (Workflow Eksternal) memberikan persetujuan penuh.
-- Setiap workflow (baik Tier 1 maupun Tier 2) harus memiliki minimal satu langkah Approver untuk dapat diaktifkan.
-- Jika ada Approver menolak di tingkat/tahapan mana pun, seluruh rantai persetujuan langsung berhenti dan status booking diturunkan ke `Revising` untuk dikembalikan ke Peminjam dengan catatan revisi yang wajib diisi.
-- Workflow bersifat dinamis dan perubahan hanya berlaku untuk transaksi pengajuan baru (tidak retroaktif).
+Sistem menggunakan algoritma penjembatan dinamis 3-Tier untuk mengompilasi rantai persetujuan unik (*custom snapshot*) per transaksi peminjaman berdasarkan unit peminjam dan pemilik ruangan:
+- **Tier 1 (Internal):** Alur persetujuan internal unit peminjam jika peminjam adalah level `Organisasi` (ormawa/UKM) ditambah langkah unit Induk (e.g. HMTI di bawah JTI).
+- **Tier 2 (BEM & Pemilik Ruangan):** Penyelarasan dinamis di mana ormawa wajib melewati gerbang BEM Polinema (Tier 2a) ditambah langkah persetujuan dari unit Pemilik Ruangan (Tier 2b) yang dituju.
+- **Tier 3 (Pusat):** Jika skop kegiatan adalah **Lintas Jurusan** dan pemilik ruangan bukan unit Pusat, sistem secara otomatis menyisipkan pejabat tingkat Pusat (Wakil Direktur III) di akhir rantai.
+- **Unique Position Guard (De-duplication) [CRITICAL]:**
+  - Untuk mencegah redundansi (seperti kasus di mana Presiden BEM Polinema bertindak sebagai organisasi induk sekaligus BEM gatekeeper), sistem secara otomatis melakukan de-duplikasi linear pada rantai langkah berdasarkan `position_id` yang unik.
+  - De-duplikasi ini diimplementasikan di backend saat persistensi database (`booking_steps` table) dan di frontend client-side Javascript (`resolveWorkflowChain`) saat mempratinjau diagram SOP visual di layar, memastikan konsistensi pratinjau 100%.
 
-### 10.5 Aturan Hierarki Unit
+### 10.5 Aturan Hierarki Unit (Maksimal 4 Tingkat)
 
-- Organisasi harus memiliki unit Jurusan sebagai parent.
-- Jurusan harus memiliki unit Pusat sebagai parent.
-- Admin Unit hanya dapat mengelola data (user, ruangan, workflow) dalam lingkup unitnya dan unit di bawahnya sesuai parent_id.
-- Super Admin adalah satu-satunya yang dapat mengubah struktur hierarki unit.
+- Struktur organisasi di Polinema bertipe self-referencing dengan batasan kedalaman **maksimal 4 tingkat**:
+  ```
+  Pusat (Level 1) -> Jurusan (Level 2) -> Organisasi (Level 3) -> Sub-Organisasi (Level 4)
+  ```
+- **Security Guard (Batas Tingkatan):** Backend (`UnitController`) dan frontend Alpine.js (`unit.blade.php`) secara ketat menolak dengan respon error `422 Unprocessable Content` jika pengguna mencoba membuat unit tingkat ke-5 di bawah Sub-Organisasi.
+- Admin Unit hanya dapat mengelola data (user, ruangan, workflow) dalam lingkup unitnya dan sub-unit di bawahnya sesuai parent_id. Super Admin adalah satu-satunya yang dapat mengelola data global secara penuh.
 
 ### 10.6 Manajemen Log dan Audit Trail
 

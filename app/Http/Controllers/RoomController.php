@@ -25,13 +25,6 @@ class RoomController extends Controller
         if ($user->role->name === 'Administrator Unit') {
             $unitIds = [$user->unit_id];
 
-            // Dapatkan seluruh parent unit secara rekursif (ancestors)
-            $unit = $user->unit;
-            while ($unit && $unit->parent_id) {
-                $unitIds[] = $unit->parent_id;
-                $unit = $unit->parent;
-            }
-
             // Dapatkan seluruh child unit (descendants)
             if ($user->unit) {
                 $childIds = Unit::where('parent_id', $user->unit_id)->pluck('id')->toArray();

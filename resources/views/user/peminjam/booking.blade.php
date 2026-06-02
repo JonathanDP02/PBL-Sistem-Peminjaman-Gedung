@@ -267,7 +267,7 @@
 
     // Algoritma 3-Tier Dynamic Bridging versi Client-Side (JS)
     function resolveWorkflowChain(selectedRoom, eventScope) {
-        const chain = [];
+        let chain = [];
         const missingConfigurations = [];
 
         const borrowerUnit = currentUserUnit;
@@ -285,6 +285,7 @@
             } else {
                 (wf.steps || []).forEach(step => {
                     chain.push({
+                        position_id: step.position_id,
                         position_name: step.position ? step.position.name : 'Posisi Tidak Diketahui',
                         tier: `Internal (${borrowerUnit.unit_name})`
                     });
@@ -300,6 +301,7 @@
                 if (wf && wf.steps && wf.steps.length > 0) {
                     const lastStep = wf.steps[wf.steps.length - 1];
                     chain.push({
+                        position_id: lastStep.position_id,
                         position_name: lastStep.position ? lastStep.position.name : 'Ketua Unit Induk',
                         tier: `Induk (${parentOrg.unit_name})`
                     });
@@ -321,6 +323,7 @@
                 } else {
                     (wf.steps || []).forEach(step => {
                         chain.push({
+                            position_id: step.position_id,
                             position_name: step.position ? step.position.name : 'Posisi Tidak Diketahui',
                             tier: `BEM (${bem.unit_name})`
                         });
@@ -334,6 +337,7 @@
                 const pembina = fullBorrowerUnit.positions.find(p => p.name.toLowerCase().includes('pembina'));
                 if (pembina) {
                     chain.push({
+                        position_id: pembina.id,
                         position_name: pembina.name,
                         tier: `Pembina (${borrowerUnit.unit_name})`
                     });
@@ -349,6 +353,7 @@
             } else {
                 (wf.steps || []).forEach(step => {
                     chain.push({
+                        position_id: step.position_id,
                         position_name: step.position ? step.position.name : 'Posisi Tidak Diketahui',
                         tier: `Pemilik Ruangan (${roomOwnerUnit.unit_name})`
                     });
@@ -367,6 +372,7 @@
                     const wadir3Step = (wf.steps || []).find(step => step.position && (step.position.name.toLowerCase().includes('iii') || step.position.name.toLowerCase().includes('3')));
                     if (wadir3Step) {
                         chain.push({
+                            position_id: wadir3Step.position_id,
                             position_name: wadir3Step.position.name,
                             tier: `Pusat (${pusat.unit_name})`
                         });
@@ -374,6 +380,7 @@
                         const lastStep = wf.steps[wf.steps.length - 1];
                         if (lastStep) {
                             chain.push({
+                                position_id: lastStep.position_id,
                                 position_name: lastStep.position ? lastStep.position.name : 'Wakil Direktur III',
                                 tier: `Pusat (${pusat.unit_name})`
                             });
@@ -383,7 +390,22 @@
             }
         }
 
-        return { chain, missingConfigurations };
+        // De-duplicate chain by position_id to prevent redundant consecutive approvals in preview
+        const uniqueChain = [];
+        const seenPositions = new Set();
+        for (const item of chain) {
+            if (item.position_id && !seenPositions.has(item.position_id)) {
+                uniqueChain.push(item);
+                seenPositions.add(item.position_id);
+            } else if (!item.position_id) {
+                if (!seenPositions.has(item.position_name)) {
+                    uniqueChain.push(item);
+                    seenPositions.add(item.position_name);
+                }
+            }
+        }
+
+        return { chain: uniqueChain, missingConfigurations };
     }
 
     // Fungsi Update SOP dinamis saat form berubah
