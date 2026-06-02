@@ -1,4 +1,4 @@
-<x-guest-layout>
+﻿<x-guest-layout>
     <!-- Container utama di-lock persis 1 layar (h-screen) dan dihilangkan scrollnya (overflow-hidden) -->
     <div class="h-screen w-full overflow-hidden flex items-center justify-center relative">
         <div class="w-full max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center z-10 scale-95 md:scale-100 origin-center">
@@ -45,7 +45,7 @@
 
                         <!-- Email / NIM / NIP -->
                         <div>
-                            <label for="email" class="block text-[10px] lg:text-[11px] uppercase tracking-wider font-bold text-[#14B8A6] mb-1.5 hover:text-[#10ECE8] transition-colors cursor-pointer">Email / NIM / NIP</label>
+                            <label for="email" class="block text-[10px] lg:text-[11px] uppercase tracking-wider font-bold text-[#14B8A6] mb-1.5 hover:text-[#10ECE8] transition-colors cursor-pointer">NIM / NIP</label>
                             <input 
                                 id="email" 
                                 type="email" 
