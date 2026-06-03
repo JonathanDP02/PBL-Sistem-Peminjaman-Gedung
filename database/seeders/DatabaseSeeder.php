@@ -413,6 +413,24 @@ class DatabaseSeeder extends Seeder
             'password' => Hash::make('12345'),
         ]);
 
+        // Akun peminjam kategori Staf
+        User::create([
+            'unit_id' => $pusat->id,
+            'position_id' => null,
+            'role_id' => $roleUser->id,
+            'name' => 'Staf Pusat Polinema',
+            'email' => 'staf@spacein.test',
+            'password' => Hash::make('12345'),
+        ]);
+        User::create([
+            'unit_id' => $jurusanTI->id,
+            'position_id' => null,
+            'role_id' => $roleUser->id,
+            'name' => 'Staf Jurusan TI',
+            'email' => 'staf.ti@spacein.test',
+            'password' => Hash::make('12345'),
+        ]);
+
         // User biasa tambahan untuk Organisasi dan Jurusan
         foreach ($jurusans as $j) {
             User::create([

@@ -5,15 +5,6 @@ config:
 classDiagram
     direction TB
 
-    %% ===== ABSTRACT BASE CLASSES =====
-    class Controller {
-        <<Abstract>>
-    }
-    
-    class Model {
-        <<Abstract Eloquent>>
-    }
-
     %% ===== SERVICES =====
     class WorkflowBridgeService {
         <<Service>>
@@ -30,30 +21,54 @@ classDiagram
         +logAction(bookingId, action, stepId, notes): BookingLog
     }
 
-    %% ===== CONTROLLERS =====
-    class BookingController {
-        <<Controller>>
-        +index(): JSON
-        +showBookingForm(): View
-        +create(): JSON
+    %% ===== CONCEPTUAL ENTITIES (Unified Model & Controller) =====
+    class User {
+        -BigInt id
+        -String name
+        -String email
+        -String password
+        -BigInt role_id
+        -BigInt unit_id
+        -BigInt position_id
+    }
+
+    class Role {
+        -BigInt id
+        -String name
+        -String description
+    }
+
+    class Unit {
+        -BigInt id
+        -String unit_name
+        -String level: enum(Pusat,Jurusan,Organisasi)
+        -String description
+        -BigInt parent_id
+        +index(Request): JsonResponse
         +store(Request): JSON
         +show(id): JSON
-        +cancel(id): JSON
         +update(Request, id): JSON
     }
 
-    class ApprovalController {
-        <<Controller>>
-        +index(Request): JSON
-        -formatApprovalResponse(booking, positionId): array
-        +approve(Request, id): JSON
-        +reject(Request, id): JSON
-        +history(Request): JSON
-        +verify(booking_code): View
+    class Building {
+        -BigInt id
+        -String building_name
+        -String location
+        +index(): array
+        +store(Request): Model
+        +update(Request, building): void
+        +destroy(building): void
+        -authorizeSuperAdmin(): void
     }
 
-    class RoomController {
-        <<Controller>>
+    class Room {
+        -BigInt id
+        -String room_name
+        -String room_code
+        -Integer capacity
+        -String description
+        -BigInt building_id
+        -BigInt unit_id
         +index(): JSON
         +store(Request): Response
         +update(Request, id): Response
@@ -61,9 +76,20 @@ classDiagram
         +showApi(id): JSON
         +blockRoom(Request): Response
     }
-    
-    class WorkflowController {
-        <<Controller>>
+
+    class Position {
+        -BigInt id
+        -String name
+        -BigInt unit_id
+        +index(): JSON
+        +store(Request): JSON
+    }
+
+    class Workflow {
+        -BigInt id
+        -String name
+        -String description
+        -BigInt unit_id
         +index(): JSON
         +store(Request): JSON
         +show(id): JSON
@@ -72,161 +98,28 @@ classDiagram
         +syncDetails(Request, id): JSON
     }
 
-    class BuildingController {
-        <<Controller>>
-        +index(): array
-        +store(Request): Model
-        +update(Request, building): void
-        +destroy(building): void
-        -authorizeSuperAdmin(): void
-    }
-
-    class WorkflowRequirementController {
-        <<Controller>>
-        +store(Request): JSON
-        +update(Request, id): JSON
-        +destroy(id): JSON
-    }
-
-    class WorkflowStepController {
-        <<Controller>>
-        +store(Request): JSON
-        +update(Request, id): JSON
-        +destroy(id): JSON
-    }
-
-    class UnitController {
-        <<Controller>>
-        +index(Request): JsonResponse
-        +store(Request): JSON
-        +show(id): JSON
-        +update(Request, id): JSON
-    }
-
-    class PositionController {
-        <<Controller>>
-        +index(): JSON
-        +store(Request): JSON
-    }
-
-    %% ===== MODELS =====
-    class User {
-        <<Model>>
-        -BigInt id
-        -String name
-        -String email
-        -String password
-        -BigInt role_id
-        -BigInt unit_id
-        -BigInt position_id
-        --Relations--
-        +role(): BelongsTo~Role~
-        +unit(): BelongsTo~Unit~
-        +position(): BelongsTo~Position~
-        +bookings(): HasMany~Booking~
-        +approvals(): HasMany~Approval~
-        +uploadedAttachments(): HasMany~BookingAttachment~
-    }
-
-    class Role {
-        <<Model>>
-        -BigInt id
-        -String name
-        -String description
-        --Relations--
-        +users(): HasMany~User~
-    }
-
-    class Unit {
-        <<Model>>
-        -BigInt id
-        -String unit_name
-        -String level: enum(Pusat,Jurusan,Organisasi)
-        -String description
-        -BigInt parent_id
-        --Relations--
-        +parent(): BelongsTo~Unit~
-        +children(): HasMany~Unit~
-        +users(): HasMany~User~
-        +rooms(): HasMany~Room~
-        +positions(): HasMany~Position~
-        +workflows(): HasMany~Workflow~
-    }
-
-    class Building {
-        <<Model>>
-        -BigInt id
-        -String building_name
-        -String location
-        --Relations--
-        +rooms(): HasMany~Room~
-    }
-
-    class Room {
-        <<Model>>
-        -BigInt id
-        -String room_name
-        -String room_code
-        -Integer capacity
-        -String description
-        -BigInt building_id
-        -BigInt unit_id
-        --Relations--
-        +building(): BelongsTo~Building~
-        +unit(): BelongsTo~Unit~
-        +bookings(): HasMany~Booking~
-    }
-
-    class Position {
-        <<Model>>
-        -BigInt id
-        -String name
-        -BigInt unit_id
-        --Relations--
-        +unit(): BelongsTo~Unit~
-        +users(): HasMany~User~
-        +workflowSteps(): HasMany~WorkflowStep~
-        +bookingSteps(): HasMany~BookingStep~
-    }
-
-    class Workflow {
-        <<Model>>
-        -BigInt id
-        -String name
-        -String description
-        -BigInt unit_id
-        --Relations--
-        +unit(): BelongsTo~Unit~
-        +steps(): HasMany~WorkflowStep~
-        +requirements(): HasMany~WorkflowRequirement~
-        +bookings(): HasMany~Booking~
-    }
-
     class WorkflowStep {
-        <<Model>>
         -BigInt id
         -BigInt workflow_id
         -BigInt position_id
         -Integer step_order
         -Boolean requires_attachment
-        --Relations--
-        +workflow(): BelongsTo~Workflow~
-        +position(): BelongsTo~Position~
-        +approvals(): HasMany~Approval~
+        +store(Request): JSON
+        +update(Request, id): JSON
+        +destroy(id): JSON
     }
 
     class WorkflowRequirement {
-        <<Model>>
         -BigInt id
         -BigInt workflow_id
         -String document_name
         -Boolean is_mandatory
-        --Relations--
-        +workflow(): BelongsTo~Workflow~
+        +store(Request): JSON
+        +update(Request, id): JSON
+        +destroy(id): JSON
     }
 
     class Booking {
-        <<Model>>
         -BigInt id
         -BigInt user_id
         -BigInt room_id
@@ -242,48 +135,34 @@ classDiagram
         -Integer current_step
         -Integer revision_count
         -String pdf_path
-        --Relations--
-        +user(): BelongsTo~User~
-        +room(): BelongsTo~Room~
-        +workflow(): BelongsTo~Workflow~
-        +approvals(): HasMany~Approval~
-        +attachments(): HasMany~BookingAttachment~
-        +logs(): HasMany~BookingLog~
-        +bookingSteps(): HasMany~BookingStep~
-        --Accessors--
-        +getProgressPercentageAttribute(): int
+        +index(): JSON
+        +showBookingForm(): View
+        +create(): JSON
+        +store(Request): JSON
+        +show(id): JSON
+        +cancel(id): JSON
+        +update(Request, id): JSON
     }
 
     class BookingStep {
-        <<Model>>
         -BigInt id
         -BigInt booking_id
         -BigInt position_id
         -Integer step_order
         -Boolean requires_attachment
         -String tier_label
-        --Relations--
-        +booking(): BelongsTo~Booking~
-        +position(): BelongsTo~Position~
-        +approvals(): HasMany~Approval~
     }
 
     class BookingAttachment {
-        <<Model>>
         -BigInt id
         -BigInt booking_id
         -BigInt requirement_id
         -BigInt uploader_id
         -String document_type
         -String file_path
-        --Relations--
-        +booking(): BelongsTo~Booking~
-        +requirement(): BelongsTo~WorkflowRequirement~
-        +uploader(): BelongsTo~User~
     }
 
     class Approval {
-        <<Model>>
         -BigInt id
         -BigInt booking_id
         -BigInt approver_id
@@ -295,52 +174,22 @@ classDiagram
         -String qr_code
         -DateTime approved_at
         -Integer attempt
-        --Relations--
-        +booking(): BelongsTo~Booking~
-        +approver(): BelongsTo~User~
-        +step(): BelongsTo~WorkflowStep~
-        +bookingStep(): BelongsTo~BookingStep~
+        +index(Request): JSON
+        -formatApprovalResponse(booking, positionId): array
+        +approve(Request, id): JSON
+        +reject(Request, id): JSON
+        +history(Request): JSON
+        +verify(booking_code): View
     }
 
     class BookingLog {
-        <<Model>>
         -BigInt id
         -BigInt booking_id
         -BigInt actor_id
         -BigInt step_id
         -String action: enum(SUBMITTED,APPROVED,REJECTED,REVISED,CANCELLED,FINALIZED,BYPASS_APPROVED)
         -String notes
-        --Relations--
-        +booking(): BelongsTo~Booking~
-        +actor(): BelongsTo~User~
-        +step(): BelongsTo~WorkflowStep~
     }
-
-    %% ===== INHERITANCE =====
-    Controller <|-- BookingController
-    Controller <|-- ApprovalController
-    Controller <|-- RoomController
-    Controller <|-- WorkflowController
-    Controller <|-- BuildingController
-    Controller <|-- WorkflowRequirementController
-    Controller <|-- WorkflowStepController
-    Controller <|-- UnitController
-    Controller <|-- PositionController
-
-    Model <|-- User
-    Model <|-- Role
-    Model <|-- Unit
-    Model <|-- Building
-    Model <|-- Room
-    Model <|-- Position
-    Model <|-- Workflow
-    Model <|-- WorkflowStep
-    Model <|-- WorkflowRequirement
-    Model <|-- Booking
-    Model <|-- BookingStep
-    Model <|-- BookingAttachment
-    Model <|-- Approval
-    Model <|-- BookingLog
 
     %% ===== RELATIONSHIPS =====
     Role "1" <-- "0..*" User : memiliki
@@ -370,25 +219,12 @@ classDiagram
     WorkflowStep "1" <-- "0..*" BookingLog : references
 
     %% ===== SERVICE DEPENDENCIES =====
-    BookingController ..> Booking : uses
-    BookingController ..> LoggerService : uses
-    BookingController ..> WorkflowBridgeService : uses
-    
-    ApprovalController ..> Approval : uses
-    ApprovalController ..> WorkflowBridgeService : uses
-    ApprovalController ..> LoggerService : uses
-    ApprovalController ..> Booking : queries
-    
-    RoomController ..> Room : uses
-    RoomController ..> Booking : validates
-    
-    WorkflowController ..> Workflow : uses
-    WorkflowController ..> WorkflowStep : manages
-    WorkflowController ..> WorkflowRequirement : manages
-
+    Booking ..> LoggerService : uses
+    Booking ..> WorkflowBridgeService : uses
+    Approval ..> WorkflowBridgeService : uses
+    Approval ..> LoggerService : uses
     WorkflowBridgeService ..> Booking : updates
     WorkflowBridgeService ..> BookingStep : persists
     WorkflowBridgeService ..> Workflow : references
     WorkflowBridgeService ..> WorkflowStep : references
-    
     LoggerService ..> BookingLog : writes
