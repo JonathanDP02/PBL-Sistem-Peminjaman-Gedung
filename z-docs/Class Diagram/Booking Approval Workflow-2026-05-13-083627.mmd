@@ -15,11 +15,14 @@ classDiagram
     }
 
     %% ===== SERVICES =====
-    class WorkflowService {
+    class WorkflowBridgeService {
         <<Service>>
-        +processApproval(booking, user, status, notes): void
-        +getNextStep(booking): WorkflowStep
-        +checkWorkflowCompletion(booking): bool
+        +buildAndPersistChain(booking, eventScope): Collection~BookingStep~
+        +resolveStepChain(booking, eventScope): array
+        +rebuildChain(booking, eventScope): Collection~BookingStep~
+        -fetchWorkflowSteps(unitId, context): Collection~WorkflowStep~
+        -findBemUnit(): Unit
+        -findPusatUnit(): Unit
     }
 
     class LoggerService {
@@ -183,6 +186,7 @@ classDiagram
         +unit(): BelongsTo~Unit~
         +users(): HasMany~User~
         +workflowSteps(): HasMany~WorkflowStep~
+        +bookingSteps(): HasMany~BookingStep~
     }
 
     class Workflow {
@@ -229,10 +233,12 @@ classDiagram
         -BigInt workflow_id
         -String event_name
         -String event_description
+        -String event_scope
         -Date booking_date
+        -Date booking_end_date
         -Time start_time
         -Time end_time
-        -String status: enum(Pending,Approved,Rejected,Revised,Cancelled)
+        -String status: enum(Draft,Pending,Approved,Rejected,Revised,Cancelled)
         -Integer current_step
         -Integer revision_count
         -String pdf_path
@@ -243,8 +249,23 @@ classDiagram
         +approvals(): HasMany~Approval~
         +attachments(): HasMany~BookingAttachment~
         +logs(): HasMany~BookingLog~
+        +bookingSteps(): HasMany~BookingStep~
         --Accessors--
         +getProgressPercentageAttribute(): int
+    }
+
+    class BookingStep {
+        <<Model>>
+        -BigInt id
+        -BigInt booking_id
+        -BigInt position_id
+        -Integer step_order
+        -Boolean requires_attachment
+        -String tier_label
+        --Relations--
+        +booking(): BelongsTo~Booking~
+        +position(): BelongsTo~Position~
+        +approvals(): HasMany~Approval~
     }
 
     class BookingAttachment {
@@ -267,6 +288,7 @@ classDiagram
         -BigInt booking_id
         -BigInt approver_id
         -BigInt step_id
+        -BigInt booking_step_id
         -String approval_status: enum(Pending,Approved,Rejected)
         -String notes
         -String signature_image
@@ -277,6 +299,7 @@ classDiagram
         +booking(): BelongsTo~Booking~
         +approver(): BelongsTo~User~
         +step(): BelongsTo~WorkflowStep~
+        +bookingStep(): BelongsTo~BookingStep~
     }
 
     class BookingLog {
@@ -314,6 +337,7 @@ classDiagram
     Model <|-- WorkflowStep
     Model <|-- WorkflowRequirement
     Model <|-- Booking
+    Model <|-- BookingStep
     Model <|-- BookingAttachment
     Model <|-- Approval
     Model <|-- BookingLog
@@ -333,21 +357,25 @@ classDiagram
     User "1" <-- "0..*" Booking : creates
     Room "1" <-- "0..*" Booking : booked by
     Workflow "1" <-- "0..*" Booking : uses
+    Booking "1" *-- "0..*" BookingStep : has steps
+    Position "1" <-- "0..*" BookingStep : assigned to
     Booking "1" *-- "1..*" Approval : has approvals
     User "1" <-- "0..*" Approval : approves as
     WorkflowStep "1" <-- "0..*" Approval : references
+    BookingStep "1" <-- "0..*" Approval : references
     Booking "1" *-- "0..*" BookingAttachment : has attachments
     WorkflowRequirement "1" <-- "0..*" BookingAttachment : fulfills
     Booking "1" *-- "1..*" BookingLog : logged in
     User "1" <-- "0..*" BookingLog : performed by
+    WorkflowStep "1" <-- "0..*" BookingLog : references
 
     %% ===== SERVICE DEPENDENCIES =====
     BookingController ..> Booking : uses
     BookingController ..> LoggerService : uses
-    BookingController ..> WorkflowService : uses
+    BookingController ..> WorkflowBridgeService : uses
     
     ApprovalController ..> Approval : uses
-    ApprovalController ..> WorkflowService : uses
+    ApprovalController ..> WorkflowBridgeService : uses
     ApprovalController ..> LoggerService : uses
     ApprovalController ..> Booking : queries
     
@@ -358,8 +386,9 @@ classDiagram
     WorkflowController ..> WorkflowStep : manages
     WorkflowController ..> WorkflowRequirement : manages
 
-    WorkflowService ..> Booking : updates
-    WorkflowService ..> Approval : verifies
-    WorkflowService ..> WorkflowStep : references
+    WorkflowBridgeService ..> Booking : updates
+    WorkflowBridgeService ..> BookingStep : persists
+    WorkflowBridgeService ..> Workflow : references
+    WorkflowBridgeService ..> WorkflowStep : references
     
     LoggerService ..> BookingLog : writes
