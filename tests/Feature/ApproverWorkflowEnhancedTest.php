@@ -205,4 +205,93 @@ class ApproverWorkflowEnhancedTest extends TestCase
         // Sometimes fake storage returns application/x-empty or something else if content is small,
         // we just care it's 200 and not 403
     }
+
+    public function test_approver_can_view_booking_detail_page_with_action_buttons()
+    {
+        $booking = Booking::create([
+            'user_id' => $this->borrower->id,
+            'room_id' => $this->room->id,
+            'workflow_id' => $this->workflow->id,
+            'event_name' => 'Detail Page Test Event',
+            'booking_date' => now()->addDays(5)->format('Y-m-d'),
+            'start_time' => '08:00',
+            'end_time' => '10:00',
+            'status' => 'Pending',
+            'current_step' => 1,
+            'event_scope' => 'Internal',
+        ]);
+        $this->createBookingStepsFor($booking);
+
+        $response = $this->actingAs($this->approver)->get(route('approvals.show', $booking->id));
+
+        $response->assertStatus(200);
+        $response->assertSee('Detail Page Test Event');
+        $response->assertSee('Tolak/Revisi');
+        $response->assertSee('Setujui Sekarang');
+    }
+
+    public function test_approver_can_fetch_approval_details_as_json()
+    {
+        $booking = Booking::create([
+            'user_id' => $this->borrower->id,
+            'room_id' => $this->room->id,
+            'workflow_id' => $this->workflow->id,
+            'event_name' => 'JSON Details Test Event',
+            'booking_date' => now()->addDays(5)->format('Y-m-d'),
+            'start_time' => '08:00',
+            'end_time' => '10:00',
+            'status' => 'Pending',
+            'current_step' => 1,
+            'event_scope' => 'Internal',
+        ]);
+        $this->createBookingStepsFor($booking);
+
+        $response = $this->actingAs($this->approver)->getJson(route('approvals.show', $booking->id));
+
+        $response->assertStatus(200);
+        $response->assertJsonPath('success', true);
+        $response->assertJsonPath('data.booking.event_name', 'JSON Details Test Event');
+        $response->assertJsonStructure([
+            'success',
+            'data' => [
+                'id',
+                'booking',
+                'room',
+                'peminjam',
+                'workflow',
+                'current_approver_required',
+                'approval_history',
+                'documents_uploaded',
+            ],
+        ]);
+    }
+
+    public function test_approver_rejection_requires_valid_notes()
+    {
+        $booking = Booking::create([
+            'user_id' => $this->borrower->id,
+            'room_id' => $this->room->id,
+            'workflow_id' => $this->workflow->id,
+            'event_name' => 'Validation Test Event',
+            'booking_date' => now()->addDays(5)->format('Y-m-d'),
+            'start_time' => '08:00',
+            'end_time' => '10:00',
+            'status' => 'Pending',
+            'current_step' => 1,
+            'event_scope' => 'Internal',
+        ]);
+        $this->createBookingStepsFor($booking);
+
+        // Notes less than 5 characters should fail
+        $response = $this->actingAs($this->approver)->postJson(route('approval.reject', $booking->id), [
+            'notes' => 'bad',
+        ]);
+        $response->assertStatus(422);
+
+        // Valid notes should pass
+        $response = $this->actingAs($this->approver)->postJson(route('approval.reject', $booking->id), [
+            'notes' => 'This is a valid rejection reason.',
+        ]);
+        $response->assertStatus(200);
+    }
 }

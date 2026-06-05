@@ -379,12 +379,19 @@ class BookingController extends Controller
         $hoursUsed = 0;
         $complianceScore = 4.8; // Nilai default
 
+        $totalMinutesUsed = 0;
         foreach ($userBookings as $booking) {
             $start = Carbon::parse($booking->start_time);
             $end = Carbon::parse($booking->end_time);
-            $hours = $end->diffInHours($start);
-            $hoursUsed += $hours;
+            if ($end->lt($start)) {
+                $end->addDay();
+            }
+            $dailyMinutes = $start->diffInMinutes($end, true);
+
+            $days = Carbon::parse($booking->booking_date)->diffInDays(Carbon::parse($booking->booking_end_date), true) + 1;
+            $totalMinutesUsed += $dailyMinutes * $days;
         }
+        $hoursUsed = round($totalMinutesUsed / 60, 1);
 
         // Kelompokkan booking berdasarkan ruangan dan tanggal untuk mempermudah render di kalender
         $bookingsByRoomAndDate = $allBookings->groupBy(function ($booking) {

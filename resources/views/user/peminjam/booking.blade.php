@@ -230,6 +230,48 @@
         </div>
 
     </div>
+
+    <div x-data="{
+        modal: {
+            show: false,
+            title: '',
+            description: '',
+            type: 'warning',
+            confirmText: 'Konfirmasi',
+            cancelText: 'Batal',
+            isConfirm: false,
+            onConfirm: null
+        },
+        showAlert(title, description, type = 'warning', onConfirm = null) {
+            this.modal = {
+                show: true,
+                title: title,
+                description: description,
+                type: type,
+                confirmText: 'Oke',
+                cancelText: 'Batal',
+                isConfirm: false,
+                onConfirm: onConfirm
+            };
+        },
+        showConfirm(title, description, onConfirm, type = 'danger', confirmText = 'Ya', cancelText = 'Batal') {
+            this.modal = {
+                show: true,
+                title: title,
+                description: description,
+                type: type,
+                confirmText: confirmText,
+                cancelText: cancelText,
+                isConfirm: true,
+                onConfirm: onConfirm
+            };
+        },
+        closeModal() {
+            this.modal.show = false;
+        }
+    }" id="global-modal-container">
+        <x-modal-confirm />
+    </div>
 </x-app-layout>
 
 <script>
@@ -524,7 +566,7 @@
                         
                         <input type="file" name="requirement_${req.id}" id="req_${req.id}" class="hidden" 
                                onchange="updateFileName(this, 'filename_${req.id}', 'icon_${req.id}')" 
-                               ${req.is_mandatory ? 'required' : ''}>
+                               data-mandatory="${req.is_mandatory ? 'true' : 'false'}" data-name="${req.document_name}">
 
                         <div class="flex items-center gap-4 flex-1">
                             <div class="w-10 h-10 rounded-lg bg-white dark:bg-[#222] border border-slate-200 dark:border-[#333] flex items-center justify-center text-slate-400 dark:text-gray-400 transition-colors" id="iconBox_${req.id}">
@@ -646,58 +688,102 @@
     document.getElementById('bookingForm').addEventListener('submit', async function(e) {
         e.preventDefault();
         
-        const form = this;
-        const submitBtn = document.getElementById('submitBtn');
-        const btnText = submitBtn.querySelector('span');
-        const loadingIcon = document.getElementById('loadingIcon');
-
-        submitBtn.disabled = true;
-        btnText.textContent = 'Memproses...';
-        loadingIcon.classList.remove('hidden');
-        loadingIcon.classList.add('animate-pulse');
-
-        try {
-            const formData = new FormData(form);
-            const response = await fetch(form.action, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json'
-                }
-            });
-
-            let data = {};
-            try {
-                data = await response.json();
-            } catch (e) {
-                console.error('Failed to parse JSON response', e);
+        // Manual validation for required documents
+        const fileInputs = this.querySelectorAll('input[type="file"][data-mandatory="true"]');
+        let missingDocs = [];
+        fileInputs.forEach(input => {
+            if (!input.files || input.files.length === 0) {
+                const docName = input.getAttribute('data-name');
+                missingDocs.push(docName);
             }
+        });
 
-            if (response.ok) {
-                alert('Berhasil! Booking Anda telah diajukan.');
-                window.location.href = "{{ route('riwayat') }}";
-            } else {
-                if (response.status === 419) {
-                    alert('Sesi Anda telah berakhir. Silakan segarkan halaman (Refresh) dan coba lagi.');
-                    return;
-                }
-                
-                if (data.errors) {
-                    const errorMessages = Object.values(data.errors).flat().join('\n');
-                    alert('Gagal: \n' + errorMessages);
-                } else {
-                    alert(data.error || data.message || 'Terjadi kesalahan, pastikan semua form dan dokumen terisi.');
-                }
-            }
-        } catch (error) {
-            console.error('Fetch error:', error);
-            alert('Gagal terhubung ke server. Silakan coba lagi.');
-        } finally {
-            submitBtn.disabled = false;
-            btnText.textContent = 'Pesan Sekarang';
-            loadingIcon.classList.add('hidden');
-            loadingIcon.classList.remove('animate-pulse');
+        if (missingDocs.length > 0) {
+            Alpine.$data(document.getElementById('global-modal-container')).showAlert(
+                'Dokumen Belum Lengkap',
+                'Harap unggah dokumen wajib berikut: ' + missingDocs.join(', '),
+                'warning'
+            );
+            return;
         }
+        
+        const form = this;
+        const roomSelectEl = document.getElementById('roomSelect');
+        const roomName = roomSelectEl.options[roomSelectEl.selectedIndex]?.text || 'Ruangan';
+        const eventName = document.getElementById('eventName').value;
+        const rentalType = document.querySelector('input[name="rental_type"]:checked')?.value;
+        const bookingDate = document.getElementById('bookingDate').value;
+        let dateText = bookingDate;
+        if (rentalType === 'range') {
+            const bookingEndDate = document.getElementById('bookingEndDate').value;
+            if (bookingEndDate) {
+                dateText += ' s/d ' + bookingEndDate;
+            }
+        }
+        const startTime = document.getElementById('startTime').value;
+        const endTime = document.getElementById('endTime').value;
+
+        const modalContainer = Alpine.$data(document.getElementById('global-modal-container'));
+        modalContainer.showConfirm(
+            'Konfirmasi Pemesanan',
+            `Apakah Anda yakin ingin memesan "${roomName}" untuk kegiatan "${eventName}" pada tanggal ${dateText} pukul ${startTime} - ${endTime} WIB?`,
+            async () => {
+                const submitBtn = document.getElementById('submitBtn');
+                const btnText = submitBtn.querySelector('span');
+                const loadingIcon = document.getElementById('loadingIcon');
+
+                submitBtn.disabled = true;
+                btnText.textContent = 'Memproses...';
+                loadingIcon.classList.remove('hidden');
+                loadingIcon.classList.add('animate-pulse');
+
+                try {
+                    const formData = new FormData(form);
+                    const response = await fetch(form.action, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json'
+                        }
+                    });
+
+                    let data = {};
+                    try {
+                        data = await response.json();
+                    } catch (e) {
+                        console.error('Failed to parse JSON response', e);
+                    }
+
+                    if (response.ok) {
+                        modalContainer.showAlert('Berhasil', 'Booking Anda telah diajukan.', 'success', () => {
+                            window.location.href = "{{ route('riwayat') }}";
+                        });
+                    } else {
+                        if (response.status === 419) {
+                            modalContainer.showAlert('Sesi Berakhir', 'Sesi Anda telah berakhir. Silakan segarkan halaman (Refresh) dan coba lagi.', 'warning');
+                            return;
+                        }
+                        
+                        if (data.errors) {
+                            const errorMessages = Object.values(data.errors).flat().join('\n');
+                            modalContainer.showAlert('Gagal Validasi', errorMessages, 'warning');
+                        } else {
+                            modalContainer.showAlert('Peringatan', data.error || data.message || 'Terjadi kesalahan, pastikan semua form dan dokumen terisi.', 'warning');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Fetch error:', error);
+                    modalContainer.showAlert('Gagal', 'Gagal terhubung ke server. Silakan coba lagi.', 'danger');
+                } finally {
+                    submitBtn.disabled = false;
+                    btnText.textContent = 'Pesan Sekarang';
+                    loadingIcon.classList.add('hidden');
+                    loadingIcon.classList.remove('animate-pulse');
+                }
+            },
+            'info',
+            'Pesan Sekarang'
+        );
     });
 </script>

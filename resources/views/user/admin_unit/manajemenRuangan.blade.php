@@ -309,12 +309,54 @@
                         window.location.reload();
                     }, 300);
                 } else {
-                    alert(data.message || 'Gagal menghapus ruangan');
+                    Alpine.$data(document.getElementById('global-modal-container')).showAlert('Gagal', data.message || 'Gagal menghapus ruangan', 'danger');
                 }
             } catch (error) {
-                alert('Terjadi kesalahan: ' + error.message);
+                Alpine.$data(document.getElementById('global-modal-container')).showAlert('Kesalahan Sistem', 'Terjadi kesalahan: ' + error.message, 'danger');
             }
         }
     </script>
+    
+    <div x-data="{
+        modal: {
+            show: false,
+            title: '',
+            description: '',
+            type: 'warning',
+            confirmText: 'Konfirmasi',
+            cancelText: 'Batal',
+            isConfirm: false,
+            onConfirm: null
+        },
+        showAlert(title, description, type = 'warning', onConfirm = null) {
+            this.modal = {
+                show: true,
+                title: title,
+                description: description,
+                type: type,
+                confirmText: 'Oke',
+                cancelText: 'Batal',
+                isConfirm: false,
+                onConfirm: onConfirm
+            };
+        },
+        showConfirm(title, description, onConfirm, type = 'danger', confirmText = 'Ya', cancelText = 'Batal') {
+            this.modal = {
+                show: true,
+                title: title,
+                description: description,
+                type: type,
+                confirmText: confirmText,
+                cancelText: cancelText,
+                isConfirm: true,
+                onConfirm: onConfirm
+            };
+        },
+        closeModal() {
+            this.modal.show = false;
+        }
+    }" id="global-modal-container">
+        <x-modal-confirm />
+    </div>
     @endpush
 </x-app-layout>

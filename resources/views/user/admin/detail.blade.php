@@ -150,7 +150,7 @@
                             <div class="flex items-center gap-3">
                                 <i class="ph ph-calendar text-kinetic-primary text-xl"></i>
                                 <div>
-                                    <p class="text-sm font-bold text-slate-900 dark:text-white">{{ \Carbon\Carbon::parse($booking->booking_date)->translatedFormat('l, d M Y') }}</p>
+                                    <p class="text-sm font-bold text-slate-900 dark:text-white">{{ $booking->getFormattedDateRange(true) }}</p>
                                     <p class="text-[10px] text-slate-500">Tanggal Kegiatan</p>
                                 </div>
                             </div>
@@ -158,7 +158,7 @@
                                 <i class="ph ph-clock text-kinetic-primary text-xl"></i>
                                 <div>
                                     <p class="text-sm font-bold text-slate-900 dark:text-white">{{ date('H:i', strtotime($booking->start_time)) }} - {{ date('H:i', strtotime($booking->end_time)) }} WIB</p>
-                                    <p class="text-[10px] text-slate-500">Durasi: {{ \Carbon\Carbon::parse($booking->end_time)->diffInHours(\Carbon\Carbon::parse($booking->start_time)) }} Jam</p>
+                                    <p class="text-[10px] text-slate-500">Durasi: {{ $booking->getDurationString() }}</p>
                                 </div>
                             </div>
                         </div>

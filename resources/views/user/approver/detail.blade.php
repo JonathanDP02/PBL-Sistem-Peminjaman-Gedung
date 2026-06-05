@@ -40,7 +40,7 @@
                         <p class="text-[10px] font-bold text-slate-500 dark:text-gray-500 uppercase tracking-widest mb-2">Tanggal</p>
                         <div class="flex items-start gap-2">
                             <i class="ph-bold ph-calendar-blank text-teal-600 dark:text-kinetic-primary mt-0.5"></i>
-                            <p class="text-sm font-bold text-slate-900 dark:text-white">{{ $approval['booking']['booking_date'] }}</p>
+                            <p class="text-sm font-bold text-slate-900 dark:text-white">{{ $booking->getFormattedDateRange(true) }}</p>
                         </div>
                     </div>
                     <div class="bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] rounded-2xl p-4">
@@ -209,31 +209,37 @@
     </div>
 
     <!-- Reject Modal -->
-    <div id="rejectModal" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-[#151515] rounded-2xl max-w-md w-full">
-            
-            <div class="p-6 border-b border-slate-200 dark:border-[#2A2A2A]">
-                <h3 class="font-bold text-slate-900 dark:text-white text-lg">Tolak Permohonan</h3>
-                <p class="text-sm text-slate-500 dark:text-gray-500 mt-1">Berikan alasan penolakan untuk peminjam</p>
-            </div>
+    <template x-teleport="body">
+        <div id="rejectModal" class="hidden fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm transition-all duration-300">
+            <div class="bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] rounded-3xl w-full max-w-lg p-8 relative shadow-2xl transform scale-95 transition-all duration-300">
+                
+                <button onclick="closeRejectModal()" class="absolute top-6 right-6 text-slate-400 hover:text-red-500 transition-colors">
+                    <i class="ph-bold ph-x text-xl"></i>
+                </button>
 
-            <div class="p-6">
-                <form id="rejectForm" onsubmit="submitReject(event)">
-                    <textarea id="rejectNotes" name="notes" placeholder="Masukkan alasan penolakan..." required class="w-full px-4 py-3 border border-slate-200 dark:border-[#2A2A2A] rounded-xl bg-white dark:bg-[#1A1A1A] text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-600 focus:ring-teal-500 focus:border-teal-500 dark:focus:ring-kinetic-primary dark:focus:border-kinetic-primary resize-none" rows="4"></textarea>
-                    
-                    <div class="flex gap-3 mt-6">
-                        <button type="button" onclick="closeRejectModal()" class="flex-1 py-3 rounded-xl border border-slate-200 dark:border-[#2A2A2A] text-slate-700 dark:text-gray-300 font-bold hover:bg-slate-50 dark:hover:bg-[#1A1A1A] transition-colors">
+                <div class="mb-6">
+                    <h3 class="font-heading text-2xl font-bold text-slate-900 dark:text-white mb-1">Tolak Permohonan</h3>
+                    <p class="text-xl text-slate-500 dark:text-gray-400">Tuliskan instruksi atau alasan dengan jelas untuk peminjam.</p>
+                </div>
+
+                <form id="rejectForm" onsubmit="submitReject(event)" class="space-y-5">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">Alasan Penolakan / Revisi</label>
+                        <textarea id="rejectNotes" name="notes" placeholder="Contoh: Lampiran proposal kurang tanda tangan ketua unit. Harap upload kembali proposal yang telah disetujui." required class="w-full px-4 py-3 border border-slate-200 dark:border-[#2A2A2A] rounded-xl bg-slate-50 dark:bg-[#1A1A1A] text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-kinetic-primary transition-colors resize-none text-sm leading-relaxed" rows="4"></textarea>
+                    </div>
+
+                    <div class="flex gap-3 pt-4 border-t border-slate-200 dark:border-[#2A2A2A] mt-6">
+                        <button type="button" onclick="closeRejectModal()" class="w-1/3 bg-slate-100 dark:bg-[#1A1A1A] text-slate-700 dark:text-white border border-slate-200 dark:border-[#2A2A2A] hover:bg-slate-200 dark:hover:bg-[#222] font-bold py-3.5 rounded-xl transition-colors text-sm">
                             Batal
                         </button>
-                        <button type="submit" class="flex-1 py-3 rounded-xl bg-red-600 text-white font-bold hover:bg-red-700 transition-colors">
-                            Tolak
+                        <button type="submit" class="w-2/3 bg-red-600 hover:bg-red-700 text-white font-bold py-3.5 rounded-xl transition-colors shadow-[0_0_15px_rgba(239,68,68,0.2)] text-sm">
+                            Ya, Tolak
                         </button>
                     </div>
                 </form>
             </div>
-
         </div>
-    </div>
+    </template>
 
     <script>
         function viewDocument(filePath, fileName) {
@@ -249,77 +255,150 @@
         }
 
         function showRejectModal() {
-            document.getElementById('rejectModal').classList.remove('hidden');
+            const modal = document.getElementById('rejectModal');
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
         }
 
         function closeRejectModal() {
-            document.getElementById('rejectModal').classList.add('hidden');
+            const modal = document.getElementById('rejectModal');
+            modal.classList.add('hidden');
+            document.body.style.overflow = '';
             document.getElementById('rejectForm').reset();
         }
 
         function submitApprove() {
-            if (confirm('Apakah Anda yakin ingin menyetujui permohonan ini?')) {
-                const bookingId = '{{ $booking->id }}';
-                fetch(`/approver/approvals/${bookingId}/approve`, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({})
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('Pengajuan telah disetujui!');
-                        window.location.href = '/approver/meja-kerja';
-                    } else {
-                        alert('Error: ' + data.message);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('Gagal memproses persetujuan');
-                });
-            }
+            const modalContainer = Alpine.$data(document.getElementById('global-modal-container'));
+            modalContainer.showConfirm(
+                'Setujui Permohonan?',
+                'Apakah Anda yakin ingin menyetujui permohonan peminjaman ini?',
+                () => {
+                    const bookingId = '{{ $booking->id }}';
+                    fetch(`/approver/approvals/${bookingId}/approve`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                        },
+                        body: JSON.stringify({})
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            modalContainer.showAlert('Berhasil', 'Pengajuan telah disetujui!', 'success', () => {
+                                window.location.href = '/approver/meja-kerja';
+                            });
+                        } else {
+                            modalContainer.showAlert('Gagal', 'Error: ' + (data.error || data.message || 'Terjadi kesalahan'), 'danger');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        modalContainer.showAlert('Kesalahan', 'Gagal memproses persetujuan', 'danger');
+                    });
+                },
+                'success',
+                'Ya, Setujui'
+            );
         }
 
         function submitReject(event) {
             event.preventDefault();
             const notes = document.getElementById('rejectNotes').value;
-            if (confirm('Apakah Anda yakin ingin menolak permohonan ini?')) {
-                const bookingId = '{{ $booking->id }}';
-                fetch(`/approver/approvals/${bookingId}/reject`, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ notes: notes })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('Pengajuan telah ditolak!');
-                        window.location.href = '/approver/meja-kerja';
-                    } else {
-                        alert('Error: ' + data.message);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('Gagal memproses penolakan');
-                });
-            }
+            const modalContainer = Alpine.$data(document.getElementById('global-modal-container'));
+            
+            modalContainer.showConfirm(
+                'Tolak Permohonan?',
+                'Apakah Anda yakin ingin menolak permohonan ini?',
+                () => {
+                    closeRejectModal();
+                    
+                    const bookingId = '{{ $booking->id }}';
+                    fetch(`/approver/approvals/${bookingId}/reject`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                        },
+                        body: JSON.stringify({ notes: notes })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            modalContainer.showAlert('Berhasil', 'Pengajuan telah ditolak!', 'success', () => {
+                                window.location.href = '/approver/meja-kerja';
+                            });
+                        } else {
+                            modalContainer.showAlert('Gagal', 'Error: ' + (data.error || data.message || 'Terjadi kesalahan'), 'danger');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        modalContainer.showAlert('Kesalahan', 'Gagal memproses penolakan', 'danger');
+                    });
+                },
+                'danger',
+                'Ya, Tolak'
+            );
         }
 
         // Close modals when clicking outside
-        document.getElementById('documentModal').addEventListener('click', function(e) {
-            if (e.target === this) closeDocumentModal();
-        });
+        const documentModal = document.getElementById('documentModal');
+        if (documentModal) {
+            documentModal.addEventListener('click', function(e) {
+                if (e.target === this) closeDocumentModal();
+            });
+        }
 
-        document.getElementById('rejectModal').addEventListener('click', function(e) {
-            if (e.target === this) closeRejectModal();
+        document.body.addEventListener('click', function(e) {
+            const rejectModal = document.getElementById('rejectModal');
+            if (rejectModal && e.target === rejectModal) {
+                closeRejectModal();
+            }
         });
     </script>
+
+    <div x-data="{
+        modal: {
+            show: false,
+            title: '',
+            description: '',
+            type: 'warning',
+            confirmText: 'Konfirmasi',
+            cancelText: 'Batal',
+            isConfirm: false,
+            onConfirm: null
+        },
+        showAlert(title, description, type = 'warning', onConfirm = null) {
+            this.modal = {
+                show: true,
+                title: title,
+                description: description,
+                type: type,
+                confirmText: 'Oke',
+                cancelText: 'Batal',
+                isConfirm: false,
+                onConfirm: onConfirm
+            };
+        },
+        showConfirm(title, description, onConfirm, type = 'danger', confirmText = 'Ya', cancelText = 'Batal') {
+            this.modal = {
+                show: true,
+                title: title,
+                description: description,
+                type: type,
+                confirmText: confirmText,
+                cancelText: cancelText,
+                isConfirm: true,
+                onConfirm: onConfirm
+            };
+        },
+        closeModal() {
+            this.modal.show = false;
+        }
+    }" id="global-modal-container">
+        <x-modal-confirm />
+    </div>
 </x-app-layout>

@@ -290,7 +290,7 @@ class ApprovalController extends Controller
                     'attempt' => ($booking->revision_count ?? 0) + 1,
                 ]);
 
-                LoggerService::logAction($booking->id, 'APPROVED', $currentStep->id, $request->notes);
+                LoggerService::logAction($booking->id, 'APPROVED', null, $request->notes);
             });
         } catch (ModelNotFoundException $e) {
             return response()->json(['success' => false, 'error' => 'Data tidak ditemukan.'], 404);
@@ -414,7 +414,7 @@ class ApprovalController extends Controller
                     'attempt' => ($booking->revision_count ?? 0) + 1,
                 ]);
 
-                LoggerService::logAction($booking->id, 'REJECTED', $currentStep->id, $request->notes);
+                LoggerService::logAction($booking->id, 'REJECTED', null, $request->notes);
             });
         } catch (ModelNotFoundException $e) {
             return response()->json(['success' => false, 'error' => 'Data tidak ditemukan.'], 404);
@@ -668,12 +668,10 @@ class ApprovalController extends Controller
             'approvals.bookingStep',
         ])->findOrFail($id);
 
-        // Verify approver can access this booking via instantiated booking_steps
-        // (NOT workflow.steps — WRI approvers exist in booking_steps but not in the
-        //  room-owner's workflow template, e.g. Graha Polinema owned by Pusat)
+        // Verify approver can access this booking via instantiated booking_steps or history
         $hasAccess = $booking->bookingSteps
             ->where('position_id', $positionId)
-            ->isNotEmpty();
+            ->isNotEmpty() || $booking->approvals->where('approver_id', $approver->id)->isNotEmpty();
 
         if (! $hasAccess) {
             abort(403, 'Anda tidak memiliki akses untuk meninjau pengajuan ini.');

@@ -115,24 +115,23 @@
         </div>
     </div>
 
-    <div id="historyModal" class="hidden fixed inset-0 z-[60] overflow-y-auto">
-        <div class="flex items-center justify-center min-h-screen p-4">
-            <div class="fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm transition-opacity" onclick="closeHistoryModal()"></div>
-            
-            <div class="relative bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden transform transition-all">
-                <div class="flex items-center justify-between p-6 border-b border-slate-200 dark:border-[#2A2A2A]">
-                    <div>
-                        <h3 class="font-heading text-xl font-extrabold text-slate-900 dark:text-white">Detail Riwayat Pengajuan</h3>
-                        <p id="modalEventName" class="text-xs text-slate-500 dark:text-gray-400 mt-0.5 italic">Memuat...</p>
-                    </div>
-                    <button onclick="closeHistoryModal()" class="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 dark:bg-[#1A1A1A] text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors">
-                        <i class="ph-bold ph-x text-xl"></i>
-                    </button>
+    <!-- History Modal -->
+    <template x-teleport="body">
+        <div id="historyModal" class="hidden fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm transition-all duration-300">
+            <div class="bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] rounded-3xl w-full max-w-2xl p-8 relative shadow-2xl transform scale-95 transition-all duration-300 flex flex-col max-h-[90vh]">
+                
+                <button onclick="closeHistoryModal()" class="absolute top-6 right-6 text-slate-400 hover:text-red-500 transition-colors">
+                    <i class="ph-bold ph-x text-xl"></i>
+                </button>
+
+                <div class="mb-6 shrink-0">
+                    <h3 class="font-heading text-2xl font-bold text-slate-900 dark:text-white mb-1">Detail Riwayat Pengajuan</h3>
+                    <p id="modalEventName" class="text-xl text-slate-500 dark:text-gray-400 italic">Memuat...</p>
                 </div>
 
-                <div class="p-8 space-y-8 max-h-[70vh] overflow-y-auto custom-scrollbar">
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="flex-1 overflow-y-auto pr-1 space-y-6 custom-scrollbar">
+                    <!-- Info Grid -->
+                    <div class="grid grid-cols-2 gap-4">
                         <div class="bg-slate-50 dark:bg-[#1A1A1A] p-4 rounded-2xl border border-slate-100 dark:border-[#2A2A2A]">
                             <p class="text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-1">Peminjam</p>
                             <p id="modalBorrower" class="text-sm font-bold text-slate-700 dark:text-gray-300">-</p>
@@ -151,39 +150,45 @@
                         </div>
                     </div>
 
+                    <!-- Timeline -->
                     <div>
-                        <h4 class="text-sm font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
+                        <h4 class="text-sm font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
                             <i class="ph-bold ph-git-merge text-teal-500 dark:text-kinetic-primary"></i>
                             Timeline Persetujuan
                         </h4>
                         
                         <div id="approvalTimeline" class="space-y-6 relative before:absolute before:left-4 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100 dark:before:bg-[#2A2A2A]">
-                            </div>
+                            <!-- Injected by JS -->
+                        </div>
                     </div>
                 </div>
 
-                <div class="p-6 bg-slate-50 dark:bg-[#1A1A1A] border-t border-slate-200 dark:border-[#2A2A2A] flex justify-end">
-                    <button onclick="closeHistoryModal()" class="px-6 py-2.5 rounded-xl bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] text-slate-600 dark:text-gray-400 font-bold text-xs hover:bg-slate-50 dark:hover:bg-[#1A1A1A] transition-all shadow-sm">
+                <div class="pt-6 border-t border-slate-200 dark:border-[#2A2A2A] mt-6 flex justify-end shrink-0">
+                    <button onclick="closeHistoryModal()" class="px-6 py-2.5 rounded-xl bg-slate-100 dark:bg-[#1A1A1A] text-slate-700 dark:text-white border border-slate-200 dark:border-[#2A2A2A] hover:bg-slate-200 dark:hover:bg-[#222] font-bold text-xs transition-colors shadow-sm">
                         Tutup
                     </button>
                 </div>
             </div>
         </div>
-    </div>
+    </template>
 
     <script>
-        const modal = document.getElementById('historyModal');
-        const timeline = document.getElementById('approvalTimeline');
-
         function openHistoryModal(bookingId) {
-            modal.classList.remove('hidden');
+            const modal = document.getElementById('historyModal');
+            const timeline = document.getElementById('approvalTimeline');
+            if (modal) modal.classList.remove('hidden');
             document.body.style.overflow = 'hidden';
-            timeline.innerHTML = '<p class="text-center text-slate-400 text-xs italic py-4">Memuat riwayat...</p>';
+            if (timeline) timeline.innerHTML = '<p class="text-center text-slate-400 text-xs italic py-4">Memuat riwayat...</p>';
 
             fetch(`/approver/approvals/${bookingId}`, {
                 headers: { 'Accept': 'application/json' }
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Gagal memuat detail riwayat (Status: ' + response.status + ')');
+                }
+                return response.json();
+            })
             .then(res => {
                 if (res.success) {
                     const data = res.data;
@@ -219,14 +224,30 @@
                                 </div>`;
                         });
                     }
-                    timeline.innerHTML = timelineHtml;
+                    if (timeline) timeline.innerHTML = timelineHtml;
+                } else {
+                    throw new Error(res.error || 'Terjadi kesalahan saat memuat data.');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                if (timeline) {
+                    timeline.innerHTML = `<p class="text-center text-red-500 text-sm font-bold py-4">Error: ${err.message}</p>`;
                 }
             });
         }
 
         function closeHistoryModal() {
-            modal.classList.add('hidden');
+            const modal = document.getElementById('historyModal');
+            if (modal) modal.classList.add('hidden');
             document.body.style.overflow = 'auto';
         }
+
+        document.body.addEventListener('click', function(e) {
+            const modal = document.getElementById('historyModal');
+            if (modal && e.target === modal) {
+                closeHistoryModal();
+            }
+        });
     </script>
 </x-app-layout>

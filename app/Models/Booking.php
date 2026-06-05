@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -106,5 +107,44 @@ class Booking extends Model
         $completedSteps = $this->current_step - 1;
 
         return (int) round(($completedSteps / $totalSteps) * 100);
+    }
+
+    public function getDurationString(): string
+    {
+        $start = Carbon::parse($this->start_time);
+        $end = Carbon::parse($this->end_time);
+
+        if ($end->lt($start)) {
+            $end->addDay();
+        }
+
+        $totalMinutes = $start->diffInMinutes($end, true);
+
+        if ($totalMinutes < 60) {
+            return $totalMinutes.' Menit';
+        }
+
+        $hours = floor($totalMinutes / 60);
+        $minutes = $totalMinutes % 60;
+
+        if ($minutes > 0) {
+            return $hours.' Jam '.$minutes.' Menit';
+        }
+
+        return $hours.' Jam';
+    }
+
+    public function getFormattedDateRange(bool $showDayOfWeek = true): string
+    {
+        $startDate = Carbon::parse($this->booking_date);
+        $endDate = Carbon::parse($this->booking_end_date);
+
+        if ($startDate->format('Y-m-d') === $endDate->format('Y-m-d')) {
+            return $showDayOfWeek
+                ? $startDate->translatedFormat('l, d M Y')
+                : $startDate->translatedFormat('d M Y');
+        }
+
+        return $startDate->translatedFormat('d M Y').' - '.$endDate->translatedFormat('d M Y');
     }
 }
