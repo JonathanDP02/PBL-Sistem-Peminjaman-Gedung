@@ -23,7 +23,46 @@
             <div x-data="{ 
                     ruanganId: '', 
                     roomsData: {{ Js::from($rooms) }},
-                    get selectedRoom() { return this.roomsData.find(r => r.id == this.ruanganId) || null; }
+                    get selectedRoom() { return this.roomsData.find(r => r.id == this.ruanganId) || null; },
+
+                    // Modal state
+                    modal: {
+                        show: false,
+                        title: '',
+                        description: '',
+                        type: 'warning',
+                        confirmText: 'Konfirmasi',
+                        cancelText: 'Batal',
+                        isConfirm: false,
+                        onConfirm: null
+                    },
+                    showAlert(title, description, type = 'warning', onConfirm = null) {
+                        this.modal = {
+                            show: true,
+                            title: title,
+                            description: description,
+                            type: type,
+                            confirmText: 'Oke',
+                            cancelText: 'Batal',
+                            isConfirm: false,
+                            onConfirm: onConfirm
+                        };
+                    },
+                    showConfirm(title, description, onConfirm, type = 'danger', confirmText = 'Ya', cancelText = 'Batal') {
+                        this.modal = {
+                            show: true,
+                            title: title,
+                            description: description,
+                            type: type,
+                            confirmText: confirmText,
+                            cancelText: cancelText,
+                            isConfirm: true,
+                            onConfirm: onConfirm
+                        };
+                    },
+                    closeModal() {
+                        this.modal.show = false;
+                    }
                 }" class="grid grid-cols-1 lg:grid-cols-5 gap-8">
                 
                 <!-- LEFT SIDE: CONFIGURATION FORM -->
@@ -196,11 +235,11 @@
                                     </div>
                                     
                                     <!-- Delete Button -->
-                                    <form action="{{ route('pemblokiran.destroy') }}" method="POST" onsubmit="return confirm('Batalkan pemblokiran ini? Seluruh jadwal dalam rentang waktu tersebut akan dibuka kembali.')" class="opacity-0 group-hover:opacity-100 transition-opacity pr-2">
+                                    <form action="{{ route('pemblokiran.destroy') }}" method="POST" class="opacity-0 group-hover:opacity-100 transition-opacity pr-2">
                                         @csrf
                                         @method('DELETE')
                                         <input type="hidden" name="event_name" value="{{ $block->event_name }}">
-                                        <button type="submit" class="p-2 bg-red-50 dark:bg-red-500/10 text-red-500 dark:text-red-400 rounded-xl hover:bg-red-500 hover:text-white dark:hover:bg-red-500 dark:hover:text-white transition-all shadow-sm">
+                                        <button type="button" @click="showConfirm('Batalkan Pemblokiran?', 'Apakah Anda yakin ingin membatalkan pemblokiran ini? Seluruh jadwal dalam rentang waktu tersebut akan dibuka kembali.', () => $el.closest('form').submit(), 'danger', 'Batalkan')" class="p-2 bg-red-50 dark:bg-red-500/10 text-red-500 dark:text-red-400 rounded-xl hover:bg-red-500 hover:text-white dark:hover:bg-red-500 dark:hover:text-white transition-all shadow-sm">
                                             <i class="ph-bold ph-trash"></i>
                                         </button>
                                     </form>
@@ -221,6 +260,8 @@
                     </div>
                 </div>
             </div>
+            <!-- Modern Custom Modal -->
+            <x-modal-confirm />
         </div>
     </div>
 </x-app-layout>

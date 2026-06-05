@@ -144,6 +144,9 @@
                 </div>
             </template>
 
+            <!-- Modern Custom Modal -->
+            <x-modal-confirm />
+
         </div>
     </div>
 
@@ -162,20 +165,61 @@
                 steps: [],
                 availablePositions: [],
 
+                // Modal state
+                modal: {
+                    show: false,
+                    title: '',
+                    description: '',
+                    type: 'warning',
+                    confirmText: 'Konfirmasi',
+                    cancelText: 'Batal',
+                    isConfirm: false,
+                    onConfirm: null
+                },
 
+                showAlert(title, description, type = 'warning', onConfirm = null) {
+                    this.modal = {
+                        show: true,
+                        title: title,
+                        description: description,
+                        type: type,
+                        confirmText: 'Oke',
+                        cancelText: 'Batal',
+                        isConfirm: false,
+                        onConfirm: onConfirm
+                    };
+                },
+
+                showConfirm(title, description, onConfirm, type = 'danger', confirmText = 'Hapus', cancelText = 'Batal') {
+                    this.modal = {
+                        show: true,
+                        title: title,
+                        description: description,
+                        type: type,
+                        confirmText: confirmText,
+                        cancelText: cancelText,
+                        isConfirm: true,
+                        onConfirm: onConfirm
+                    };
+                },
+
+                closeModal() {
+                    this.modal.show = false;
+                },
 
                 getHeaders() {
                     return {
                         'Accept': 'application/json',
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name=\"csrf-token\"]').getAttribute('content')
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                     };
                 },
 
                 async initBuilder() {
                     if (!this.workflowId) {
-                        alert('ID Workflow tidak ditemukan. Anda akan dikembalikan ke daftar.');
-                        window.location.href = this.workflowsBuilderUrl;
+                        this.showAlert('ID Workflow Tidak Ditemukan', 'ID Workflow tidak ditemukan. Anda akan dikembalikan ke daftar.', 'danger', () => {
+                            window.location.href = this.workflowsBuilderUrl;
+                        });
                         return;
                     }
 
@@ -210,7 +254,7 @@
 
                     } catch (error) {
                         console.error('Error memuat data:', error);
-                        alert('Terjadi kesalahan koneksi saat memuat alur.');
+                        this.showAlert('Koneksi Gagal', 'Terjadi kesalahan koneksi saat memuat alur.', 'danger');
                     } finally {
                         this.loading = false;
                     }
@@ -225,9 +269,9 @@
                 },
 
                 removeDocument(index) {
-                    if(confirm('Hapus syarat dokumen ini?')) {
+                    this.showConfirm('Hapus Syarat Dokumen?', 'Apakah Anda yakin ingin menghapus syarat dokumen ini?', () => {
                         this.documents.splice(index, 1);
-                    }
+                    }, 'danger', 'Hapus');
                 },
 
                 addStep() {
@@ -240,30 +284,44 @@
                 },
 
                 removeStep(index) {
-                    if(confirm('Hapus pejabat ini dari alur?')) {
+                    this.showConfirm('Hapus Pejabat?', 'Apakah Anda yakin ingin menghapus pejabat ini dari alur?', () => {
                         this.steps.splice(index, 1);
                         // Re-order the remaining steps
                         this.steps.forEach((step, i) => {
                             step.step_order = i + 1;
                         });
-                    }
+                    }, 'danger', 'Hapus');
                 },
 
                 async saveAll() {
                     const incompleteDocs = this.documents.filter((d) => !d.document_name.trim());
-                    if (incompleteDocs.length > 0) return alert('Terdapat nama dokumen yang masih kosong. Harap isi atau hapus.');
+                    if (incompleteDocs.length > 0) {
+                        this.showAlert('Nama Dokumen Kosong', 'Terdapat nama dokumen yang masih kosong. Harap isi atau hapus.', 'warning');
+                        return;
+                    }
                     
                     const incompleteSteps = this.steps.filter((s) => !s.position_id);
-                    if (incompleteSteps.length > 0) return alert('Terdapat tahapan alur yang belum memilih Jabatan Pejabat.');
-
-                    if (this.steps.length === 0) {
-                        const proceed = confirm('Workflow ini belum memiliki tahapan persetujuan. Syarat dokumen tetap bisa disimpan, tetapi workflow belum dapat dipakai untuk pengajuan sampai minimal 1 tahapan ditambahkan. Lanjut simpan?');
-
-                        if (!proceed) {
-                            return;
-                        }
+                    if (incompleteSteps.length > 0) {
+                        this.showAlert('Jabatan Belum Dipilih', 'Terdapat tahapan alur yang belum memilih Jabatan Pejabat.', 'warning');
+                        return;
                     }
 
+                    if (this.steps.length === 0) {
+                        this.showConfirm(
+                            'Simpan Tanpa Tahapan?', 
+                            'Workflow ini belum memiliki tahapan persetujuan. Syarat dokumen tetap bisa disimpan, tetapi alur persetujuan belum dapat dipakai untuk pengajuan sampai minimal 1 tahapan ditambahkan. Lanjut simpan?', 
+                            () => {
+                                this.executeSave();
+                            },
+                            'warning',
+                            'Lanjut Simpan'
+                        );
+                    } else {
+                        this.executeSave();
+                    }
+                },
+
+                async executeSave() {
                     try {
                         this.saving = true;
 
@@ -288,15 +346,16 @@
                         });
 
                         if (res.ok) {
-                            alert('Konfigurasi Workflow berhasil disimpan!');
-                            window.location.href = this.workflowsBuilderUrl;
+                            this.showAlert('Berhasil Disimpan', 'Konfigurasi Workflow berhasil disimpan!', 'success', () => {
+                                window.location.href = this.workflowsBuilderUrl;
+                            });
                         } else {
                             const err = await res.json();
-                            alert(err.message || 'Gagal menyimpan konfigurasi.');
+                            this.showAlert('Gagal Menyimpan', err.message || 'Gagal menyimpan konfigurasi.', 'danger');
                         }
                     } catch (error) {
                         console.error('Save error:', error);
-                        alert('Terjadi kesalahan pada sistem saat menyimpan.');
+                        this.showAlert('Kesalahan Sistem', 'Terjadi kesalahan pada sistem saat menyimpan.', 'danger');
                     } finally {
                         this.saving = false;
                     }

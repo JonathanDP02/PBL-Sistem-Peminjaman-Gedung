@@ -1,5 +1,44 @@
 <x-app-layout>
-    <div class="px-8 py-8 space-y-8 min-h-full" x-data="{ activeTab: 'ruangan' }">
+    <div class="px-8 py-8 space-y-8 min-h-full" x-data="{ 
+        activeTab: 'ruangan',
+        modal: {
+            show: false,
+            title: '',
+            description: '',
+            type: 'warning',
+            confirmText: 'Konfirmasi',
+            cancelText: 'Batal',
+            isConfirm: false,
+            onConfirm: null
+        },
+        showAlert(title, description, type = 'warning', onConfirm = null) {
+            this.modal = {
+                show: true,
+                title: title,
+                description: description,
+                type: type,
+                confirmText: 'Oke',
+                cancelText: 'Batal',
+                isConfirm: false,
+                onConfirm: onConfirm
+            };
+        },
+        showConfirm(title, description, onConfirm, type = 'danger', confirmText = 'Hapus', cancelText = 'Batal') {
+            this.modal = {
+                show: true,
+                title: title,
+                description: description,
+                type: type,
+                confirmText: confirmText,
+                cancelText: cancelText,
+                isConfirm: true,
+                onConfirm: onConfirm
+            };
+        },
+        closeModal() {
+            this.modal.show = false;
+        }
+    }">
         
         <!-- Header -->
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -214,7 +253,8 @@
                     </div>
                 </form>
             </div>
-        </div>
+        <!-- Custom Confirm Modal -->
+        <x-modal-confirm />
     @endpush
 
     @push('scripts')
@@ -347,6 +387,10 @@
             setTimeout(() => { modal.classList.add('hidden'); }, 300);
         }
 
+        function getFasilitasAlpine() {
+            return Alpine.$data(document.querySelector('[x-data]'));
+        }
+
         async function deleteRoom() {
             if(!roomToDelete) return;
             try {
@@ -355,8 +399,13 @@
                     headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Accept': 'application/json' }
                 });
                 if(response.ok) { window.location.reload(); } 
-                else { const d = await response.json(); alert(d.message || 'Gagal hapus ruangan'); }
-            } catch(e) { alert('Error: ' + e.message); }
+                else { 
+                    const d = await response.json(); 
+                    getFasilitasAlpine().showAlert('Gagal Hapus Ruangan', d.message || 'Gagal hapus ruangan', 'danger');
+                }
+            } catch(e) { 
+                getFasilitasAlpine().showAlert('Kesalahan Sistem', 'Error: ' + e.message, 'danger');
+            }
         }
 
         // === GEDUNG SCRIPT ===
@@ -385,18 +434,28 @@
             setTimeout(() => { m.classList.add('hidden'); }, 300);
         }
 
-        async function confirmDeleteGedung(id, name) {
-            if(confirm(`Yakin ingin menghapus gedung ${name}?\nGedung tidak dapat dihapus jika masih ada ruangan yang terhubung.`)) {
-                try {
-                    const response = await fetch(`/superadmin/api/buildings/${id}`, {
-                        method: 'DELETE',
-                        headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Accept': 'application/json' }
-                    });
-                    const d = await response.json();
-                    if(response.ok) { window.location.reload(); } 
-                    else { alert(d.message || 'Gagal hapus gedung'); }
-                } catch(e) { alert('Error: ' + e.message); }
-            }
+        function confirmDeleteGedung(id, name) {
+            getFasilitasAlpine().showConfirm(
+                'Hapus Gedung?',
+                `Yakin ingin menghapus gedung ${name}? Gedung tidak dapat dihapus jika masih ada ruangan yang terhubung.`,
+                async () => {
+                    try {
+                        const response = await fetch(`/superadmin/api/buildings/${id}`, {
+                            method: 'DELETE',
+                            headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Accept': 'application/json' }
+                        });
+                        const d = await response.json();
+                        if(response.ok) { window.location.reload(); } 
+                        else { 
+                            getFasilitasAlpine().showAlert('Gagal Hapus Gedung', d.message || 'Gagal hapus gedung', 'danger');
+                        }
+                    } catch(e) { 
+                        getFasilitasAlpine().showAlert('Kesalahan Sistem', 'Error: ' + e.message, 'danger');
+                    }
+                },
+                'danger',
+                'Hapus Gedung'
+            );
         }
     </script>
     @endpush

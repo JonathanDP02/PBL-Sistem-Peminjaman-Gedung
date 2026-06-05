@@ -196,7 +196,7 @@
                             <div class="flex items-center gap-3">
                                 <i class="ph ph-calendar text-kinetic-primary text-xl"></i>
                                 <div>
-                                    <p class="text-sm font-bold text-slate-900 dark:text-white">{{ \Carbon\Carbon::parse($booking->booking_date)->translatedFormat('l, d M Y') }}</p>
+                                    <p class="text-sm font-bold text-slate-900 dark:text-white">{{ $booking->getFormattedDateRange(true) }}</p>
                                     <p class="text-[10px] text-slate-500">Tanggal Kegiatan</p>
                                 </div>
                             </div>
@@ -204,7 +204,7 @@
                                 <i class="ph ph-clock text-kinetic-primary text-xl"></i>
                                 <div>
                                     <p class="text-sm font-bold text-slate-900 dark:text-white">{{ date('H:i', strtotime($booking->start_time)) }} - {{ date('H:i', strtotime($booking->end_time)) }} WIB</p>
-                                    <p class="text-[10px] text-slate-500">Durasi: {{ \Carbon\Carbon::parse($booking->end_time)->diffInHours(\Carbon\Carbon::parse($booking->start_time)) }} Jam</p>
+                                    <p class="text-[10px] text-slate-500">Durasi: {{ $booking->getDurationString() }}</p>
                                 </div>
                             </div>
                         </div>
@@ -288,35 +288,43 @@
         </div>
 
     </div>
-</x-app-layout>
 
 <script>
     async function cancelBooking(id) {
-        if (!confirm('Apakah Anda yakin ingin membatalkan peminjaman ini?')) return;
-        
-        try {
-            const cancelUrl = `{{ route('booking.cancel', ['id' => '__ID__']) }}`.replace('__ID__', id);
-        const response = await fetch(cancelUrl, {
-                method: 'PATCH',
-                headers: {
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                    'Accept': 'application/json'
+        const modalContainer = Alpine.$data(document.getElementById('global-modal-container'));
+        modalContainer.showConfirm(
+            'Batalkan Peminjaman?', 
+            'Apakah Anda yakin ingin membatalkan peminjaman ini?', 
+            async () => {
+                try {
+                    const cancelUrl = `{{ route('booking.cancel', ['id' => '__ID__']) }}`.replace('__ID__', id);
+                    const response = await fetch(cancelUrl, {
+                        method: 'PATCH',
+                        headers: {
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Accept': 'application/json'
+                        }
+                    });
+                    
+                    const data = await response.json();
+                    if (response.ok) {
+                        modalContainer.showAlert('Berhasil', 'Peminjaman berhasil dibatalkan!', 'success', () => {
+                            window.location.reload();
+                        });
+                    } else {
+                        modalContainer.showAlert('Gagal', data.error || 'Terjadi kesalahan.', 'danger');
+                    }
+                } catch (e) {
+                    modalContainer.showAlert('Kesalahan Koneksi', 'Gagal terhubung ke server.', 'danger');
                 }
-            });
-            
-            const data = await response.json();
-            if (response.ok) {
-                alert('Berhasil dibatalkan!');
-                window.location.reload();
-            } else {
-                alert(data.error || 'Terjadi kesalahan.');
-            }
-        } catch (e) {
-            alert('Gagal terhubung ke server.');
-        }
+            },
+            'danger',
+            'Ya, Batalkan'
+        );
     }
 
     async function submitRevisi() {
+        const modalContainer = Alpine.$data(document.getElementById('global-modal-container'));
         const form = document.getElementById('form-revisi');
         if (!form.checkValidity()) {
             form.reportValidity();
@@ -341,21 +349,65 @@
 
             const data = await response.json();
             if (response.ok) {
-                alert('Berhasil mengirim revisi!');
-                window.location.reload();
+                modalContainer.showAlert('Berhasil', 'Berhasil mengirim revisi!', 'success', () => {
+                    window.location.reload();
+                });
             } else {
                 if (data.errors) {
-                    alert(Object.values(data.errors).flat().join('\n'));
+                    modalContainer.showAlert('Gagal Validasi', Object.values(data.errors).flat().join('\n'), 'warning');
                 } else {
-                    alert(data.error || 'Terjadi kesalahan.');
+                    modalContainer.showAlert('Gagal', data.error || 'Terjadi kesalahan.', 'danger');
                 }
                 btn.innerHTML = originalText;
                 btn.disabled = false;
             }
         } catch (e) {
-            alert('Gagal mengirim data.');
+            modalContainer.showAlert('Kesalahan', 'Gagal mengirim data.', 'danger');
             btn.innerHTML = originalText;
             btn.disabled = false;
         }
     }
 </script>
+
+<div x-data="{
+    modal: {
+        show: false,
+        title: '',
+        description: '',
+        type: 'warning',
+        confirmText: 'Konfirmasi',
+        cancelText: 'Batal',
+        isConfirm: false,
+        onConfirm: null
+    },
+    showAlert(title, description, type = 'warning', onConfirm = null) {
+        this.modal = {
+            show: true,
+            title: title,
+            description: description,
+            type: type,
+            confirmText: 'Oke',
+            cancelText: 'Batal',
+            isConfirm: false,
+            onConfirm: onConfirm
+        };
+    },
+    showConfirm(title, description, onConfirm, type = 'danger', confirmText = 'Ya', cancelText = 'Batal') {
+        this.modal = {
+            show: true,
+            title: title,
+            description: description,
+            type: type,
+            confirmText: confirmText,
+            cancelText: cancelText,
+            isConfirm: true,
+            onConfirm: onConfirm
+        };
+    },
+    closeModal() {
+        this.modal.show = false;
+    }
+}" id="global-modal-container">
+    <x-modal-confirm />
+</div>
+</x-app-layout>

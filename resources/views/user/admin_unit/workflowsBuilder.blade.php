@@ -92,7 +92,8 @@
                         </button>
                     </div>
                 </div>
-            </div>
+            <!-- Modern Custom Modal -->
+            <x-modal-confirm />
 
         </div>
     </div>
@@ -110,11 +111,53 @@
                 editId: null,
                 formData: { name: '', description: '' },
                 
+                // Modal state
+                modal: {
+                    show: false,
+                    title: '',
+                    description: '',
+                    type: 'warning',
+                    confirmText: 'Konfirmasi',
+                    cancelText: 'Batal',
+                    isConfirm: false,
+                    onConfirm: null
+                },
+
+                showAlert(title, description, type = 'warning', onConfirm = null) {
+                    this.modal = {
+                        show: true,
+                        title: title,
+                        description: description,
+                        type: type,
+                        confirmText: 'Oke',
+                        cancelText: 'Batal',
+                        isConfirm: false,
+                        onConfirm: onConfirm
+                    };
+                },
+
+                showConfirm(title, description, onConfirm, type = 'danger', confirmText = 'Hapus', cancelText = 'Batal') {
+                    this.modal = {
+                        show: true,
+                        title: title,
+                        description: description,
+                        type: type,
+                        confirmText: confirmText,
+                        cancelText: cancelText,
+                        isConfirm: true,
+                        onConfirm: onConfirm
+                    };
+                },
+
+                closeModal() {
+                    this.modal.show = false;
+                },
+
                 getHeaders() {
                     return {
                         'Accept': 'application/json',
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name=\"csrf-token\"]').getAttribute('content')
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                     };
                 },
 
@@ -157,12 +200,15 @@
                     this.showModal = true;
                 },
 
-                closeModal() {
+                closeModalForm() {
                     this.showModal = false;
                 },
 
                 async submitForm() {
-                    if (!this.formData.name) return alert('Nama workflow wajib diisi!');
+                    if (!this.formData.name) {
+                        this.showAlert('Nama Alur Kosong', 'Nama alur workflow wajib diisi!', 'warning');
+                        return;
+                    }
                     
                     try {
                         this.isSubmitting = true;
@@ -181,37 +227,43 @@
                                 window.location.href = '/admin_unit/workflows-index?id=' + newWorkflow.id;
                             } else {
                                 await this.fetchWorkflows();
-                                this.closeModal();
+                                this.closeModalForm();
                             }
                         } else {
                             const errorData = await res.json();
-                            alert(errorData.message || 'Gagal menyimpan workflow. Periksa koneksi atau hak akses.');
+                            this.showAlert('Gagal Menyimpan', errorData.message || 'Gagal menyimpan workflow. Periksa koneksi atau hak akses.', 'danger');
                         }
                     } catch (error) {
-                        alert('Terjadi kesalahan pada sistem.');
+                        this.showAlert('Kesalahan Sistem', 'Terjadi kesalahan pada sistem.', 'danger');
                     } finally {
                         this.isSubmitting = false;
                     }
                 },
 
-                async deleteWorkflow(id) {
-                    if (!confirm('PERINGATAN KERAS: Apakah Anda yakin ingin menghapus workflow ini? Seluruh rantai persetujuan dan syarat dokumen di dalamnya akan hangus permanen.')) return;
+                deleteWorkflow(id) {
+                    this.showConfirm(
+                        'Hapus Workflow?',
+                        'PERINGATAN KERAS: Apakah Anda yakin ingin menghapus workflow ini? Seluruh rantai persetujuan dan syarat dokumen di dalamnya akan hangus permanen.',
+                        async () => {
+                            try {
+                                const res = await fetch(`/admin_unit/api/workflows/${id}`, {
+                                    method: 'DELETE',
+                                    headers: this.getHeaders()
+                                });
 
-                    try {
-                        const res = await fetch(`/admin_unit/api/workflows/${id}`, {
-                            method: 'DELETE',
-                            headers: this.getHeaders()
-                        });
-
-                        if (res.ok) {
-                            await this.fetchWorkflows();
-                        } else {
-                            const errorData = await res.json();
-                            alert(errorData.message || 'Gagal menghapus workflow. Mungkin sedang digunakan oleh transaksi aktif.');
-                        }
-                    } catch (error) {
-                        alert('Terjadi kesalahan pada sistem saat mencoba menghapus.');
-                    }
+                                if (res.ok) {
+                                    await this.fetchWorkflows();
+                                } else {
+                                    const errorData = await res.json();
+                                    this.showAlert('Gagal Menghapus', errorData.message || 'Gagal menghapus workflow. Mungkin sedang digunakan oleh transaksi aktif.', 'danger');
+                                }
+                            } catch (error) {
+                                this.showAlert('Kesalahan Sistem', 'Terjadi kesalahan pada sistem saat mencoba menghapus.', 'danger');
+                            }
+                        },
+                        'danger',
+                        'Hapus Alur'
+                    );
                 }
             }
         }

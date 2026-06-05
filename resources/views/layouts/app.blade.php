@@ -115,6 +115,7 @@
             <main class="flex-1 overflow-y-auto relative transition-colors duration-300">
                 {{ $slot }}
             </main>
+        </div>
 
         <!-- Script Tema Gelap/Terang & Progress Bar -->
         <script>
@@ -204,8 +205,6 @@
                     }
                 });
             });
-        </script>
-
         </script>
         
 

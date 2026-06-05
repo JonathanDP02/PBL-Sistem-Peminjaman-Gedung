@@ -89,7 +89,7 @@
         <table class="detail">
             <tr><td>Nama Kegiatan</td><td>: {{ $booking->event_name }}</td></tr>
             <tr><td>Deskripsi</td><td>: {{ $booking->event_description ?? '-' }}</td></tr>
-            <tr><td>Tanggal</td><td>: {{ $booking->booking_date->format('d F Y') }}</td></tr>
+            <tr><td>Tanggal</td><td>: {{ $booking->booking_date->format('Y-m-d') === $booking->booking_end_date->format('Y-m-d') ? $booking->booking_date->translatedFormat('d F Y') : $booking->booking_date->translatedFormat('d F Y') . ' – ' . $booking->booking_end_date->translatedFormat('d F Y') }}</td></tr>
             <tr><td>Waktu</td><td>: {{ \Carbon\Carbon::parse($booking->start_time)->format('H:i') }} – {{ \Carbon\Carbon::parse($booking->end_time)->format('H:i') }} WIB</td></tr>
             <tr><td>Ruangan</td><td>: {{ $booking->room->room_name ?? '-' }}</td></tr>
             <tr><td>Peminjam</td><td>: {{ $booking->user->name ?? '-' }}</td></tr>
