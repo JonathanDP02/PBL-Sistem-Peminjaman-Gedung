@@ -62,6 +62,15 @@
                         </div>
 
                         <div>
+                            <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-400 tracking-widest uppercase mb-3">Deskripsi Kegiatan <span class="text-slate-400 font-normal">(Maks. 250 karakter)</span></label>
+                            <div class="relative group">
+                                <i class="ph ph-text-align-left absolute left-4 top-4 text-slate-400 dark:text-gray-500 text-lg group-focus-within:text-kinetic-primary transition-colors"></i>
+                                <textarea name="event_description" id="eventDescription" maxlength="250" placeholder="Jelaskan detail agenda dan tujuan kegiatan..." rows="3"
+                                    class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl pl-12 pr-4 py-3 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-600 focus:outline-none focus:border-kinetic-primary focus:ring-2 focus:ring-kinetic-primary/20 hover:border-slate-300 dark:hover:border-[#3A3A3A] transition-all duration-300 resize-none"></textarea>
+                            </div>
+                        </div>
+
+                        <div>
                             <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-400 tracking-widest uppercase mb-3">Pilih Ruangan <span class="text-red-500">*</span></label>
                             <div class="relative group">
                                 <i class="ph ph-buildings absolute left-4 top-1/2 -translate-y-1/4 text-slate-400 dark:text-gray-500 text-lg group-focus-within:text-kinetic-primary transition-colors"></i>
@@ -82,18 +91,22 @@
                             </div>
                         </div>
 
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-400 tracking-widest uppercase mb-3">Skop Kegiatan <span class="text-red-500">*</span></label>
-                            <div class="relative group">
-                                <i class="ph ph-globe absolute left-4 top-1/2 -translate-y-1/4 text-slate-400 dark:text-gray-500 text-lg group-focus-within:text-kinetic-primary transition-colors"></i>
-                                <select id="scopeSelect" name="event_scope" required style="appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important;"
-                                        class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl pl-12 pr-10 py-3.5 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-600 focus:outline-none focus:border-kinetic-primary focus:ring-2 focus:ring-kinetic-primary/20 hover:border-slate-300 dark:hover:border-[#3A3A3A] transition-all duration-300 appearance-none cursor-pointer">
-                                    <option value="Internal">Internal (Lingkup unit/jurusan sendiri)</option>
-                                    <option value="Lintas Jurusan">Lintas Jurusan (Melibatkan Wakil Direktur 3)</option>
-                                </select>
-                                <i class="ph-caret-down absolute right-4 top-1/2 -translate-y-1/4 text-slate-400 dark:text-gray-500 pointer-events-none text-sm"></i>
+                        <!-- Container Detail Ruangan & Fasilitas -->
+                        <div id="roomDetailsContainer" class="hidden bg-slate-50/50 dark:bg-[#1A1A1A]/50 border border-dashed border-slate-200 dark:border-[#2A2A2A] rounded-xl p-4 space-y-3 transition-all duration-300">
+                            <div class="flex items-center justify-between">
+                                <span class="text-[9px] font-bold text-kinetic-primary tracking-widest uppercase">Spesifikasi Ruang</span>
+                                <span class="text-[10px] bg-slate-200 dark:bg-[#2A2A2A] text-slate-700 dark:text-gray-300 px-2 py-0.5 rounded font-bold" id="roomCapacityBadge">Kapasitas: -</span>
+                            </div>
+                            <p class="text-xs text-slate-600 dark:text-gray-400 leading-relaxed" id="roomDescText">-</p>
+                            <div class="pt-2 border-t border-slate-100 dark:border-[#2A2A2A]">
+                                <span class="block text-[9px] font-bold text-slate-400 dark:text-gray-500 tracking-widest uppercase mb-1.5">Fasilitas Tersedia:</span>
+                                <div class="flex flex-wrap gap-1.5" id="roomFacilitiesContainer">
+                                    <!-- Badges fasilitas di-render via JS -->
+                                </div>
                             </div>
                         </div>
+
+                        <input type="hidden" id="scopeSelect" name="event_scope" value="Internal">
 
                         <!-- Durasi Sewa Toggle -->
                         <div>
@@ -123,7 +136,6 @@
                                 </label>
                             </div>
                         </div>
-
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="dateAndTimeGrid">
                             <!-- Block Tanggal (Kiri) -->
                             <div class="flex flex-col gap-4">
@@ -161,20 +173,22 @@
                                 </div>
                             </div>
                         </div>
-
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-400 tracking-widest uppercase mb-3">Alur Prosedur (SOP)</label>
-                            <div id="workflowContainer" class="grid grid-cols-2 gap-4">
-                                <p class="col-span-2 text-sm text-slate-500 dark:text-gray-400">Pilih ruangan terlebih dahulu untuk melihat alur persetujuan</p>
-                            </div>
-                        </div>
                     </div>
 
-                    <div class="flex flex-col h-full justify-between">
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-400 tracking-widest uppercase mb-3">Lampiran Dokumen</label>
-                            <div id="documentsContainer" class="space-y-3">
-                                <p class="text-sm text-slate-500 dark:text-gray-400">Pilih ruangan dan workflow untuk melihat dokumen yang diperlukan</p>
+                    <div class="space-y-8 flex flex-col h-full justify-between">
+                        <div class="space-y-8">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-400 tracking-widest uppercase mb-3">Alur Prosedur (SOP)</label>
+                                <div id="workflowContainer" class="grid grid-cols-2 gap-4">
+                                    <p class="col-span-2 text-sm text-slate-500 dark:text-gray-400">Pilih ruangan terlebih dahulu untuk melihat alur persetujuan</p>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-400 tracking-widest uppercase mb-3">Lampiran Dokumen</label>
+                                <div id="documentsContainer" class="space-y-3">
+                                    <p class="text-sm text-slate-500 dark:text-gray-400">Pilih ruangan dan workflow untuk melihat dokumen yang diperlukan</p>
+                                </div>
                             </div>
                         </div>
 
@@ -351,7 +365,7 @@
             }
         }
 
-        // ─── Tier 2a: BEM Polinema & Pembina ─────────────────────────────────
+        // ─── Tier 2a: BEM Polinema ─────────────────────────────────
         if (
             borrowerUnit.level === 'Organisasi'
             && !borrowerUnit.unit_name.toLowerCase().includes('bem')
@@ -364,6 +378,10 @@
                     missingConfigurations.push(`Unit BEM Polinema (${bem.unit_name}) belum mengonfigurasi alur persetujuan umum.`);
                 } else {
                     (wf.steps || []).forEach(step => {
+                        const posName = step.position ? step.position.name : '';
+                        if (posName.toLowerCase().includes('pembina') || posName.toLowerCase().includes('dpk')) {
+                            return; // Skip BEM DPK for other units
+                        }
                         chain.push({
                             position_id: step.position_id,
                             position_name: step.position ? step.position.name : 'Posisi Tidak Diketahui',
@@ -372,18 +390,65 @@
                     });
                 }
             }
+        }
 
-            // Cari jika unit peminjam memiliki jabatan dengan kata kunci 'Pembina'
-            const fullBorrowerUnit = findUnit(borrowerUnit.id);
-            if (fullBorrowerUnit && fullBorrowerUnit.positions) {
-                const pembina = fullBorrowerUnit.positions.find(p => p.name.toLowerCase().includes('pembina'));
-                if (pembina) {
-                    chain.push({
-                        position_id: pembina.id,
-                        position_name: pembina.name,
-                        tier: `Pembina (${borrowerUnit.unit_name})`
+        // ─── Tier 2a (Part 2): Pembina (DPK) ─────────────────────────────────
+        if (borrowerUnit.level === 'Organisasi') {
+            // Cari Pembina (DPK)
+            let departmentUnit = null;
+            let currentUnit = borrowerUnit;
+            while (currentUnit) {
+                if (currentUnit.level === 'Jurusan') {
+                    departmentUnit = currentUnit;
+                    break;
+                }
+                currentUnit = currentUnit.parent_id ? findUnit(currentUnit.parent_id) : null;
+            }
+
+            let pembina = null;
+            let labelSuffix = borrowerUnit.unit_name;
+
+            if (departmentUnit) {
+                const fullDept = findUnit(departmentUnit.id);
+                if (fullDept && fullDept.positions) {
+                    pembina = fullDept.positions.find(p => {
+                        const isPembinaOrDpk = p.name.toLowerCase().includes('pembina') || p.name.toLowerCase().includes('dpk');
+                        const hasUser = p.users && p.users.length > 0;
+                        return isPembinaOrDpk && hasUser;
                     });
                 }
+                labelSuffix = departmentUnit.unit_name;
+                if (!pembina) {
+                    missingConfigurations.push(`Jabatan DPK (Pembina) untuk ${departmentUnit.unit_name} belum dikonfigurasi atau tidak memiliki user aktif.`);
+                }
+            } else {
+                const fullBorrower = findUnit(borrowerUnit.id);
+                if (fullBorrower && fullBorrower.positions) {
+                    pembina = fullBorrower.positions.find(p => {
+                        const isPembinaOrDpk = p.name.toLowerCase().includes('pembina') || p.name.toLowerCase().includes('dpk');
+                        const hasUser = p.users && p.users.length > 0;
+                        if (!isPembinaOrDpk || !hasUser) {
+                            return false;
+                        }
+                        const wf = findUnitWorkflow(borrowerUnit.id);
+                        if (!wf || !wf.steps) {
+                            return false;
+                        }
+                        return wf.steps.some(step => step.position_id == p.id);
+                    });
+                }
+                labelSuffix = borrowerUnit.unit_name;
+                if (!pembina) {
+                    missingConfigurations.push(`Jabatan DPK (Pembina) untuk ${borrowerUnit.unit_name} belum dikonfigurasi, tidak memiliki user aktif, atau belum terdaftar di SOP alur persetujuan umum.`);
+                }
+            }
+
+            if (pembina) {
+                chain.push({
+                    position_id: pembina.id,
+                    position_name: pembina.name,
+                    tier: `DPK (${labelSuffix})`
+                });
             }
         }
 
@@ -400,35 +465,6 @@
                         tier: `Pemilik Ruangan (${roomOwnerUnit.unit_name})`
                     });
                 });
-            }
-        }
-
-        // ─── Tier 3: Pusat ───────────────────────────────────────────────────
-        if (eventScope === 'Lintas Jurusan' && roomOwnerUnit.level !== 'Pusat') {
-            const pusat = findPusatUnit();
-            if (pusat) {
-                const wf = findUnitWorkflow(pusat.id);
-                if (!wf) {
-                    missingConfigurations.push(`Unit Pusat (${pusat.unit_name}) belum mengonfigurasi alur persetujuan umum.`);
-                } else {
-                    const wadir3Step = (wf.steps || []).find(step => step.position && (step.position.name.toLowerCase().includes('iii') || step.position.name.toLowerCase().includes('3')));
-                    if (wadir3Step) {
-                        chain.push({
-                            position_id: wadir3Step.position_id,
-                            position_name: wadir3Step.position.name,
-                            tier: `Pusat (${pusat.unit_name})`
-                        });
-                    } else {
-                        const lastStep = wf.steps[wf.steps.length - 1];
-                        if (lastStep) {
-                            chain.push({
-                                position_id: lastStep.position_id,
-                                position_name: lastStep.position ? lastStep.position.name : 'Wakil Direktur III',
-                                tier: `Pusat (${pusat.unit_name})`
-                            });
-                        }
-                    }
-                }
             }
         }
 
@@ -455,12 +491,18 @@
         const selectedRoomId = roomSelect.value;
         const eventScope = scopeSelect.value;
         
+        const roomDetailsContainer = document.getElementById('roomDetailsContainer');
+        const roomCapacityBadge = document.getElementById('roomCapacityBadge');
+        const roomDescText = document.getElementById('roomDescText');
+        const roomFacilitiesContainer = document.getElementById('roomFacilitiesContainer');
+        
         if (!selectedRoomId) {
             workflowContainer.innerHTML = '<p class="col-span-2 text-sm text-slate-500 dark:text-gray-400">Pilih ruangan terlebih dahulu untuk melihat alur persetujuan</p>';
-            documentsContainer.innerHTML = '<p class="text-sm text-slate-500 dark:text-gray-400">Pilih ruangan dan skop untuk melihat dokumen yang diperlukan</p>';
+            documentsContainer.innerHTML = '<p class="text-sm text-slate-500 dark:text-gray-400">Pilih ruangan terlebih dahulu untuk melihat dokumen yang diperlukan</p>';
             workflowIdInput.value = '';
             document.getElementById('submitBtn').disabled = true;
             document.getElementById('submitBtn').classList.add('opacity-50', 'cursor-not-allowed');
+            if (roomDetailsContainer) roomDetailsContainer.classList.add('hidden');
             return;
         }
 
@@ -471,6 +513,30 @@
         });
 
         if (!selectedRoom) return;
+
+        // Render detail & fasilitas ruangan
+        if (roomDetailsContainer) {
+            roomDetailsContainer.classList.remove('hidden');
+            roomCapacityBadge.textContent = `Kapasitas: ${selectedRoom.capacity || 0} orang`;
+            roomDescText.textContent = selectedRoom.description || 'Tidak ada deskripsi.';
+            
+            roomFacilitiesContainer.innerHTML = '';
+            if (selectedRoom.facilities) {
+                const facilitiesList = selectedRoom.facilities.split(',').map(f => f.trim()).filter(Boolean);
+                if (facilitiesList.length > 0) {
+                    facilitiesList.forEach(fac => {
+                        const badge = document.createElement('span');
+                        badge.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 bg-teal-50 dark:bg-kinetic-primary/10 border border-teal-200/60 dark:border-kinetic-primary/20 rounded-lg text-[10px] font-bold text-teal-800 dark:text-kinetic-secondary transition-all';
+                        badge.innerHTML = `<span class="w-1.5 h-1.5 bg-kinetic-primary rounded-full animate-pulse"></span> ${fac}`;
+                        roomFacilitiesContainer.appendChild(badge);
+                    });
+                } else {
+                    roomFacilitiesContainer.innerHTML = '<span class="text-[10px] text-slate-400 dark:text-gray-600">Tidak ada informasi fasilitas.</span>';
+                }
+            } else {
+                roomFacilitiesContainer.innerHTML = '<span class="text-[10px] text-slate-400 dark:text-gray-600">Tidak ada informasi fasilitas.</span>';
+            }
+        }
 
         // Hitung dynamic chain
         const result = resolveWorkflowChain(selectedRoom, eventScope);
@@ -558,7 +624,7 @@
             documentsHTML = '<p class="text-sm text-slate-500 dark:text-gray-400">Tidak ada dokumen yang diperlukan untuk alur ini</p>';
         } else {
             workflow.requirements.forEach(req => {
-                const mandatoryText = req.is_mandatory ? '<span class="text-red-500">(Wajib)</span>' : '<span class="text-slate-400">(Opsional)</span>';
+                const mandatoryText = '<span class="text-red-500">(Wajib)</span>';
                 
                 documentsHTML += `
                     <div class="bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl p-4 flex items-center justify-between group hover:border-kinetic-primary/50 transition-colors cursor-pointer relative overflow-hidden" 
@@ -566,7 +632,7 @@
                         
                         <input type="file" name="requirement_${req.id}" id="req_${req.id}" class="hidden" 
                                onchange="updateFileName(this, 'filename_${req.id}', 'icon_${req.id}')" 
-                               data-mandatory="${req.is_mandatory ? 'true' : 'false'}" data-name="${req.document_name}">
+                               data-mandatory="true" data-name="${req.document_name}">
 
                         <div class="flex items-center gap-4 flex-1">
                             <div class="w-10 h-10 rounded-lg bg-white dark:bg-[#222] border border-slate-200 dark:border-[#333] flex items-center justify-center text-slate-400 dark:text-gray-400 transition-colors" id="iconBox_${req.id}">

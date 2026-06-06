@@ -112,7 +112,7 @@ class WorkflowBridgeService
             }
         }
 
-        // ─── Tier 2a: BEM Polinema & Pembina (Mekanisme Dinamis) ─────────────
+        // ─── Tier 2a: BEM Polinema (Mekanisme Dinamis) ─────────────
         // Ormawa (kecuali BEM & DPM) selalu melewati BEM Polinema (Internal & Lintas Jurusan)
         if (
             $borrowerUnit->level === 'Organisasi'
@@ -129,6 +129,10 @@ class WorkflowBridgeService
                     throw new \Exception("Unit BEM Polinema ({$bemUnit->unit_name}) belum mengonfigurasi alur persetujuan umum.");
                 }
                 foreach ($bemSteps as $s) {
+                    $posName = $s->position ? $s->position->name : '';
+                    if (str_contains(strtolower($posName), 'pembina') || str_contains(strtolower($posName), 'dpk')) {
+                        continue; // Skip BEM DPK for other units
+                    }
                     $steps[] = [
                         'position_id' => $s->position_id,
                         'requires_attachment' => $s->requires_attachment,
@@ -136,18 +140,59 @@ class WorkflowBridgeService
                     ];
                 }
             }
+        }
 
-            // Setelah BEM, periksa jika ormawa peminjam memiliki jabatan dengan kata kunci 'Pembina'
+        // ─── Tier 2a (Part 2): Pembina (DPK) ─────────────────────────────────
+        if ($borrowerUnit->level === 'Organisasi') {
             $operator = config('database.default') === 'sqlite' ? 'like' : 'ilike';
-            $pembinaPos = Position::where('unit_id', $borrowerUnit->id)
-                ->where('name', $operator, '%Pembina%')
-                ->first();
+            $departmentUnit = null;
+            $currentUnit = $borrowerUnit;
+            while ($currentUnit) {
+                if ($currentUnit->level === 'Jurusan') {
+                    $departmentUnit = $currentUnit;
+                    break;
+                }
+                $currentUnit = $currentUnit->parent_id ? Unit::find($currentUnit->parent_id) : null;
+            }
+
+            if ($departmentUnit) {
+                $pembinaPos = Position::where('unit_id', $departmentUnit->id)
+                    ->where(function ($q) use ($operator) {
+                        $q->where('name', $operator, '%Pembina%')
+                            ->orWhere('name', $operator, '%DPK%');
+                    })
+                    ->whereHas('users')
+                    ->first();
+                $labelSuffix = $departmentUnit->unit_name;
+                if (! $pembinaPos) {
+                    throw new \Exception("Jabatan DPK (Pembina) untuk {$departmentUnit->unit_name} belum dikonfigurasi atau tidak memiliki user aktif.");
+                }
+            } else {
+                $pembinaPos = Position::where('unit_id', $borrowerUnit->id)
+                    ->where(function ($q) use ($operator) {
+                        $q->where('name', $operator, '%Pembina%')
+                            ->orWhere('name', $operator, '%DPK%');
+                    })
+                    ->whereHas('users')
+                    ->whereIn('id', function ($query) use ($borrowerUnit) {
+                        $query->select('position_id')
+                            ->from('workflow_steps')
+                            ->join('workflows', 'workflow_steps.workflow_id', '=', 'workflows.id')
+                            ->where('workflows.unit_id', $borrowerUnit->id)
+                            ->whereNull('workflows.room_id');
+                    })
+                    ->first();
+                $labelSuffix = $borrowerUnit->unit_name;
+                if (! $pembinaPos) {
+                    throw new \Exception("Jabatan DPK (Pembina) untuk {$borrowerUnit->unit_name} belum dikonfigurasi, tidak memiliki user aktif, atau belum terdaftar di SOP alur persetujuan umum.");
+                }
+            }
 
             if ($pembinaPos) {
                 $steps[] = [
                     'position_id' => $pembinaPos->id,
                     'requires_attachment' => false,
-                    'tier_label' => 'Pembina ('.$borrowerUnit->unit_name.')',
+                    'tier_label' => 'DPK ('.$labelSuffix.')',
                 ];
             }
         }
@@ -164,42 +209,6 @@ class WorkflowBridgeService
                     'position_id' => $s->position_id,
                     'requires_attachment' => $s->requires_attachment,
                     'tier_label' => 'Pemilik Ruangan ('.$roomOwnerUnit->unit_name.')',
-                ];
-            }
-        }
-
-        // ─── Tier 3: Pusat (Wadir III) ─────────────────────────────────────────
-        // Append Pusat workflow only when:
-        //   - Scope is 'Lintas Jurusan'
-        //   - AND room owner is not already Pusat (no double-counting)
-        if ($eventScope === 'Lintas Jurusan' && $roomOwnerUnit->level !== 'Pusat') {
-            $pusatUnit = $this->findPusatUnit();
-            if (! $pusatUnit) {
-                throw new \Exception('Unit Pusat tidak ditemukan.');
-            }
-            $pusatSteps = $this->fetchWorkflowSteps($pusatUnit->id, 'Internal');
-            if ($pusatSteps->isEmpty()) {
-                throw new \Exception("Unit Pusat ({$pusatUnit->unit_name}) belum mengonfigurasi alur persetujuan umum.");
-            }
-            $wadir3Step = null;
-            foreach ($pusatSteps as $s) {
-                $pos = Position::find($s->position_id);
-                if ($pos && str_contains(strtolower($pos->name), 'iii')) {
-                    $wadir3Step = $s;
-                    break;
-                }
-            }
-
-            // Fallback to the last step if name 'III' not matched
-            if (! $wadir3Step && $pusatSteps->isNotEmpty()) {
-                $wadir3Step = $pusatSteps->last();
-            }
-
-            if ($wadir3Step) {
-                $steps[] = [
-                    'position_id' => $wadir3Step->position_id,
-                    'requires_attachment' => $wadir3Step->requires_attachment,
-                    'tier_label' => 'Pusat ('.$pusatUnit->unit_name.')',
                 ];
             }
         }
@@ -253,7 +262,7 @@ class WorkflowBridgeService
             ->first();
 
         if (! $workflow) {
-            return collect();
+            return new \Illuminate\Database\Eloquent\Collection;
         }
 
         return WorkflowStep::where('workflow_id', $workflow->id)

@@ -1,9 +1,9 @@
 <x-app-layout title="Detail Pesanan">
-    <div class="relative px-8 pt-4 pb-8 space-y-8 z-10 flex flex-col min-h-full transition-colors duration-300">
+    <div class="relative px-8 pt-3 pb-8 space-y-5 z-10 flex flex-col min-h-full transition-colors duration-300">
         
-        <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
             <div>
-                <nav class="flex items-center gap-2 text-xs font-medium text-slate-400 mb-2">
+                <nav class="flex items-center gap-2 text-xs font-medium text-slate-400 mb-1">
                     @php
                         $backRoute = route('riwayat');
                         $backText = 'Kembali';
@@ -12,7 +12,7 @@
                     <i class="ph ph-caret-right text-[10px]"></i>
                     <span class="text-slate-500">Detail Pesanan</span>
                 </nav>
-                <h2 class="font-heading text-3xl font-extrabold text-slate-900 dark:text-white mb-2">Detail Peminjaman</h2>
+                <h2 class="font-heading text-2xl font-extrabold text-slate-900 dark:text-white mb-1">Detail Peminjaman</h2>
                 <div class="flex items-center gap-3">
                     <span class="text-sm font-mono font-bold text-slate-400">#BKG-{{ str_pad($booking->id, 5, '0', STR_PAD_LEFT) }}</span>
                     @php
@@ -105,8 +105,18 @@
                             </div>
                             <div>
                                 <p class="text-[10px] font-bold {{ $textColor }} mb-1 uppercase tracking-widest">{{ $log->created_at->translatedFormat('d M Y • H:i') }}</p>
-                                <h4 class="text-sm font-bold text-slate-900 dark:text-white mb-1">{{ $log->action }}</h4>
-                                <p class="text-xs text-slate-500 dark:text-gray-500 leading-relaxed">{{ $log->notes ?: 'Tindakan dicatat oleh sistem.' }}</p>
+                                <h4 class="text-sm font-bold text-slate-900 dark:text-white mb-0.5">{{ $log->action }}</h4>
+                                @if($log->actor)
+                                    <p class="text-[11px] font-semibold text-slate-600 dark:text-gray-400 mb-1">
+                                        Oleh: {{ $log->actor->name }}
+                                        @if($log->actor->position)
+                                            ({{ $log->actor->position->name }})
+                                        @endif
+                                    </p>
+                                @else
+                                    <p class="text-[11px] font-semibold text-slate-600 dark:text-gray-400 mb-1">Oleh: Sistem</p>
+                                @endif
+                                <p class="text-xs text-slate-500 dark:text-gray-500 leading-relaxed mb-2">{{ $log->notes ?: '-' }}</p>
                             </div>
                         </div>
                         @endforeach
@@ -124,6 +134,20 @@
                                 @endphp
                                 <h4 class="text-sm font-bold text-slate-900 dark:text-white mb-1">{{ $currentStep ? 'Persetujuan ' . $currentStep->position->name : 'Menunggu Proses' }}</h4>
                                 <p class="text-xs text-slate-500 dark:text-gray-500 leading-relaxed">Verifikasi oleh pejabat terkait</p>
+                            </div>
+                        </div>
+                        @endif
+
+                        {{-- Selesai Step if Approved --}}
+                        @if($booking->status === 'Approved')
+                        <div class="relative flex gap-6">
+                            <div class="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center z-10 shadow-lg shadow-emerald-500/20">
+                                <i class="ph-bold ph-check-circle text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-bold text-emerald-500 mb-1 uppercase tracking-widest">SELESAI</p>
+                                <h4 class="text-sm font-bold text-slate-900 dark:text-white mb-1">Peminjaman Selesai Disetujui</h4>
+                                <p class="text-xs text-slate-500 dark:text-gray-500 leading-relaxed">Semua persetujuan terpenuhi. Izin digital siap digunakan.</p>
                             </div>
                         </div>
                         @endif
@@ -166,17 +190,17 @@
                     <div class="bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] rounded-2xl p-6 transition-colors shadow-sm dark:shadow-none">
                         <p class="text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-4">Keperluan & Kegiatan</p>
                         <div class="space-y-4">
-                            <div class="flex items-center gap-3">
-                                <i class="ph ph-article text-kinetic-primary text-xl"></i>
-                                <div>
-                                    <p class="text-sm font-bold text-slate-900 dark:text-white line-clamp-1">{{ $booking->event_name }}</p>
+                            <div class="flex items-start gap-3">
+                                <i class="ph ph-article text-kinetic-primary text-xl mt-0.5"></i>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-bold text-slate-900 dark:text-white break-all">{{ $booking->event_name }}</p>
                                     <p class="text-[10px] text-slate-500">Nama Kegiatan</p>
                                 </div>
                             </div>
-                            <div class="flex items-center gap-3">
-                                <i class="ph ph-text-align-left text-kinetic-primary text-xl"></i>
-                                <div>
-                                    <p class="text-sm font-bold text-slate-900 dark:text-white line-clamp-1">{{ $booking->event_description ?: '-' }}</p>
+                            <div class="flex items-start gap-3">
+                                <i class="ph ph-text-align-left text-kinetic-primary text-xl mt-0.5"></i>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-bold text-slate-900 dark:text-white break-all whitespace-pre-line">{{ $booking->event_description ?: '-' }}</p>
                                     <p class="text-[10px] text-slate-500">Deskripsi</p>
                                 </div>
                             </div>

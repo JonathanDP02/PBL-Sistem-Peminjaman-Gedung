@@ -1,8 +1,20 @@
+@php
+    $isWadir2 = false;
+    $approver = Auth::user();
+    if ($approver && $approver->position) {
+        $posName = strtolower($approver->position->name);
+        $hasTwo = str_contains($posName, 'wadir ii') || str_contains($posName, 'wadir 2') || str_contains($posName, 'wakil direktur ii');
+        $hasThree = str_contains($posName, 'wadir iii') || str_contains($posName, 'wadir 3') || str_contains($posName, 'wakil direktur iii');
+        if ($hasTwo && !$hasThree) {
+            $isWadir2 = true;
+        }
+    }
+@endphp
 <x-app-layout title="Detail Permohonan Peminjaman">
-    <div class="relative px-8 pt-6 pb-32 space-y-10 z-10 flex flex-col min-h-full transition-colors duration-300">
+    <div class="relative px-8 pt-4 pb-16 space-y-6 z-10 flex flex-col min-h-full transition-colors duration-300">
         
         <!-- Header -->
-        <div class="flex items-center gap-4 pb-6 border-b border-slate-200 dark:border-[#2A2A2A]">
+        <div class="flex items-center gap-4 pb-3 border-b border-slate-200 dark:border-[#2A2A2A]">
             <a href="{{ route('meja-kerja') }}" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-[#2A2A2A] text-slate-900 dark:text-white transition-colors">
                 <i class="ph-bold ph-arrow-left text-xl"></i>
             </a>
@@ -163,16 +175,18 @@
                     <!-- Deskripsi Event -->
                     <div class="mb-8 pb-8 border-b border-slate-200 dark:border-[#2A2A2A]">
                         <h3 class="font-bold text-slate-900 dark:text-white text-sm mb-3">Deskripsi Event</h3>
-                        <p class="text-sm text-slate-600 dark:text-gray-400 line-clamp-4">{{ $approval['booking']['event_description'] ?? 'Tidak ada deskripsi' }}</p>
+                        <p class="text-sm text-slate-600 dark:text-gray-400 break-all whitespace-pre-line">{{ $approval['booking']['event_description'] ?? 'Tidak ada deskripsi' }}</p>
                     </div>
 
                     <!-- Action Buttons -->
                     <div class="space-y-3">
-                        <button onclick="showRejectModal()" class="w-full py-3 rounded-xl border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 font-bold text-sm hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">
-                            <i class="ph-bold ph-x-circle mr-2"></i>Tolak/Revisi
-                        </button>
+                        @if (!$isWadir2)
+                            <button onclick="showRejectModal()" class="w-full py-3 rounded-xl border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 font-bold text-sm hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">
+                                <i class="ph-bold ph-x-circle mr-2"></i>Tolak/Revisi
+                            </button>
+                        @endif
                         <button onclick="submitApprove()" class="w-full py-3 rounded-xl bg-teal-600 dark:bg-kinetic-primary text-white dark:text-[#151515] font-bold text-sm hover:bg-teal-700 dark:hover:bg-[#2dd4bf] transition-colors shadow-[0_4px_12px_rgba(20,184,166,0.2)]">
-                            <i class="ph-bold ph-check-circle mr-2"></i>{{ ($approval['booking']['revision_count'] ?? 0) > 0 ? 'Setujui Revisi' : 'Setujui Sekarang' }}
+                            <i class="ph-bold ph-check-circle mr-2"></i>{{ $isWadir2 ? 'Terbitkan Disposisi' : (($approval['booking']['revision_count'] ?? 0) > 0 ? 'Setujui Revisi' : 'Setujui Sekarang') }}
                         </button>
                     </div>
 
@@ -267,7 +281,84 @@
             document.getElementById('rejectForm').reset();
         }
 
+        let disposisiPrinted = false;
+
+        function closeDisposisiModal() {
+            const modal = document.getElementById('disposisiModal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function getDisposisiData() {
+            const klasifikasi = document.querySelector('input[name="disposisi_klasifikasi"]:checked')?.value || 'Biasa';
+            const tujuan = Array.from(document.querySelectorAll('input[name="disposisi_tujuan"]:checked')).map(cb => cb.value);
+            const isi = Array.from(document.querySelectorAll('input[name="disposisi_isi"]:checked')).map(cb => cb.value);
+            const catatan = document.getElementById('disposisi_catatan')?.value || '';
+
+            return { klasifikasi, tujuan, isi, catatan };
+        }
+
+        function printDisposisi() {
+            const data = getDisposisiData();
+            const bookingId = '{{ $booking->id }}';
+
+            const queryParams = new URLSearchParams({
+                klasifikasi: data.klasifikasi,
+                tujuan: JSON.stringify(data.tujuan),
+                isi: JSON.stringify(data.isi),
+                catatan: data.catatan
+            });
+
+            window.open(`/approver/bookings/${bookingId}/preview-disposisi?${queryParams.toString()}`, '_blank');
+
+            disposisiPrinted = true;
+            const btn = document.getElementById('confirmApproveBtn');
+            if (btn) {
+                btn.removeAttribute('disabled');
+            }
+        }
+
+        function executeApproval() {
+            const data = getDisposisiData();
+            const bookingId = '{{ $booking->id }}';
+            const modalContainer = Alpine.$data(document.getElementById('global-modal-container'));
+
+            closeDisposisiModal();
+
+            fetch(`/approver/approvals/${bookingId}/approve`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({
+                    disposisi_data: data
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    modalContainer.showAlert('Berhasil', 'Pengajuan telah disetujui!', 'success', () => {
+                        window.location.href = '/approver/meja-kerja';
+                    });
+                } else {
+                    modalContainer.showAlert('Gagal', 'Error: ' + (data.error || data.message || 'Terjadi kesalahan'), 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                modalContainer.showAlert('Kesalahan', 'Gagal memproses persetujuan', 'danger');
+            });
+        }
+
         function submitApprove() {
+            const isWadir2 = {{ $isWadir2 ? 'true' : 'false' }};
+            if (isWadir2) {
+                const modal = document.getElementById('disposisiModal');
+                if (modal) modal.classList.remove('hidden');
+                return;
+            }
+
             const modalContainer = Alpine.$data(document.getElementById('global-modal-container'));
             modalContainer.showConfirm(
                 'Setujui Permohonan?',
@@ -401,4 +492,114 @@
     }" id="global-modal-container">
         <x-modal-confirm />
     </div>
+
+    @if ($isWadir2)
+        <!-- Disposisi Wadir II Modal -->
+        <template x-teleport="body">
+            <div id="disposisiModal" class="hidden fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 transition-all duration-300">
+                <div class="bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2xl transform scale-95 transition-all duration-300">
+                    <!-- Modal Header -->
+                    <div class="flex items-center justify-between p-6 border-b border-slate-200 dark:border-[#2A2A2A]">
+                        <h3 class="font-heading text-lg font-bold text-slate-900 dark:text-white">Form Disposisi Wadir II</h3>
+                        <button onclick="closeDisposisiModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-gray-300 transition-colors">
+                            <i class="ph-bold ph-x text-2xl"></i>
+                        </button>
+                    </div>
+
+                    <!-- Modal Body -->
+                    <div class="flex-1 overflow-auto p-6 space-y-6">
+                        <!-- Klasifikasi -->
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-3">Klasifikasi Surat</label>
+                            <div class="flex flex-wrap gap-4">
+                                @foreach (['Sangat Rahasia', 'Rahasia', 'Sangat Segera', 'Segera', 'Biasa'] as $klas)
+                                    <label class="inline-flex items-center gap-2.5 text-sm text-slate-700 dark:text-gray-300 cursor-pointer">
+                                        <input type="radio" name="disposisi_klasifikasi" value="{{ $klas }}" {{ $klas === 'Biasa' ? 'checked' : '' }} class="w-5 h-5 border-2 border-slate-400 dark:border-slate-600 bg-white dark:bg-[#1A1A1A] text-teal-600 checked:bg-teal-600 checked:border-teal-600 focus:ring-teal-500 focus:ring-2 accent-teal-600 cursor-pointer">
+                                        {{ $klas }}
+                                    </label>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        <!-- Diteruskan Kepada -->
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-3">Diteruskan Kepada</label>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                @php
+                                    $tujuanOptions = [
+                                        'Wakil Direktur I', 'Wakil Direktur III', 'Wakil Direktur IV',
+                                        'Kajur Teknik Elektro', 'Kajur Teknik Mesin', 'Kajur Teknik Sipil',
+                                        'Kajur Teknik Kimia', 'Kajur Akuntansi', 'Kajur Administrasi Niaga',
+                                        'Kajur Teknologi Informasi', 'Kasubag Akademik', 'Kasubag Umum',
+                                        'Pokja Adm. Akademik & Registrasi', 'Pokja Eval. Akademik & Pengelolaan Data',
+                                        'Pokja Pembinaan Keg. Mhs & Alumni', 'Pokja Tata Usaha', 'Pokja Protokoler',
+                                        'Pokja Rumah Tangga', 'Pokja Perencanaan', 'Pokja Monev', 'Pokja Keuangan',
+                                        'Pokja Pengelola BMN', 'Pokja Kepegawaian', 'Pokja Ortala', 'Pokja Kerja Sama',
+                                        'Pokja Humas', 'Pokja Hukum', 'Pusat P2MPP', 'Pusat P3M', 'UPA Perpustakaan',
+                                        'UPA TIK', 'UPA Bahasa', 'UPA PP', 'UPA PKK', 'UPA LUK', 'UPA Percetakan & Penerbitan',
+                                        'Pokja Unit Pengelola Usaha', 'Tim Kerja Pimpinan', 'PPK', 'Pokja UPPBJ',
+                                        'Tim Teknis PBJ', 'Admin PPK', 'Adm. Wadir II'
+                                    ];
+                                @endphp
+                                @foreach ($tujuanOptions as $tuj)
+                                    <label class="inline-flex items-center gap-2.5 text-sm text-slate-700 dark:text-gray-300 cursor-pointer">
+                                        <input type="checkbox" name="disposisi_tujuan" value="{{ $tuj }}" class="w-5 h-5 border-2 border-slate-400 dark:border-slate-600 bg-white dark:bg-[#1A1A1A] rounded text-teal-600 checked:bg-teal-600 checked:border-teal-600 focus:ring-teal-500 focus:ring-2 accent-teal-600 cursor-pointer">
+                                        {{ $tuj }}
+                                    </label>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        <!-- Isi Disposisi -->
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-3">Isi Disposisi</label>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                @php
+                                    $isiOptions = [
+                                        'Mohon diproses sesuai aturan yang berlaku',
+                                        'Mohon ditindaklanjuti',
+                                        'Mohon masukan',
+                                        'Mohon diinfokan',
+                                        'Mohon bisa dibantu',
+                                        'Mohon diterima dengan baik dan dibalas',
+                                        'Mohon diagendakan',
+                                        'Untuk diketahui',
+                                        'Sebagai refrensi',
+                                        'Arsip'
+                                    ];
+                                @endphp
+                                @foreach ($isiOptions as $isiOpt)
+                                    <label class="inline-flex items-center gap-2.5 text-sm text-slate-700 dark:text-gray-300 cursor-pointer">
+                                        <input type="checkbox" name="disposisi_isi" value="{{ $isiOpt }}" class="w-5 h-5 border-2 border-slate-400 dark:border-slate-600 bg-white dark:bg-[#1A1A1A] rounded text-teal-600 checked:bg-teal-600 checked:border-teal-600 focus:ring-teal-500 focus:ring-2 accent-teal-600 cursor-pointer">
+                                        {{ $isiOpt }}
+                                    </label>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        <!-- Catatan/Jawaban Disposisi -->
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">Jawaban Disposisi / Catatan</label>
+                            <textarea id="disposisi_catatan" name="disposisi_catatan" placeholder="Tuliskan catatan tambahan jika ada..." class="w-full px-4 py-3 border border-slate-200 dark:border-[#2A2A2A] rounded-xl bg-slate-50 dark:bg-[#1A1A1A] text-slate-900 dark:text-white text-sm focus:outline-none focus:border-kinetic-primary transition-colors resize-none" rows="3"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Modal Footer -->
+                    <div class="p-6 border-t border-slate-200 dark:border-[#2A2A2A] flex justify-between items-center gap-3">
+                        <button type="button" onclick="closeDisposisiModal()" class="px-5 py-3 bg-slate-100 dark:bg-[#1A1A1A] text-slate-700 dark:text-white border border-slate-200 dark:border-[#2A2A2A] hover:bg-slate-200 dark:hover:bg-[#222] font-bold rounded-xl transition-colors text-sm">
+                            Batal
+                        </button>
+                        <div class="flex items-center gap-3">
+                            <button type="button" onclick="printDisposisi()" class="px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-colors text-sm flex items-center gap-2">
+                                <i class="ph ph-printer"></i> Simpan & Cetak Disposisi
+                            </button>
+                            <button type="button" id="confirmApproveBtn" onclick="executeApproval()" class="px-5 py-3 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl transition-colors text-sm flex items-center gap-2 shadow-lg">
+                                <i class="ph ph-check-circle"></i> Ya, Setujui & Kirim
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </template>
+    @endif
 </x-app-layout>

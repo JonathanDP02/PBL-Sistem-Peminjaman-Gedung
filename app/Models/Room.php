@@ -18,6 +18,7 @@ class Room extends Model
         'capacity',
         'description',
         'image',
+        'facilities',
     ];
 
     public function building(): BelongsTo

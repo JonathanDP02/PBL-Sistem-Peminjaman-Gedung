@@ -68,6 +68,7 @@ class RoomController extends Controller
             'unit_id' => $user->role->name === 'Administrator Unit' ? 'nullable' : 'required',
             'workflow_id' => 'nullable|exists:workflows,id',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'facilities' => 'nullable|array',
         ]);
 
         if ($user->role->name === 'Administrator Unit') {
@@ -77,6 +78,19 @@ class RoomController extends Controller
         // Proses upload gambar
         if ($request->hasFile('image')) {
             $validated['image'] = $request->file('image')->store('rooms', 'public');
+        }
+
+        // Konversi array fasilitas ke string
+        if ($request->has('facilities') && is_array($request->input('facilities'))) {
+            $facilitiesArray = [];
+            foreach ($request->input('facilities') as $fac) {
+                if (! empty($fac['name']) && ! empty($fac['quantity'])) {
+                    $facilitiesArray[] = $fac['quantity'].' '.$fac['name'];
+                }
+            }
+            $validated['facilities'] = implode(', ', $facilitiesArray);
+        } else {
+            $validated['facilities'] = null;
         }
 
         $room = Room::create($validated);
@@ -95,6 +109,7 @@ class RoomController extends Controller
             'description' => 'nullable',
             'workflow_id' => 'nullable|exists:workflows,id',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'facilities' => 'nullable|array',
         ];
 
         if (Auth::user()->role->name === 'Administrator Utama') {
@@ -110,6 +125,19 @@ class RoomController extends Controller
                 Storage::disk('public')->delete($room->image);
             }
             $validated['image'] = $request->file('image')->store('rooms', 'public');
+        }
+
+        // Konversi array fasilitas ke string
+        if ($request->has('facilities') && is_array($request->input('facilities'))) {
+            $facilitiesArray = [];
+            foreach ($request->input('facilities') as $fac) {
+                if (! empty($fac['name']) && ! empty($fac['quantity'])) {
+                    $facilitiesArray[] = $fac['quantity'].' '.$fac['name'];
+                }
+            }
+            $validated['facilities'] = implode(', ', $facilitiesArray);
+        } else {
+            $validated['facilities'] = null;
         }
 
         $room->update($validated);

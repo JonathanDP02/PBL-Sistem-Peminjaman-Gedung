@@ -48,14 +48,18 @@
                             <div class="space-y-2">
                                 <p class="text-xs uppercase tracking-[0.24em] text-slate-500">Fasilitas Ruang</p>
                                 <div class="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-slate-700">
-                                    @forelse($room->facilities ?? [] as $fac)
-                                        <div class="inline-flex items-center gap-1.5 rounded-xl bg-teal-500/10 border border-teal-500/20 px-2.5 py-1 text-xs text-teal-300">
-                                            <span class="w-1.5 h-1.5 rounded-full bg-teal-400"></span>
-                                            <span>{{ $fac->name }} <strong class="text-white">x{{ $fac->quantity }}</strong></span>
-                                        </div>
-                                    @empty
+                                    @if($room->facilities)
+                                        @foreach(array_map('trim', explode(',', $room->facilities)) as $facName)
+                                            @if($facName)
+                                                <div class="inline-flex items-center gap-1.5 rounded-xl bg-teal-500/10 border border-teal-500/20 px-2.5 py-1 text-xs text-teal-300">
+                                                    <span class="w-1.5 h-1.5 rounded-full bg-teal-400"></span>
+                                                    <span>{{ $facName }}</span>
+                                                </div>
+                                            @endif
+                                        @endforeach
+                                    @else
                                         <p class="text-xs text-slate-500 italic pl-1">Belum ada inventaris fasilitas.</p>
-                                    @endforelse
+                                    @endif
                                 </div>
                             </div>
                         </div>
@@ -71,7 +75,7 @@
                                 data-room-building="{{ $room->building->building_name }}" 
                                 data-room-description="{{ $room->description }}" 
                                 data-room-workflow="{{ $room->workflow_id }}"
-                                data-room-facilities="{{ json_encode($room->facilities ?? []) }}"
+                                data-room-facilities="{{ $room->facilities }}"
                                 class="edit-btn inline-flex items-center justify-center rounded-full border border-teal-500/20 bg-teal-500/10 px-4 py-2 text-sm font-semibold text-teal-200 transition hover:bg-teal-500/20">
                                 Edit
                             </button>
@@ -99,25 +103,24 @@
         @include('user.admin_unit.modal-delete-ruang')
     @endpush
 
+    <datalist id="facility-options">
+        <option value="AC">AC (Air Conditioner)</option>
+        <option value="Proyektor Laser">Proyektor Laser</option>
+        <option value="Layar Proyektor">Layar Proyektor</option>
+        <option value="Kursi Lipat">Kursi Lipat</option>
+        <option value="Meja">Meja</option>
+        <option value="Papan Tulis">Papan Tulis (Whiteboard)</option>
+        <option value="Microphone Wireless">Microphone Wireless</option>
+        <option value="Speaker Portable">Speaker Portable</option>
+        <option value="PC Lab">PC / Komputer Lab</option>
+        <option value="Laptop Presenter">Laptop Presenter</option>
+    </datalist>
+
     @push('scripts')
     <script>
         let roomToDelete = null;
         let roomNameToDelete = null;
         let facIndex = 0;
-
-        const facilityOptions = `
-            <option value="">-- Pilih Fasilitas --</option>
-            <option value="AC">AC (Air Conditioner)</option>
-            <option value="Proyektor Laser">Proyektor Laser</option>
-            <option value="Layar Proyektor">Layar Proyektor</option>
-            <option value="Kursi Lipat">Kursi Lipat</option>
-            <option value="Meja">Meja</option>
-            <option value="Papan Tulis">Papan Tulis (Whiteboard)</option>
-            <option value="Microphone Wireless">Microphone Wireless</option>
-            <option value="Speaker Portable">Speaker Portable</option>
-            <option value="PC Lab">PC / Komputer Lab</option>
-            <option value="Laptop Presenter">Laptop Presenter</option>
-        `;
 
         function addFacilityRow(modalType, name = '', qty = 1) {
             const container = document.getElementById(`container-fasilitas-${modalType}`);
@@ -128,10 +131,7 @@
             const html = `
                 <div class="flex gap-2 items-center facility-row">
                     <div class="relative w-2/3">
-                        <select name="facilities[${facIndex}][name]" required class="w-full bg-slate-50 dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] rounded-xl pl-4 pr-8 py-3 text-sm text-slate-900 dark:text-white appearance-none outline-none focus:border-teal-500">
-                            ${facilityOptions}
-                        </select>
-                        <i class="ph ph-caret-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
+                        <input list="facility-options" name="facilities[${facIndex}][name]" value="${name}" placeholder="Tulis atau pilih fasilitas..." required class="w-full bg-slate-50 dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white outline-none focus:border-teal-500">
                     </div>
                     <div class="w-1/3 flex items-center gap-2">
                         <input type="number" name="facilities[${facIndex}][quantity]" value="${qty}" min="1" required placeholder="Jml" class="w-full bg-slate-50 dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] rounded-xl px-3 py-3 text-sm text-slate-900 dark:text-white outline-none focus:border-teal-500">
@@ -142,11 +142,6 @@
                 </div>
             `;
             container.insertAdjacentHTML('beforeend', html);
-            
-            if(name) {
-                const selects = container.querySelectorAll('select');
-                selects[selects.length - 1].value = name;
-            }
         }
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -171,12 +166,26 @@
                     const description = this.getAttribute('data-room-description');
                     const workflowId = this.getAttribute('data-room-workflow');
                     
-                    const facilitiesRaw = this.getAttribute('data-room-facilities');
+                    const facilitiesRaw = this.getAttribute('data-room-facilities') || '';
                     let facilities = [];
-                    try {
-                        facilities = JSON.parse(facilitiesRaw);
-                    } catch(e) {
-                        console.error("Gagal parsing fasilitas", e);
+                    if (facilitiesRaw) {
+                        facilitiesRaw.split(',').forEach(item => {
+                            const trimmed = item.trim();
+                            if (trimmed) {
+                                const match = trimmed.match(/^(\d+)\s+(.+)$/);
+                                if (match) {
+                                    facilities.push({
+                                        name: match[2],
+                                        quantity: parseInt(match[1])
+                                    });
+                                } else {
+                                    facilities.push({
+                                        name: trimmed,
+                                        quantity: 1
+                                    });
+                                }
+                            }
+                        });
                     }
                     
                     openEditModal(roomId, roomName, capacity, building, description, facilities, workflowId);

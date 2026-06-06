@@ -26,16 +26,18 @@ class GenerateApprovalCertificateJob implements ShouldQueue
     {
         $booking = Booking::with([
             'room',
-            'user',
+            'user.unit',
             'workflow',
+            'approvals.bookingStep.position',
+            'approvals.bookingStep.position.unit',
             'approvals.step.position',
-            'approvals.approver',
+            'approvals.approver.position',
         ])->findOrFail($this->bookingId);
 
         // Ambil approval terakhir (pejabat tertinggi yang approve)
         $lastApproval = $booking->approvals
             ->where('approval_status', 'Approved')
-            ->sortByDesc(fn ($a) => $a->step->step_order ?? 0)
+            ->sortByDesc(fn ($a) => $a->bookingStep->step_order ?? $a->step->step_order ?? 0)
             ->first();
 
         // Generate QR Code menggunakan GD (tidak perlu Imagick)

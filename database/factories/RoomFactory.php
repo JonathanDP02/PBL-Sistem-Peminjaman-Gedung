@@ -34,6 +34,7 @@ class RoomFactory extends Factory
             'room_name' => $this->faker->randomElement($tipeRuang).' '.$nomorRuang,
             'capacity' => $this->faker->randomElement([30, 40, 50, 60, 100, 200]),
             'description' => $this->faker->optional()->sentence(),
+            'facilities' => 'AC, Proyektor, Papan Tulis',
         ];
     }
 }

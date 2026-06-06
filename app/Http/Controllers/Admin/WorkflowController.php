@@ -138,6 +138,13 @@ class WorkflowController extends Controller
         try {
             DB::transaction(function () use ($workflow, $validated) {
                 // 1. Bersihkan data lama
+                $stepIds = $workflow->steps()->pluck('id');
+                DB::table('approvals')->whereIn('step_id', $stepIds)->update(['step_id' => null]);
+                DB::table('booking_logs')->whereIn('step_id', $stepIds)->update(['step_id' => null]);
+
+                $requirementIds = $workflow->requirements()->pluck('id');
+                DB::table('booking_attachments')->whereIn('requirement_id', $requirementIds)->update(['requirement_id' => null]);
+
                 $workflow->steps()->delete();
                 $workflow->requirements()->delete();
 

@@ -229,19 +229,48 @@ class ApprovalController extends Controller
      */
     public function approve(Request $request, $bookingId)
     {
-        $request->validate([
-            'notes' => 'nullable|string',
-        ]);
-
         $approver = Auth::user();
+        $approver->loadMissing('position');
+
+        $isWadir2 = false;
+        if ($approver->position) {
+            $posName = strtolower($approver->position->name);
+            $hasTwo = str_contains($posName, 'wadir ii') || str_contains($posName, 'wadir 2') || str_contains($posName, 'wakil direktur ii');
+            $hasThree = str_contains($posName, 'wadir iii') || str_contains($posName, 'wadir 3') || str_contains($posName, 'wakil direktur iii');
+            if ($hasTwo && ! $hasThree) {
+                $isWadir2 = true;
+            }
+        }
+
+        if ($isWadir2) {
+            $request->validate([
+                'notes' => 'nullable|string',
+                'disposisi_data' => 'required|array',
+                'disposisi_data.klasifikasi' => 'required|string',
+                'disposisi_data.tujuan' => 'required|array',
+                'disposisi_data.isi' => 'required|array',
+                'disposisi_data.catatan' => 'nullable|string',
+            ]);
+        } else {
+            $request->validate([
+                'notes' => 'nullable|string',
+            ]);
+        }
+
         $positionId = $approver->position_id;
 
         $booking = null;
         $approval = null;
 
         try {
-            DB::transaction(function () use ($request, $bookingId, $approver, $positionId, &$booking, &$approval) {
+            DB::transaction(function () use ($request, $bookingId, $approver, $positionId, $isWadir2, &$booking, &$approval) {
                 $booking = Booking::lockForUpdate()->findOrFail($bookingId);
+
+                if ($isWadir2) {
+                    $booking->update([
+                        'disposisi_data' => $request->disposisi_data,
+                    ]);
+                }
 
                 // Find the active instantiated step for this approver
                 $currentStep = BookingStep::where('booking_id', $booking->id)
@@ -356,6 +385,32 @@ class ApprovalController extends Controller
                 'notes' => $request->notes,
                 'created_at' => $approval->created_at->toIso8601String(),
             ],
+        ]);
+    }
+
+    /**
+     * GET /approver/bookings/{id}/preview-disposisi
+     * Preview disposisi sheet for printing
+     */
+    public function previewDisposisi(Request $request, $bookingId)
+    {
+        $booking = Booking::with(['user.unit', 'approvals.bookingStep.position', 'approvals.approver'])->findOrFail($bookingId);
+
+        $tujuan = $request->query('tujuan');
+        $isi = $request->query('isi');
+
+        $disposisi_data = [
+            'klasifikasi' => $request->query('klasifikasi', 'Biasa'),
+            'tujuan' => is_array($tujuan) ? $tujuan : (is_string($tujuan) ? json_decode($tujuan, true) : []),
+            'isi' => is_array($isi) ? $isi : (is_string($isi) ? json_decode($isi, true) : []),
+            'catatan' => $request->query('catatan', ''),
+        ];
+
+        // Temporarily set the disposisi_data for preview purposes
+        $booking->disposisi_data = $disposisi_data;
+
+        return view('pdf.disposisi-preview', [
+            'booking' => $booking,
         ]);
     }
 

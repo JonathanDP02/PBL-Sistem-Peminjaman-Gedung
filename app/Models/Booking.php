@@ -27,6 +27,7 @@ class Booking extends Model
         'status',
         'revision_count',
         'pdf_path',
+        'disposisi_data',
     ];
 
     protected function casts(): array
@@ -36,6 +37,7 @@ class Booking extends Model
             'booking_end_date' => 'date',
             'start_time' => 'datetime:H:i:s',
             'end_time' => 'datetime:H:i:s',
+            'disposisi_data' => 'array',
         ];
     }
 

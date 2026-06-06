@@ -63,7 +63,8 @@ class DatabaseSeeder extends Seeder
         // Level 3: Organisasi (parent = masing-masing Jurusan atau Pusat)
         $bemPusat = Unit::create(['parent_id' => $pusat->id, 'level' => 'Organisasi', 'unit_name' => 'BEM Polinema', 'description' => 'Badan Eksekutif Mahasiswa Pusat']);
         $dpmPusat = Unit::create(['parent_id' => $pusat->id, 'level' => 'Organisasi', 'unit_name' => 'Dewan Perwakilan Mahasiswa', 'description' => 'Dewan Perwakilan Mahasiswa']);
-        $formadiksi = Unit::create(['parent_id' => $pusat->id, 'level' => 'Organisasi', 'unit_name' => 'Formadiksi', 'description' => 'Forum Mahasiswa Bidikmisi']);
+        $formadiksi = Unit::create(['parent_id' => $bemPusat->id, 'level' => 'Organisasi', 'unit_name' => 'Formadiksi', 'description' => 'Forum Mahasiswa Bidikmisi']);
+        $ukmOlahraga = Unit::create(['parent_id' => $bemPusat->id, 'level' => 'Organisasi', 'unit_name' => 'UKM Olahraga', 'description' => 'Unit Kegiatan Mahasiswa Olahraga']);
 
         $hmti = Unit::create(['parent_id' => $jurusanTI->id, 'level' => 'Organisasi', 'unit_name' => 'HMTI', 'description' => 'Himpunan Mahasiswa TI']);
         $wri = Unit::create(['parent_id' => $hmti->id, 'level' => 'Organisasi', 'unit_name' => 'Workshop Riset Informatika', 'description' => 'Workshop Riset Informatika']);
@@ -97,14 +98,18 @@ class DatabaseSeeder extends Seeder
 
         // Jabatan organisasi (untuk kelola data lokal)
         $posPresBEM = Position::create(['unit_id' => $bemPusat->id, 'name' => 'Presiden BEM Polinema']);
+        $posPembinaBEM = Position::create(['unit_id' => $bemPusat->id, 'name' => 'DPK BEM']);
         $posKetuaDPM = Position::create(['unit_id' => $dpmPusat->id, 'name' => 'Ketua Dewan Perwakilan Mahasiswa']);
+        $posPembinaDPM = Position::create(['unit_id' => $dpmPusat->id, 'name' => 'DPK DPM']);
         $posKetuaFormadiksi = Position::create(['unit_id' => $formadiksi->id, 'name' => 'Ketua Formadiksi']);
+        $posPembinaFormadiksi = Position::create(['unit_id' => $formadiksi->id, 'name' => 'DPK Formadiksi']);
+        $posKetuaUKMOlahraga = Position::create(['unit_id' => $ukmOlahraga->id, 'name' => 'Ketua UKM Olahraga']);
+        $posPembinaUKMOlahraga = Position::create(['unit_id' => $ukmOlahraga->id, 'name' => 'DPK UKM Olahraga']);
         $posHumasHMTI = Position::create(['unit_id' => $hmti->id, 'name' => 'Humas HMTI']);
         $posKetHMTI = Position::create(['unit_id' => $hmti->id, 'name' => 'Ketua HMTI']);
-        $posPembinaHMTI = Position::create(['unit_id' => $hmti->id, 'name' => 'Pembina HMTI']);
+        $posPembinaJTI = Position::create(['unit_id' => $jurusanTI->id, 'name' => 'DPK TI']);
         $posHumasWRI = Position::create(['unit_id' => $wri->id, 'name' => 'Humas WRI']);
         $posKetuaWRI = Position::create(['unit_id' => $wri->id, 'name' => 'Ketua WRI']);
-        $posPembinaWRI = Position::create(['unit_id' => $wri->id, 'name' => 'Pembina WRI']);
         $posKetHMS = Position::create(['unit_id' => $hms->id, 'name' => 'Ketua HMS']);
         $posKetHME = Position::create(['unit_id' => $hme->id, 'name' => 'Ketua HME']);
         $posKetHMM = Position::create(['unit_id' => $hmm->id, 'name' => 'Ketua HMM']);
@@ -133,6 +138,7 @@ class DatabaseSeeder extends Seeder
             'room_name' => 'Lab Komputer TI-101',
             'capacity' => 40,
             'description' => 'Lab komputer utama Jurusan TI',
+            'facilities' => '40 PC Lab, 1 Proyektor Laser, 2 AC, 1 Papan Tulis',
         ]);
         Room::create([
             'building_id' => $gedungTI->id,
@@ -140,6 +146,7 @@ class DatabaseSeeder extends Seeder
             'room_name' => 'Ruang Kelas TI',
             'capacity' => 50,
             'description' => 'Ruang kelas reguler Jurusan TI',
+            'facilities' => '1 Proyektor Laser, 2 AC, 1 Papan Tulis, 50 Kursi Lipat',
         ]);
 
         // Ruangan 1 untuk Gedung lainnya
@@ -149,6 +156,7 @@ class DatabaseSeeder extends Seeder
             'room_name' => 'Ruang Kelas Sipil-101',
             'capacity' => 40,
             'description' => 'Ruang kelas reguler Sipil',
+            'facilities' => '1 Proyektor Laser, 1 AC, 1 Papan Tulis, 40 Kursi Lipat',
         ]);
         Room::create([
             'building_id' => $gedungElektro->id,
@@ -156,6 +164,7 @@ class DatabaseSeeder extends Seeder
             'room_name' => 'Ruang Kelas Elektro-101',
             'capacity' => 40,
             'description' => 'Ruang kelas reguler Elektro',
+            'facilities' => '1 Proyektor Laser, 1 AC, 1 Papan Tulis, 40 Kursi Lipat',
         ]);
         Room::create([
             'building_id' => $gedungMesin->id,
@@ -163,6 +172,7 @@ class DatabaseSeeder extends Seeder
             'room_name' => 'Ruang Kelas Mesin-101',
             'capacity' => 40,
             'description' => 'Ruang kelas reguler Mesin',
+            'facilities' => '1 Proyektor Laser, 1 AC, 1 Papan Tulis, 40 Kursi Lipat',
         ]);
         Room::create([
             'building_id' => $gedungKimia->id,
@@ -170,6 +180,7 @@ class DatabaseSeeder extends Seeder
             'room_name' => 'Ruang Kelas Kimia-101',
             'capacity' => 40,
             'description' => 'Ruang kelas reguler Kimia',
+            'facilities' => '1 Proyektor Laser, 1 AC, 1 Papan Tulis, 40 Kursi Lipat',
         ]);
         Room::create([
             'building_id' => $gedungAkuntansi->id,
@@ -177,6 +188,7 @@ class DatabaseSeeder extends Seeder
             'room_name' => 'Ruang Kelas Akuntansi-101',
             'capacity' => 40,
             'description' => 'Ruang kelas reguler Akuntansi',
+            'facilities' => '1 Proyektor Laser, 1 AC, 1 Papan Tulis, 40 Kursi Lipat',
         ]);
         Room::create([
             'building_id' => $gedungAN->id,
@@ -184,6 +196,7 @@ class DatabaseSeeder extends Seeder
             'room_name' => 'Ruang Kelas AN-101',
             'capacity' => 40,
             'description' => 'Ruang kelas reguler Administrasi Niaga',
+            'facilities' => '1 Proyektor Laser, 1 AC, 1 Papan Tulis, 40 Kursi Lipat',
         ]);
 
         // Graha Polinema (milik Pusat)
@@ -193,6 +206,7 @@ class DatabaseSeeder extends Seeder
             'room_name' => 'Graha Polinema',
             'capacity' => 1000,
             'description' => 'Gedung Graha Polinema untuk kegiatan besar',
+            'facilities' => '1000 Kursi Lipat, 10 AC, 4 Speaker Portable, 2 Microphone Wireless',
         ]);
 
         // ═══════════════════════════════════════════════════════
@@ -237,6 +251,7 @@ class DatabaseSeeder extends Seeder
             ['unit' => $bemPusat, 'name' => 'BEM Polinema', 'email' => 'admin.bem'],
             ['unit' => $dpmPusat, 'name' => 'Dewan Perwakilan Mahasiswa', 'email' => 'admin.dpm'],
             ['unit' => $formadiksi, 'name' => 'Formadiksi', 'email' => 'admin.formadiksi'],
+            ['unit' => $ukmOlahraga, 'name' => 'UKM Olahraga', 'email' => 'admin.olahraga'],
             ['unit' => $hmti, 'name' => 'HMTI', 'email' => 'admin.hmti'],
             ['unit' => $wri, 'name' => 'WRI', 'email' => 'admin.wri'],
             ['unit' => $hms, 'name' => 'HMS', 'email' => 'admin.hms'],
@@ -296,33 +311,57 @@ class DatabaseSeeder extends Seeder
         User::create([
             'unit_id' => $hmti->id,
             'position_id' => $posHumasHMTI->id,
-            'role_id' => $roleApprover->id,
+            'role_id' => $roleUser->id,
             'name' => 'Humas HMTI',
             'email' => 'humas.hmti@spacein.test',
             'password' => Hash::make('12345'),
         ]);
         User::create([
-            'unit_id' => $hmti->id,
-            'position_id' => $posPembinaHMTI->id,
+            'unit_id' => $jurusanTI->id,
+            'position_id' => $posPembinaJTI->id,
             'role_id' => $roleApprover->id,
-            'name' => 'Pembina HMTI',
-            'email' => 'pembina.hmti@spacein.test',
+            'name' => 'DPK TI',
+            'email' => 'dpk.ti@spacein.test',
             'password' => Hash::make('12345'),
         ]);
         User::create([
             'unit_id' => $wri->id,
             'position_id' => $posHumasWRI->id,
-            'role_id' => $roleApprover->id,
+            'role_id' => $roleUser->id,
             'name' => 'Humas WRI',
             'email' => 'humas.wri@spacein.test',
             'password' => Hash::make('12345'),
         ]);
         User::create([
-            'unit_id' => $wri->id,
-            'position_id' => $posPembinaWRI->id,
+            'unit_id' => $bemPusat->id,
+            'position_id' => $posPembinaBEM->id,
             'role_id' => $roleApprover->id,
-            'name' => 'Pembina WRI',
-            'email' => 'pembina.wri@spacein.test',
+            'name' => 'DPK BEM',
+            'email' => 'dpk.bem@spacein.test',
+            'password' => Hash::make('12345'),
+        ]);
+        User::create([
+            'unit_id' => $dpmPusat->id,
+            'position_id' => $posPembinaDPM->id,
+            'role_id' => $roleApprover->id,
+            'name' => 'DPK DPM',
+            'email' => 'dpk.dpm@spacein.test',
+            'password' => Hash::make('12345'),
+        ]);
+        User::create([
+            'unit_id' => $formadiksi->id,
+            'position_id' => $posPembinaFormadiksi->id,
+            'role_id' => $roleApprover->id,
+            'name' => 'DPK Formadiksi',
+            'email' => 'dpk.formadiksi@spacein.test',
+            'password' => Hash::make('12345'),
+        ]);
+        User::create([
+            'unit_id' => $ukmOlahraga->id,
+            'position_id' => $posPembinaUKMOlahraga->id,
+            'role_id' => $roleApprover->id,
+            'name' => 'DPK UKM Olahraga',
+            'email' => 'dpk.olahraga@spacein.test',
             'password' => Hash::make('12345'),
         ]);
         User::create([
@@ -359,6 +398,7 @@ class DatabaseSeeder extends Seeder
             ['unit' => $bemPusat, 'pos' => $posPresBEM, 'name' => 'BEM Polinema', 'email' => 'bem'],
             ['unit' => $dpmPusat, 'pos' => $posKetuaDPM, 'name' => 'Dewan Perwakilan Mahasiswa', 'email' => 'dpm'],
             ['unit' => $formadiksi, 'pos' => $posKetuaFormadiksi, 'name' => 'Formadiksi', 'email' => 'formadiksi'],
+            ['unit' => $ukmOlahraga, 'pos' => $posKetuaUKMOlahraga, 'name' => 'UKM Olahraga', 'email' => 'olahraga'],
             ['unit' => $hmti, 'pos' => $posKetHMTI, 'name' => 'HMTI', 'email' => 'hmti'],
             ['unit' => $wri, 'pos' => $posKetuaWRI, 'name' => 'WRI', 'email' => 'wri'],
             ['unit' => $hms, 'pos' => $posKetHMS, 'name' => 'HMS', 'email' => 'hms'],
@@ -494,17 +534,17 @@ class DatabaseSeeder extends Seeder
             'description' => 'Alur persetujuan peminjaman Graha Polinema',
         ]);
 
-        // Urutan jika Pusat adalah Pemilik Ruang: Wakil Direktur II -> Wakil Direktur III
+        // Urutan jika Pusat adalah Pemilik Ruang: Wakil Direktur III -> Wakil Direktur II
         WorkflowStep::create([
             'workflow_id' => $wfAuditorium->id,
-            'position_id' => $posWadir2->id,
+            'position_id' => $posWadir3->id,
             'step_order' => 1,
             'requires_attachment' => false,
         ]);
 
         WorkflowStep::create([
             'workflow_id' => $wfAuditorium->id,
-            'position_id' => $posWadir3->id,
+            'position_id' => $posWadir2->id,
             'step_order' => 2,
             'requires_attachment' => false,
         ]);
@@ -512,12 +552,7 @@ class DatabaseSeeder extends Seeder
         // Tambahkan syarat dokumen untuk Peminjaman Auditorium
         WorkflowRequirement::create([
             'workflow_id' => $wfAuditorium->id,
-            'document_name' => 'Surat Izin Orang Tua/Wali',
-            'is_mandatory' => true,
-        ]);
-        WorkflowRequirement::create([
-            'workflow_id' => $wfAuditorium->id,
-            'document_name' => 'Surat Disposini Wadir',
+            'document_name' => 'Proposal',
             'is_mandatory' => true,
         ]);
 
@@ -531,6 +566,12 @@ class DatabaseSeeder extends Seeder
             'workflow_id' => $wfBEM->id,
             'position_id' => $posPresBEM->id,
             'step_order' => 1,
+            'requires_attachment' => false,
+        ]);
+        WorkflowStep::create([
+            'workflow_id' => $wfBEM->id,
+            'position_id' => $posPembinaBEM->id,
+            'step_order' => 2,
             'requires_attachment' => false,
         ]);
         WorkflowRequirement::create([
@@ -547,14 +588,8 @@ class DatabaseSeeder extends Seeder
         ]);
         WorkflowStep::create([
             'workflow_id' => $wfHMTI->id,
-            'position_id' => $posHumasHMTI->id,
-            'step_order' => 1,
-            'requires_attachment' => false,
-        ]);
-        WorkflowStep::create([
-            'workflow_id' => $wfHMTI->id,
             'position_id' => $posKetHMTI->id,
-            'step_order' => 2,
+            'step_order' => 1,
             'requires_attachment' => false,
         ]);
         WorkflowRequirement::create([
@@ -581,6 +616,24 @@ class DatabaseSeeder extends Seeder
             'is_mandatory' => true,
         ]);
 
+        // Workflow umum untuk UKM Olahraga (Tier 1)
+        $wfUKMOlahraga = Workflow::create([
+            'unit_id' => $ukmOlahraga->id,
+            'name' => 'Alur UKM Olahraga',
+            'description' => 'Alur umum persetujuan tingkat UKM Olahraga',
+        ]);
+        WorkflowStep::create([
+            'workflow_id' => $wfUKMOlahraga->id,
+            'position_id' => $posKetuaUKMOlahraga->id,
+            'step_order' => 1,
+            'requires_attachment' => false,
+        ]);
+        WorkflowRequirement::create([
+            'workflow_id' => $wfUKMOlahraga->id,
+            'document_name' => 'Proposal Kegiatan (UKM Olahraga)',
+            'is_mandatory' => true,
+        ]);
+
         // Workflow umum untuk WRI (Tier 1)
         $wfWRI = Workflow::create([
             'unit_id' => $wri->id,
@@ -589,14 +642,8 @@ class DatabaseSeeder extends Seeder
         ]);
         WorkflowStep::create([
             'workflow_id' => $wfWRI->id,
-            'position_id' => $posHumasWRI->id,
-            'step_order' => 1,
-            'requires_attachment' => false,
-        ]);
-        WorkflowStep::create([
-            'workflow_id' => $wfWRI->id,
             'position_id' => $posKetuaWRI->id,
-            'step_order' => 2,
+            'step_order' => 1,
             'requires_attachment' => false,
         ]);
         WorkflowRequirement::create([

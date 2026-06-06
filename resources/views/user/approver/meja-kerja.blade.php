@@ -127,7 +127,7 @@
                                 </td>
                                 <td class="px-6 py-5 text-center">
                                     <a href="{{ route('approvals.show', $approval['booking']['id']) }}" class="px-5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1A1A] dark:hover:bg-[#2A2A2A] border border-slate-200 dark:border-[#2A2A2A] text-slate-700 dark:text-white text-xs font-bold transition-colors">
-                                        Review
+                                        Tinjau
                                     </a>
                                 </td>
                             </tr>
@@ -164,7 +164,7 @@
                     <span class="text-sm font-bold text-slate-900 dark:text-white">{{ $stats['total_count'] }}</span>    
                 </div>
                 <div class="flex justify-between items-center">
-                    <span class="text-sm text-slate-500 dark:text-gray-400">Selesai Review</span>
+                    <span class="text-sm text-slate-500 dark:text-gray-400">Selesai Ditinjau</span>
                     <span class="text-sm font-bold text-slate-900 dark:text-white">{{ $stats['reviewed_count'] }}</span>
                 </div>
             </div>
