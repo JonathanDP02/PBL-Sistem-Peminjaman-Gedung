@@ -363,6 +363,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware('checkRole:Penyetuju')->prefix('approver')->group(function () {
 
         Route::get('/meja-kerja', [ApprovalController::class, 'mejaKerja'])->name('meja-kerja');
+        Route::get('/bookings/{id}/preview-disposisi', [ApprovalController::class, 'previewDisposisi'])->name('approvals.preview-disposisi');
         Route::get('/approvals/{id}', [ApprovalController::class, 'show'])->name('approvals.show');
         Route::get('/approvals', [ApprovalController::class, 'index'])->name('approval.index');
         Route::post('/approvals/{booking_id}/approve', [ApprovalController::class, 'approve'])->name('approval.approve');

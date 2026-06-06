@@ -95,6 +95,7 @@ Semua akun menggunakan password: **`12345`**
 | Admin BEM Polinema    | admin.bem@spacein.test  | Admin_Unit | BEM Polinema               |
 | Admin Dewan Perwakilan Mahasiswa| admin.dpm@spacein.test| Admin_Unit | Dewan Perwakilan Mahasiswa|
 | Admin Formadiksi      | admin.formadiksi@spacein.test| Admin_Unit | Formadiksi                 |
+| Admin UKM Olahraga    | admin.olahraga@spacein.test| Admin_Unit | UKM Olahraga               |
 | Admin HMTI            | admin.hmti@spacein.test | Admin_Unit | HMTI                       |
 | Admin WRI             | admin.wri@spacein.test  | Admin_Unit | Workshop Riset Informatika |
 | Admin HMS             | admin.hms@spacein.test  | Admin_Unit | HMS                        |
@@ -118,13 +119,17 @@ Semua akun menggunakan password: **`12345`**
 | Ketua Jurusan Kimia | kajur.kimia@spacein.test | Approver | Ketua Jurusan Kimia | Jurusan Teknik Kimia |
 | Ketua Jurusan Akuntansi | kajur.akuntansi@spacein.test | Approver | Ketua Jurusan Akuntansi | Jurusan Akuntansi |
 | Ketua Jurusan Administrasi Niaga | kajur.an@spacein.test | Approver | Ketua Jurusan Administrasi Niaga | Jurusan Administrasi Niaga |
-| Pembina HMTI      | pembina.hmti@spacein.test| Approver | Pembina HMTI    | HMTI           |
+| DPK TI            | dpk.ti@spacein.test     | Approver | DPK TI           | Jurusan TI     |
 | Humas WRI         | humas.wri@spacein.test  | Approver | Humas WRI       | WRI            |
 | Ketua WRI         | ketua.wri@spacein.test  | Approver | Ketua WRI       | WRI            |
-| Pembina WRI       | pembina.wri@spacein.test| Approver | Pembina WRI     | WRI            |
+| DPK BEM           | dpk.bem@spacein.test    | Approver | DPK BEM         | BEM Polinema   |
+| DPK DPM           | dpk.dpm@spacein.test    | Approver | DPK DPM         | Dewan Perwakilan Mahasiswa |
+| DPK Formadiksi    | dpk.formadiksi@spacein.test| Approver | DPK Formadiksi | Formadiksi |
+| DPK UKM Olahraga  | dpk.olahraga@spacein.test| Approver | DPK UKM Olahraga | UKM Olahraga |
 | Ketua BEM Polinema| ketua.bem@spacein.test  | Approver | Presiden BEM Polinema | BEM Polinema |
 | Ketua Dewan Perwakilan Mahasiswa| ketua.dpm@spacein.test| Approver | Ketua Dewan Perwakilan Mahasiswa | Dewan Perwakilan Mahasiswa |
 | Ketua Formadiksi  | ketua.formadiksi@spacein.test | Approver | Ketua Formadiksi | Formadiksi |
+| Ketua UKM Olahraga| ketua.olahraga@spacein.test | Approver | Ketua UKM Olahraga | UKM Olahraga |
 | Ketua HMTI        | ketua.hmti@spacein.test | Approver | Ketua HMTI      | HMTI           |
 | Ketua HMS         | ketua.hms@spacein.test  | Approver | Ketua HMS       | HMS            |
 | Ketua HME         | ketua.hme@spacein.test  | Approver | Ketua HME       | HME            |
@@ -150,6 +155,7 @@ Semua akun menggunakan password: **`12345`**
 | Mahasiswa BEM Polinema  | mhs.bem@spacein.test | User | BEM Polinema |
 | Mahasiswa Dewan Perwakilan Mahasiswa| mhs.dpm@spacein.test | User | Dewan Perwakilan Mahasiswa |
 | Mahasiswa Formadiksi    | mhs.formadiksi@spacein.test | User | Formadiksi |
+| Mahasiswa UKM Olahraga  | mhs.olahraga@spacein.test | User | UKM Olahraga |
 | Mahasiswa HMM           | mhs.hmm@spacein.test | User | HMM          |
 | Mahasiswa HMK           | mhs.hmk@spacein.test | User | HMK          |
 | Mahasiswa HMA           | mhs.hma@spacein.test | User | HMA          |
@@ -159,8 +165,9 @@ Semua akun menggunakan password: **`12345`**
 Pusat (Politeknik Negeri Malang)
 ├── Admin Pusat
 │   ├── BEM Polinema
-│   ├── Dewan Perwakilan Mahasiswa
-│   └── Formadiksi
+│   │   ├── Formadiksi
+│   │   └── UKM Olahraga
+│   └── Dewan Perwakilan Mahasiswa
 ├── Jurusan Teknologi Informasi
 │   └── HMTI
 │       └── Workshop Riset Informatika (WRI)

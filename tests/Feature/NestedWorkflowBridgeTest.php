@@ -62,38 +62,34 @@ class NestedWorkflowBridgeTest extends TestCase
         $labels = collect($steps)->map(fn ($s) => $s['tier_label'])->toArray();
         $positions = collect($steps)->map(fn ($s) => Position::find($s['position_id'])->name)->toArray();
 
-        // Expect WRI internal humas & ketua
+        // Expect WRI internal ketua
         $this->assertStringContainsString('Internal (Workshop Riset Informatika)', $labels[0]);
-        $this->assertEquals('Humas WRI', $positions[0]);
-
-        $this->assertStringContainsString('Internal (Workshop Riset Informatika)', $labels[1]);
-        $this->assertEquals('Ketua WRI', $positions[1]);
+        $this->assertEquals('Ketua WRI', $positions[0]);
 
         // Expect dynamic HMTI parent injection
-        $this->assertStringContainsString('Induk (HMTI)', $labels[2]);
-        $this->assertEquals('Ketua HMTI', $positions[2]);
+        $this->assertStringContainsString('Induk (HMTI)', $labels[1]);
+        $this->assertEquals('Ketua HMTI', $positions[1]);
 
         // Expect BEM Polinema gatekeeper
-        $this->assertStringContainsString('BEM (BEM Polinema)', $labels[3]);
-        $this->assertEquals('Presiden BEM Polinema', $positions[3]);
+        $this->assertStringContainsString('BEM (BEM Polinema)', $labels[2]);
+        $this->assertEquals('Presiden BEM Polinema', $positions[2]);
 
-        // Expect Pembina WRI bounce-back step
-        $this->assertStringContainsString('Pembina (Workshop Riset Informatika)', $labels[4]);
-        $this->assertEquals('Pembina WRI', $positions[4]);
+        // Expect DPK TI
+        $this->assertStringContainsString('DPK (Jurusan Teknologi Informasi)', $labels[3]);
+        $this->assertEquals('DPK TI', $positions[3]);
 
         // Expect Room Owner JTI
-        $this->assertStringContainsString('Pemilik Ruangan (Jurusan Teknologi Informasi)', $labels[5]);
-        $this->assertEquals('Ketua Jurusan TI', $positions[5]);
+        $this->assertStringContainsString('Pemilik Ruangan (Jurusan Teknologi Informasi)', $labels[4]);
+        $this->assertEquals('Ketua Jurusan TI', $positions[4]);
     }
 
     /**
      * Test HMTI (organization directly under Jurusan TI) booking JTI room.
      * Expects:
-     * 1. Humas HMTI (Internal HMTI)
-     * 2. Ketua HMTI (Internal HMTI)
-     * 3. Presiden BEM Polinema (BEM Polinema gatekeeper)
-     * 4. Pembina HMTI (Pembina HMTI)
-     * 5. Ketua Jurusan TI (Pemilik Ruangan JTI)
+     * 1. Ketua HMTI (Internal HMTI)
+     * 2. Presiden BEM Polinema (BEM Polinema gatekeeper)
+     * 3. DPK TI (DPK TI)
+     * 4. Ketua Jurusan TI (Pemilik Ruangan JTI)
      *
      * Note: NO HMTI parent injection because HMTI's parent is Jurusan (level "Jurusan", not "Organisasi").
      */
@@ -121,25 +117,21 @@ class NestedWorkflowBridgeTest extends TestCase
         $labels = collect($steps)->map(fn ($s) => $s['tier_label'])->toArray();
         $positions = collect($steps)->map(fn ($s) => Position::find($s['position_id'])->name)->toArray();
 
-        // 1. Humas HMTI
+        // 1. Ketua HMTI
         $this->assertStringContainsString('Internal (HMTI)', $labels[0]);
-        $this->assertEquals('Humas HMTI', $positions[0]);
+        $this->assertEquals('Ketua HMTI', $positions[0]);
 
-        // 2. Ketua HMTI
-        $this->assertStringContainsString('Internal (HMTI)', $labels[1]);
-        $this->assertEquals('Ketua HMTI', $positions[1]);
+        // 2. Presiden BEM (BEM Polinema)
+        $this->assertStringContainsString('BEM (BEM Polinema)', $labels[1]);
+        $this->assertEquals('Presiden BEM Polinema', $positions[1]);
 
-        // 3. Presiden BEM (BEM Polinema)
-        $this->assertStringContainsString('BEM (BEM Polinema)', $labels[2]);
-        $this->assertEquals('Presiden BEM Polinema', $positions[2]);
+        // 3. DPK TI
+        $this->assertStringContainsString('DPK (Jurusan Teknologi Informasi)', $labels[2]);
+        $this->assertEquals('DPK TI', $positions[2]);
 
-        // 4. Pembina HMTI
-        $this->assertStringContainsString('Pembina (HMTI)', $labels[3]);
-        $this->assertEquals('Pembina HMTI', $positions[3]);
-
-        // 5. Ketua Jurusan TI (Pemilik Ruangan JTI)
-        $this->assertStringContainsString('Pemilik Ruangan (Jurusan Teknologi Informasi)', $labels[4]);
-        $this->assertEquals('Ketua Jurusan TI', $positions[4]);
+        // 4. Ketua Jurusan TI (Pemilik Ruangan JTI)
+        $this->assertStringContainsString('Pemilik Ruangan (Jurusan Teknologi Informasi)', $labels[3]);
+        $this->assertEquals('Ketua Jurusan TI', $positions[3]);
 
         // Assert no Induk (Jurusan TI) tier is injected in the list
         foreach ($labels as $label) {

@@ -17,6 +17,7 @@ class BookingPdfController extends Controller
             'user',
             'workflow',
             'approvals.step.position',
+            'approvals.bookingStep.position.unit',
             'approvals.approver',
         ])->findOrFail($bookingId);
 
@@ -36,7 +37,7 @@ class BookingPdfController extends Controller
 
         $lastApproval = $booking->approvals
             ->where('approval_status', 'Approved')
-            ->sortByDesc(fn ($a) => $a->step->step_order ?? 0)
+            ->sortByDesc(fn ($a) => $a->bookingStep->step_order ?? $a->step->step_order ?? 0)
             ->first();
 
         $qrCode = QrCodeHelper::generateBase64(url('/validate/'.$booking->id));
@@ -59,6 +60,7 @@ class BookingPdfController extends Controller
             'user',
             'workflow',
             'approvals.step.position',
+            'approvals.bookingStep.position.unit',
             'approvals.approver',
         ])->findOrFail($bookingId);
 
@@ -78,7 +80,7 @@ class BookingPdfController extends Controller
 
         $lastApproval = $booking->approvals
             ->where('approval_status', 'Approved')
-            ->sortByDesc(fn ($a) => $a->step->step_order ?? 0)
+            ->sortByDesc(fn ($a) => $a->bookingStep->step_order ?? $a->step->step_order ?? 0)
             ->first();
 
         $qrCode = QrCodeHelper::generateBase64(url('/validate/'.$booking->id));

@@ -6,7 +6,7 @@
             </a>
         </div>
         <div class="px-6 mb-4">
-            <p class="text-[10px] font-bold tracking-widest text-slate-400 dark:text-gray-500 uppercase mb-4">Enterprise Booking</p>
+            <p class="text-[10px] font-bold tracking-widest text-slate-400 dark:text-gray-500 uppercase mb-4">Layanan Peminjaman</p>
             <nav class="space-y-1">
                 <!-- Menu untuk Peminjam -->
                 @if(Auth::user()?->role?->name === 'Peminjam')

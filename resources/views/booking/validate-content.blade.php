@@ -41,7 +41,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
                 <p class="text-xs text-gray-500 dark:text-gray-500 uppercase font-bold tracking-wider mb-1">Nama Kegiatan</p>
-                <p class="text-base font-medium text-gray-800 dark:text-white">{{ $booking->event_name }}</p>
+                <p class="text-base font-medium text-gray-800 dark:text-white break-all">{{ $booking->event_name }}</p>
             </div>
             <div>
                 <p class="text-xs text-gray-500 dark:text-gray-500 uppercase font-bold tracking-wider mb-1">Peminjam</p>
@@ -68,7 +68,7 @@
         @if ($booking->event_description)
             <div class="mt-4 pt-4 border-t border-slate-100 dark:border-[#222]">
                 <p class="text-xs text-gray-500 dark:text-gray-500 uppercase font-bold tracking-wider mb-1">Deskripsi</p>
-                <p class="text-base text-gray-800 dark:text-slate-300">{{ $booking->event_description }}</p>
+                <p class="text-base text-gray-800 dark:text-slate-300 break-all whitespace-pre-line">{{ $booking->event_description }}</p>
             </div>
         @endif
     </div>

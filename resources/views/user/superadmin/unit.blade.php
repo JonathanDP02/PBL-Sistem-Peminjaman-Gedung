@@ -341,7 +341,7 @@
                                         class="w-full bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] rounded-xl pl-4 pr-10 py-3.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-kinetic-primary transition-colors appearance-none cursor-pointer">
                                     <option value="">-- Pilih Unit Induk --</option>
                                     <template x-for="p in filteredParents" :key="p.id">
-                                        <option :value="p.id" x-text="p.unit_name"></option>
+                                        <option :value="String(p.id)" x-text="p.unit_name"></option>
                                     </template>
                                 </select>
                                 <i class="ph-bold ph-caret-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-xs"></i>

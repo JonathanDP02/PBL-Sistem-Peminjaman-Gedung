@@ -24,7 +24,7 @@
                 <h2 class="font-heading text-4xl font-extrabold text-slate-900 dark:text-white mb-1">
                     {{ $stats['pending_count'] }}<span class="text-sm font-bold tracking-widest text-slate-400 dark:text-gray-500 uppercase ml-2">Items</span>
                 </h2>
-                <p class="text-xs text-slate-500 dark:text-gray-400 font-medium">Menunggu Review Saya</p>
+                <p class="text-xs text-slate-500 dark:text-gray-400 font-medium">Menunggu Tinjauan Saya</p>
             </div>
 
             <div class="bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] rounded-3xl p-6 shadow-sm dark:shadow-none flex flex-col transition-colors">
@@ -108,7 +108,7 @@
                                 </td>
                                 <td class="px-6 py-5 text-center">
                                     <a href="{{ route('approvals.show', $approval['booking']['id']) }}" class="px-5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1A1A] dark:hover:bg-[#2A2A2A] border border-slate-200 dark:border-[#2A2A2A] text-slate-700 dark:text-white text-xs font-bold transition-colors">
-                                        Review
+                                        Tinjau
                                     </a>
                                 </td>
                             </tr>

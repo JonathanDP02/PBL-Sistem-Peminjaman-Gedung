@@ -103,6 +103,7 @@
                             <th class="px-6 py-5 text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest">Nama</th>
                             <th class="px-6 py-5 text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest">Unit</th>
                             <th class="px-6 py-5 text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest">Level</th>
+                            <th class="px-6 py-5 text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest">Jabatan</th>
                             <th class="px-6 py-5 text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest">Role</th>
                             <th class="px-6 py-5 text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest text-center">Aksi</th>
                         </tr>
@@ -391,7 +392,7 @@ function renderUsersTable(users) {
     if (!users || users.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="5" class="px-6 py-8 text-center text-slate-500 dark:text-gray-400">
+                <td colspan="6" class="px-6 py-8 text-center text-slate-500 dark:text-gray-400">
                     Tidak ada data user
                 </td>
             </tr>
@@ -422,6 +423,11 @@ function renderUsersTable(users) {
                 <td class="px-6 py-4">
                     <span class="px-3 py-1 ${levelColor} rounded-full text-xs font-medium border">
                         ${user.unit?.level || 'N/A'}
+                    </span>
+                </td>
+                <td class="px-6 py-4">
+                    <span class="px-3 py-1 bg-slate-100 dark:bg-[#222] text-slate-600 dark:text-gray-300 rounded-full text-xs font-medium border border-slate-200 dark:border-[#333]">
+                        ${user.position?.name || '-'}
                     </span>
                 </td>
                 <td class="px-6 py-4">
@@ -627,6 +633,9 @@ function editUser(userId) {
             
             if (!inputUserId || !inputName || !inputEmail) return;
             
+            clearErrors();
+            resetPositionMode();
+            
             inputUserId.value = user.id;
             inputName.value = user.name;
             inputEmail.value = user.email;
@@ -639,8 +648,6 @@ function editUser(userId) {
             if (passwordNote) passwordNote.textContent = '(Isi jika ingin mengubah)';
             if (inputPassword) inputPassword.required = false;
             if (submitBtn) submitBtn.textContent = 'Simpan Perubahan';
-            clearErrors();
-            resetPositionMode();
             openModal('modalUserForm');
         } else {
             showAlert('Gagal memuat data user', 'error');

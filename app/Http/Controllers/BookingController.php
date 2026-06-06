@@ -52,8 +52,8 @@ class BookingController extends Controller
             ->whereNull('room_id')
             ->get();
 
-        // Ambil data semua unit beserta jabatannya untuk pemetaan dinamis di client-side
-        $units = Unit::with('positions')->get();
+        // Ambil data semua unit beserta jabatannya dan penggunanya untuk pemetaan dinamis di client-side
+        $units = Unit::with('positions.users')->get();
 
         // Mengirimkan variabel $buildings, $workflows, dan $units ke halaman view
         return view('user.peminjam.booking', compact('buildings', 'workflows', 'units'));
@@ -72,7 +72,6 @@ class BookingController extends Controller
             'room_id' => 'required|integer|exists:rooms,id',
             'event_name' => 'required|string|max:200',
             'event_description' => 'nullable|string',
-            'event_scope' => 'required|in:Internal,Lintas Jurusan',
             'booking_date' => 'required|date|after_or_equal:today',
             'booking_end_date' => 'nullable|date|after_or_equal:booking_date',
             'start_time' => 'required|date_format:H:i',
@@ -84,7 +83,7 @@ class BookingController extends Controller
         }
 
         $room = Room::findOrFail($validated['room_id']);
-        $eventScope = $validated['event_scope'];
+        $eventScope = 'Internal';
 
         // Cari workflow milik unit pemilik ruangan (General Workflow di mana room_id IS NULL)
         $workflow = Workflow::where('unit_id', $room->unit_id)
@@ -101,7 +100,6 @@ class BookingController extends Controller
 
         // Cek mandatory requirements sebelum transaksi
         $mandatoryRequirements = WorkflowRequirement::where('workflow_id', $validated['workflow_id'])
-            ->where('is_mandatory', true)
             ->get();
 
         foreach ($mandatoryRequirements as $requirement) {
@@ -282,7 +280,6 @@ class BookingController extends Controller
         }
 
         $mandatoryRequirements = WorkflowRequirement::where('workflow_id', $booking->workflow_id)
-            ->where('is_mandatory', true)
             ->get();
 
         foreach ($mandatoryRequirements as $requirement) {
@@ -433,7 +430,7 @@ class BookingController extends Controller
             'workflow.steps.position',
             'bookingSteps.position',
             'approvals',
-            'logs.actor',
+            'logs.actor.position',
             'attachments',
         ]);
 

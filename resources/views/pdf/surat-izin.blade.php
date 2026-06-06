@@ -61,6 +61,9 @@
         .qr-box p { font-size: 8px; color: #777; margin-top: 5px; }
         
         .number { text-align: center; font-size: 10px; margin-bottom: 16px; color: #555; }
+        .dispo-checkbox { display: inline-block; width: 10px; height: 10px; border: 1px solid #000; text-align: center; line-height: 10px; font-weight: bold; margin-right: 4px; font-size: 8px; vertical-align: middle; }
+        .dispo-table { width: 100%; border: 1px solid #000; border-collapse: collapse; }
+        .dispo-table td, .dispo-table th { border: 1px solid #000; padding: 4px; vertical-align: top; }
     </style>
 </head>
 <body>
@@ -92,6 +95,7 @@
             <tr><td>Tanggal</td><td>: {{ $booking->booking_date->format('Y-m-d') === $booking->booking_end_date->format('Y-m-d') ? $booking->booking_date->translatedFormat('d F Y') : $booking->booking_date->translatedFormat('d F Y') . ' – ' . $booking->booking_end_date->translatedFormat('d F Y') }}</td></tr>
             <tr><td>Waktu</td><td>: {{ \Carbon\Carbon::parse($booking->start_time)->format('H:i') }} – {{ \Carbon\Carbon::parse($booking->end_time)->format('H:i') }} WIB</td></tr>
             <tr><td>Ruangan</td><td>: {{ $booking->room->room_name ?? '-' }}</td></tr>
+            <tr><td>Fasilitas Ruang</td><td>: {{ $booking->room->facilities ?? '-' }}</td></tr>
             <tr><td>Peminjam</td><td>: {{ $booking->user->name ?? '-' }}</td></tr>
         </table>
     </div>
@@ -109,10 +113,10 @@
                 </tr>
             </thead>
             <tbody>
-                @forelse ($booking->approvals->where('approval_status', 'Approved')->sortBy('step.step_order') as $approval)
+                @forelse ($booking->approvals->where('approval_status', 'Approved')->sortBy(fn ($a) => $a->bookingStep->step_order ?? $a->step->step_order ?? 0) as $approval)
                 <tr>
-                    <td style="text-align: center;">{{ $approval->step->step_order ?? '-' }}</td>
-                    <td>{{ $approval->step->position->name ?? '-' }}</td>
+                    <td style="text-align: center;">{{ $approval->bookingStep->step_order ?? $approval->step->step_order ?? '-' }}</td>
+                    <td>{{ $approval->bookingStep->position->name ?? $approval->step->position->name ?? '-' }}</td>
                     <td>{{ $approval->approver->name ?? '-' }}</td>
                     <td style="color: #065f46; font-weight: bold; text-align: center;">APPROVED</td>
                 </tr>
@@ -131,8 +135,8 @@
             {{-- Bagian Kanan: Tanda Tangan Digital Berbasis QR Code --}}
             <td class="sign-section">
                 <div class="sign-title">Menyetujui,</div>
-                <div style="font-size: 10px;">{{ $lastApproval->step->position->name ?? 'Pejabat Berwenang' }}</div>
-                <div style="font-size: 9px; color: #555; margin-bottom: 6px;">{{ $lastApproval->step->position->unit->unit_name ?? 'Politeknik Negeri Malang' }}</div>
+                <div style="font-size: 10px;">{{ $lastApproval->bookingStep->position->name ?? $lastApproval->step->position->name ?? 'Pejabat Berwenang' }}</div>
+                <div style="font-size: 9px; color: #555; margin-bottom: 6px;">{{ $lastApproval->bookingStep->position->unit->unit_name ?? $lastApproval->step->position->unit->unit_name ?? 'Politeknik Negeri Malang' }}</div>
                 
                 {{-- QR Code Resmi sebagai TTD Elektronik (Berada di Tengah Signature Block) --}}
                 <div style="margin: 8px 0;">
@@ -149,13 +153,145 @@
         </tr>
     </table>
 
-    {{-- Catatan Penting di Pojok Kiri Paling Bawah Halaman --}}
-    <div style="position:bottom: 0; left: 0;margin-top: 40px; font-size: 11px; color: #555; line-height: 1.3; border-left: 2px solid #aaa; padding-left: 6px; width: 280px;">
-        <strong>PENTING:</strong><br>
-        1. Surat Izin ini resmi diterbitkan secara elektronik oleh sistem <strong>Space.in</strong>.<br>
-        2. Dokumen ini sah dan tidak memerlukan tanda tangan basah serta stempel fisik.<br>
-        3. Keaslian dokumen dapat diverifikasi dengan memindai QR Code di atas.
     </div>
+
+    @if ($booking->disposisi_data)
+        <div style="page-break-before: always;"></div>
+        
+        {{-- Header Institusi (Kop Surat) --}}
+        <div class="header">
+            <h2>Politeknik Negeri Malang</h2>
+            <p>Jl. Soekarno Hatta No.9, Malang, Jawa Timur 65141</p>
+            <p>Telp. (0341) 404424 | www.polinema.ac.id</p>
+        </div>
+
+        <div style="text-align: center; position: relative; margin-bottom: 10px;">
+            <h3 style="font-size: 13px; text-transform: uppercase; font-weight: bold; margin: 0;">Disposisi Wakil Direktur II</h3>
+            <div style="position: absolute; right: 0; top: -5px; border: 1px solid #000; padding: 3px 10px; font-weight: bold; font-size: 11px;">
+                {{ $booking->id }}
+            </div>
+        </div>
+
+        {{-- Detail & Klasifikasi --}}
+        <table class="dispo-table" style="width: 100%; border: 1px solid #000; border-collapse: collapse; font-size: 9px;">
+            <tr>
+                <td colspan="2" style="border: 1px solid #000; padding: 6px; text-align: justify;">
+                    <span style="font-weight: bold; margin-right: 15px;">KLASIFIKASI:</span>
+                    @php
+                        $klasifikasi = $booking->disposisi_data['klasifikasi'] ?? 'Biasa';
+                    @endphp
+                    <span style="margin-right: 15px;"><span class="dispo-checkbox">{!! $klasifikasi === 'Sangat Rahasia' ? '✓' : '&nbsp;' !!}</span> Sangat Rahasia</span>
+                    <span style="margin-right: 15px;"><span class="dispo-checkbox">{!! $klasifikasi === 'Rahasia' ? '✓' : '&nbsp;' !!}</span> Rahasia</span>
+                    <span style="margin-right: 15px;"><span class="dispo-checkbox">{!! $klasifikasi === 'Sangat Segera' ? '✓' : '&nbsp;' !!}</span> Sangat Segera</span>
+                    <span style="margin-right: 15px;"><span class="dispo-checkbox">{!! $klasifikasi === 'Segera' ? '✓' : '&nbsp;' !!}</span> Segera</span>
+                    <span><span class="dispo-checkbox">{!! $klasifikasi === 'Biasa' ? '✓' : '&nbsp;' !!}</span> Biasa</span>
+                </td>
+            </tr>
+            <tr>
+                <td style="width: 60%; border: 1px solid #000; padding: 6px; line-height: 1.4; vertical-align: top;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 9px;">
+                        <tr><td style="width: 120px; padding: 1px 0;">Nomor Dispo</td><td style="width: 10px;">:</td><td><strong>{{ $booking->id }}</strong></td></tr>
+                        <tr><td style="padding: 1px 0;">Nomor Surat</td><td>:</td><td><strong>{{ $booking->id }}</strong></td></tr>
+                        <tr><td style="padding: 1px 0;">Asal Surat</td><td>:</td><td><strong>{{ $booking->user->unit->unit_name ?? '-' }}</strong></td></tr>
+                        <tr><td style="padding: 1px 0;">Perihal</td><td>:</td><td><strong>{{ $booking->event_name }}</strong></td></tr>
+                    </table>
+                </td>
+                <td style="width: 40%; border: 1px solid #000; padding: 6px; line-height: 1.4; vertical-align: top;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 9px;">
+                        <tr><td style="width: 100px; padding: 1px 0;">Tanggal Terima</td><td style="width: 10px;">:</td><td><strong>{{ $booking->created_at->format('d/m/Y') }}</strong></td></tr>
+                        <tr><td style="padding: 1px 0;">Tanggal Surat</td><td>:</td><td><strong>{{ $booking->booking_date->format('d/m/Y') }}</strong></td></tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+
+        <div style="margin-top: 10px; font-weight: bold; margin-bottom: 2px; font-size: 9px;">Diteruskan Kepada:</div>
+        <table class="dispo-table" style="width: 100%; border: 1px solid #000; border-collapse: collapse; font-size: 8px;">
+            @php
+                $tujuanList = $booking->disposisi_data['tujuan'] ?? [];
+                $allTujuan = [
+                    ['Wakil Direktur I', 'Kasubag Akademik', 'Pusat P2MPP'],
+                    ['Wakil Direktur III', 'Pokja Adm. Akademik & Registrasi', 'Pusat P3M'],
+                    ['Wakil Direktur IV', 'Pokja Eval. Akademik & Pengelolaan Data', 'UPA Perpustakaan'],
+                    ['Kajur Teknik Elektro', 'Pokja Pembinaan Keg. Mhs & Alumni', 'UPA TIK'],
+                    ['Kajur Teknik Mesin', 'Kepala BPKU', 'UPA Bahasa'],
+                    ['Kajur Teknik Sipil', 'Kasubag Umum', 'UPA PP'],
+                    ['Kajur Teknik Kimia', 'Pokja Tata Usaha', 'UPA PKK'],
+                    ['Kajur Akuntansi', 'Pokja Protokoler', 'UPA LUK'],
+                    ['Kajur Administrasi Niaga', 'Pokja Rumah Tangga', 'UPA Percetakan & Penerbitan'],
+                    ['Kajur Teknologi Informasi', 'Pokja Perencanaan', 'Pokja Unit Pengelola Usaha'],
+                    ['Koordinator Kampus Kediri', 'Pokja Monev', 'Tim Kerja Pimpinan'],
+                    ['Koordinator Kampus Lumajang', 'Pokja Keuangan', 'PPK'],
+                    ['Koordinator Kampus Pamekasan', 'Pokja Pengelola BMN', 'Pokja UPPBJ'],
+                    ['KPS', 'Pokja Kepegawaian', 'Tim Teknis PBJ'],
+                    ['Sekretaris Dewas', 'Pokja Ortala', 'Admin PPK'],
+                    ['Ketua Senat', 'Pokja Kerja Sama', 'Adm. Wadir II'],
+                    ['Ketua SPI', 'Pokja Humas', ''],
+                    ['Kepala BAK', 'Pokja Hukum', '']
+                ];
+            @endphp
+            @foreach ($allTujuan as $row)
+                <tr>
+                    @foreach ($row as $col)
+                        <td style="width: 33.33%; border: 1px solid #000; padding: 2px 4px;">
+                            @if ($col)
+                                <span class="dispo-checkbox">{!! in_array($col, $tujuanList) ? '✓' : '&nbsp;' !!}</span> {{ $col }}
+                            @endif
+                        </td>
+                    @endforeach
+                </tr>
+            @endforeach
+        </table>
+
+        <table class="dispo-table" style="width: 100%; border: 1px solid #000; border-collapse: collapse; margin-top: 10px; font-size: 9px;">
+            <tr>
+                <th style="width: 100%; border: 1px solid #000; padding: 4px; background-color: #f0f0f0; text-align: center; font-weight: bold;">ISI DISPOSISI</th>
+            </tr>
+            <tr>
+                <td style="border: 1px solid #000; padding: 6px; vertical-align: top;">
+                    @php
+                        $isiList = $booking->disposisi_data['isi'] ?? [];
+                        $leftIsi = [
+                            'Mohon diproses sesuai aturan yang berlaku',
+                            'Mohon ditindaklanjuti',
+                            'Mohon masukan',
+                            'Mohon diinfokan',
+                            'Mohon bisa dibantu'
+                        ];
+                        $rightIsi = [
+                            'Mohon diterima dengan baik dan dibalas',
+                            'Mohon diagendakan',
+                            'Untuk diketahui',
+                            'Sebagai refrensi',
+                            'Arsip'
+                        ];
+                    @endphp
+                    <table style="width: 100%; border-collapse: collapse; font-size: 8px;">
+                        @for ($i = 0; $i < 5; $i++)
+                            <tr>
+                                <td style="width: 50%; padding: 2px 0;">
+                                    <span class="dispo-checkbox">{!! in_array($leftIsi[$i], $isiList) ? '✓' : '&nbsp;' !!}</span> {{ $leftIsi[$i] }}
+                                </td>
+                                <td style="width: 50%; padding: 2px 0;">
+                                    <span class="dispo-checkbox">{!! in_array($rightIsi[$i], $isiList) ? '✓' : '&nbsp;' !!}</span> {{ $rightIsi[$i] }}
+                                </td>
+                            </tr>
+                        @endfor
+                    </table>
+                </td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid #000; padding: 4px; background-color: #f0f0f0; text-align: center; font-weight: bold;">
+                    JAWABAN DISPOSISI
+                </td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid #000; padding: 8px; height: 50px; vertical-align: top; font-size: 9px;">
+                    {!! nl2br(e($booking->disposisi_data['catatan'] ?? '')) !!}
+                </td>
+            </tr>
+        </table>
+    @endif
 
 </body>
 </html>
