@@ -739,6 +739,27 @@ Digunakan oleh `ProfileController@update`.
 
 ## 12. Layanan
 
+### `WorkflowBridgeService` (`app/Services/WorkflowBridgeService.php`)
+
+Layanan utama yang mengimplementasikan **Algoritma Dynamic Workflow Bridging 3-Tier** untuk menggabungkan langkah-langkah alur persetujuan peminjaman ruangan berdasarkan unit peminjam dan unit pemilik ruangan.
+
+#### `resolveStepChain(Booking $booking, string $eventScope): array`
+
+Mengevaluasi dan menyusun rantai persetujuan dinamis dalam bentuk array langkah-langkah terurut.
+
+**Logika 3-Tier Bridging:**
+1. **Tier 1 (Internal):** Mengambil langkah workflow milik unit peminjam (jika peminjam adalah unit level `Organisasi`).
+2. **Tier 2 (Induk / BEM / DPK Gatekeepers):** 
+   - Jika peminjam adalah unit `Organisasi` yang memiliki unit induk `Organisasi` di atasnya, langkah unit induk di-append.
+   - Jika lingkup event adalah `Lintas Jurusan`, workflow BEM Polinema (sebagai Gatekeeper) disisipkan.
+   - Menyisipkan workflow unit pemilik ruangan (cth: Ketua Jurusan untuk ruangan Jurusan TI).
+3. **Tier 3 (Pusat):** Jika lingkup event adalah `Lintas Jurusan` dan pemilik ruangan bukan Pusat, alur persetujuan Wakil Direktur (Pusat) disisipkan di akhir.
+
+**Deduplikasi Posisi (Unique Position Guard):**
+Mengegah terjadinya duplikasi persetujuan oleh pejabat yang sama di rantai langkah dengan menyaring langkah berdasarkan `position_id` yang unik, menyisakan hanya kemunculan pertama.
+
+---
+
 ### `WorkflowService` (`app/Services/WorkflowService.php`)
 
 Menangani logika bisnis yang terkait dengan alur kerja persetujuan.
@@ -850,50 +871,58 @@ Mengembalikan judul halaman yang mudah dibaca berdasarkan nama rute saat ini.
 
 ### Urutan Seeding
 
-1. **Peran** — Membuat 4 peran: `SuperAdmin`, `Admin_Unit`, `User`, `Approver`
-2. **Unit** — Membuat hierarki 3 tingkat:
-   - Pusat (Politeknik Negeri Malang)
-   - 3 Jurusan: Teknologi Informasi, Teknik Sipil, Teknik Elektro
-   - 6 Organisasi (2 per Jurusan): HMTI, BEM TI, HM Sipil, BEM Sipil, HM Elektro, BEM Elektro
-3. **Posisi** — Membuat jabatan per unit: Wakil Direktur, Ketua Jurusan TI, Kaprodi TI, Ketua Jurusan Sipil, Ketua Jurusan Elektro, Ketua HMTI
-4. **Gedung & Ruangan** — 3 gedung (Gedung AN, Gedung TI, Auditorium), 5 ruangan
-5. **Pengguna** — 9 pengguna di semua peran (lihat tabel di bawah)
-6. **Alur Kerja & Langkah** — 2 alur kerja: "Peminjaman JTI" (3 langkah) dan "Peminjaman Auditorium" (2 langkah)
+1. **Peran** — Membuat 4 peran: `Administrator Utama` (SuperAdmin), `Administrator Unit` (Admin_Unit), `Peminjam` (User), dan `Penyetuju` (Approver).
+2. **Unit** — Membuat hierarki 3 tingkat secara dinamis:
+   - Pusat (Pusat - Politeknik Negeri Malang)
+   - 7 Jurusan: Teknologi Informasi, Teknik Sipil, Teknik Elektro, Teknik Mesin, Teknik Kimia, Akuntansi, Administrasi Niaga
+   - Organisasi Kemahasiswaan: BEM Polinema, Dewan Perwakilan Mahasiswa, Formadiksi, UKM Olahraga, HMTI, WRI, HMS, HME, HMM, HMK, HMA, HMAN.
+3. **Posisi** — Jabatan per unit: Wakil Direktur II, Wakil Direktur III, Ketua Jurusan, Kaprodi, Presiden BEM, DPK BEM, Ketua DPM, DPK DPM, Ketua Himpunan, DPK Jurusan, Ketua WRI, dll.
+4. **Gedung & Ruangan** — 8 Gedung (Teknologi Informasi, Teknik Sipil, Teknik Elektro, Teknik Mesin, Teknik Kimia, Akuntansi, Administrasi Niaga, Graha Polinema) dan 9 Ruangan (termasuk Lab Komputer TI-101, Ruang Kelas TI, Graha Polinema).
+5. **Pengguna** — Pengguna di semua unit dan peran dengan password default `12345`.
+6. **Alur Kerja & Langkah** — Menyiapkan workflow default untuk Peminjaman JTI, Peminjaman Graha Polinema, Alur BEM Polinema, Alur HMTI, Alur Formadiksi, Alur UKM Olahraga, dan Alur WRI.
 
 ### Pengguna Seed Default
 
-| Nama | Email | Peran | Unit |
-|---|---|---|---|
-| Super Admin Politeknik | `superadmin@spacein.test` | SuperAdmin | Pusat |
-| Admin Jurusan TI | `admin.ti@spacein.test` | Admin_Unit | Jurusan TI |
-| Admin Jurusan Sipil | `admin.sipil@spacein.test` | Admin_Unit | Jurusan Sipil |
-| Dr. Budi Santoso | `kajur.ti@spacein.test` | Approver | Jurusan TI (Ketua Jurusan) |
-| Dr. Siti Rahayu | `wadir@spacein.test` | Approver | Pusat (Wakil Direktur) |
-| Ir. Agus Wijaya | `kaprodi.ti@spacein.test` | Approver | Jurusan TI (Kaprodi) |
-| Andi Mahasiswa TI | `user@spacein.test` | User | HMTI |
-| Budi Mahasiswa Sipil | `budi@spacein.test` | User | BEM Sipil |
-| Citra Mahasiswi Elektro | `citra@spacein.test` | User | HM Elektro |
+| Nama | Email | Peran | Unit | Posisi |
+|---|---|---|---|---|
+| Super Admin Politeknik | `superadmin@spacein.test` | Administrator Utama | Pusat | — |
+| Admin Jurusan TI | `admin.ti@spacein.test` | Administrator Unit | Jurusan TI | — |
+| Admin Pusat | `admin.pusat@spacein.test` | Administrator Unit | Pusat | — |
+| Dr. Budi Santoso | `kajur.ti@spacein.test` | Penyetuju | Jurusan TI | Ketua Jurusan TI |
+| Ir. Agus Wijaya | `kaprodi.ti@spacein.test` | Penyetuju | Jurusan TI | Kaprodi TI |
+| DPK TI | `dpk.ti@spacein.test` | Penyetuju | Jurusan TI | DPK TI (Pembina) |
+| Dr. Siti Rahayu | `wadir@spacein.test` | Penyetuju | Pusat | Wakil Direktur III |
+| Dr. Ahmad Subagyo | `wadir2@spacein.test` | Penyetuju | Pusat | Wakil Direktur II |
+| DPK BEM | `dpk.bem@spacein.test` | Penyetuju | BEM Polinema | DPK BEM |
+| Ketua BEM Polinema | `ketua.bem@spacein.test` | Penyetuju | BEM Polinema | Presiden BEM Polinema |
+| Andi Mahasiswa TI | `user@spacein.test` | Peminjam | HMTI | — |
+| Doni Mahasiswa WRI | `user.wri@spacein.test` | Peminjam | Workshop Riset Informatika | — |
+| Citra Mahasiswi Elektro | `citra@spacein.test` | Peminjam | HME | — |
+| Staf Pusat Polinema | `staf@spacein.test` | Peminjam | Pusat | — |
+| Staf Jurusan TI | `staf.ti@spacein.test` | Peminjam | Jurusan TI | — |
 
 > **Kata sandi default untuk semua pengguna seed:** `12345`
 
 ### Alur Kerja: Peminjaman JTI
 
-Berlaku untuk ruangan yang dimiliki oleh Jurusan Teknologi Informasi.
+Berlaku untuk ruangan yang dimiliki oleh Jurusan Teknologi Informasi (misal: Ruang Kelas TI, Lab Komputer).
 
-| Langkah | Posisi | Memerlukan Lampiran |
-|---|---|---|
-| 1 | Kaprodi TI | Tidak |
-| 2 | Ketua Jurusan TI | Tidak |
-| 3 | Wakil Direktur | Ya (harus mengunggah surat disposisi) |
-
-### Alur Kerja: Peminjaman Auditorium
-
-Berlaku untuk ruangan Auditorium yang dimiliki oleh Pusat.
-
-| Langkah | Posisi | Memerlukan Lampiran |
+| Urutan Langkah | Posisi Penyetuju | Memerlukan Lampiran |
 |---|---|---|
 | 1 | Ketua Jurusan TI | Tidak |
-| 2 | Wakil Direktur | Ya (harus mengunggah surat izin Wadir) |
+
+*Catatan: Dokumen persyaratan peminjaman JTI yang wajib diunggah oleh Peminjam adalah **Proposal Kegiatan** dan **Surat Disposisi Wadir**.*
+
+### Alur Kerja: Peminjaman Graha Polinema
+
+Berlaku untuk Graha Polinema yang dimiliki oleh Pusat.
+
+| Urutan Langkah | Posisi Penyetuju | Memerlukan Lampiran |
+|---|---|---|
+| 1 | Wakil Direktur III | Tidak |
+| 2 | Wakil Direktur II | Tidak (Menampilkan tombol "Terbitkan Disposisi") |
+
+*Catatan: Dokumen persyaratan peminjaman Graha Polinema yang wajib diunggah oleh Peminjam adalah **Proposal**.*
 
 ---
 
