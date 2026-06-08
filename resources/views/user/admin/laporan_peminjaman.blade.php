@@ -152,7 +152,7 @@
                 <div class="max-w-2xl">
                     <span class="inline-flex items-center px-3 py-1 rounded-full bg-cyan-50 dark:bg-kinetic-secondary/10 text-cyan-700 dark:text-kinetic-secondary text-[11px] font-bold uppercase tracking-[0.3em] border border-cyan-200 dark:border-kinetic-secondary/20">Laporan</span>
                     <h1 class="mt-4 text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">Ringkasan Laporan</h1>
-                    <p class="mt-3 text-sm text-slate-500 dark:text-gray-400 max-w-2xl">Pantau performa pemakaian ruang, status booking, dan unit paling aktif dalam sistem peminjaman.</p>
+                    <p class="mt-3 text-sm text-slate-500 dark:text-gray-400 max-w-2xl">Pantau performa pemakaian ruang, status pemesanan, dan unit paling aktif dalam sistem peminjaman.</p>
                 </div>
 
                 <div class="flex flex-col gap-3 sm:flex-row">
@@ -197,7 +197,7 @@
             <div class="print-card rounded-[2rem] border border-slate-200 dark:border-kinetic-border bg-white dark:bg-kinetic-card p-6 shadow-sm dark:shadow-none">
                 <p class="label text-[10px] md:text-xs uppercase tracking-[0.26em] text-slate-400 dark:text-gray-500 font-bold mb-2 md:mb-4">Disetujui</p>
                 <h2 class="text-3xl font-extrabold text-slate-900 dark:text-white">{{ $disetujui ?: 0 }}</h2>
-                <p class="no-print mt-2 md:mt-3 text-[10px] md:text-sm text-slate-500 dark:text-gray-400">Total booking yang telah di-acc.</p>
+                <p class="no-print mt-2 md:mt-3 text-[10px] md:text-sm text-slate-500 dark:text-gray-400">Total pemesanan yang telah di-acc.</p>
             </div>
             <div class="print-card rounded-[2rem] border border-slate-200 dark:border-kinetic-border bg-white dark:bg-kinetic-card p-6 shadow-sm dark:shadow-none">
                 <p class="label text-[10px] md:text-xs uppercase tracking-[0.26em] text-slate-400 dark:text-gray-500 font-bold mb-2 md:mb-4">Menunggu</p>

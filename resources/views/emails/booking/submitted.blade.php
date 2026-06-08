@@ -12,7 +12,7 @@ Pengajuan peminjaman ruangan Anda telah berhasil dikirim dan saat ini sedang men
 - **Waktu:** {{ \Carbon\Carbon::parse($booking->start_time)->format('H:i') }} - {{ \Carbon\Carbon::parse($booking->end_time)->format('H:i') }}
 
 <x-mail::button :url="config('app.url') . '/peminjam/jadwal-saya'">
-Pantau Status Peminjaman
+Pantau Status Pemesanan
 </x-mail::button>
 
 Terima kasih,<br>

@@ -16,7 +16,7 @@
                         <div class="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
                             <div>
                                 <h2 class="text-lg font-bold text-slate-900 dark:text-white">Daftar Booking</h2>
-                                <p class="mt-1 text-sm text-slate-500 dark:text-gray-400">Kelola & pantau status booking Anda.</p>
+                                <p class="mt-1 text-sm text-slate-500 dark:text-gray-400">Kelola & pantau status pemesanan Anda.</p>
                             </div>
                             <div class="inline-flex items-center gap-3 rounded-2xl bg-slate-50 dark:bg-[#111111] px-4 py-3 border border-slate-200 dark:border-kinetic-border">
                                 <span class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 dark:text-gray-400">Sort</span>
@@ -84,7 +84,7 @@
 
                 <aside class="space-y-6">
                     <div class="rounded-[2rem] border border-slate-200 dark:border-kinetic-border bg-white dark:bg-[#161616] shadow-sm dark:shadow-none p-6">
-                        <h2 class="text-lg font-bold text-slate-900 dark:text-white">Status Booking</h2>
+                        <h2 class="text-lg font-bold text-slate-900 dark:text-white">Status Pemesanan</h2>
                         <div class="mt-6 space-y-4">
                             @php
                                 // Array Status Dinamis dari controller
