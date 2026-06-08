@@ -157,7 +157,7 @@
                         <div class="flex justify-between items-start mb-6 relative z-10">
                             <div>
                                 <h3 class="text-lg font-bold text-slate-900 dark:text-white">Status Ruangan</h3>
-                                <p class="text-xs text-slate-500 dark:text-gray-500">Real-time occupancy info</p>
+                                <p class="text-xs text-slate-500 dark:text-gray-500">Informasi kapasitas/kepadatan secara langsung</p>
                             </div>
                             <span x-show="selectedRoom" class="text-[10px] font-bold tracking-wider text-teal-700 bg-teal-100 dark:text-white dark:bg-white/10 px-2 py-1 rounded border border-teal-200 dark:border-transparent" style="display: none;">DIPILIH</span>
                         </div>

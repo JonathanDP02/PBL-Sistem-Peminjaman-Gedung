@@ -100,7 +100,7 @@
                     <div class="flex items-baseline gap-2 relative mt-2">
                         <span class="text-7xl font-black text-slate-300/30 dark:text-white absolute -top-4 -left-2 opacity-80" style="text-shadow: 0 4px 20px rgba(0,0,0,0.05); -webkit-text-stroke: 1px currentColor;">{{ $bookingAktif }}</span>
                         <span class="text-5xl font-black text-transparent bg-clip-text bg-white opacity-0">{{ $bookingAktif }}</span>
-                        <span class="text-teal-600 dark:text-[#5EEAD4] text-xs font-bold z-10 absolute bottom-1 left-24 transition-colors duration-300">Real-time</span>
+                        <span class="text-teal-600 dark:text-[#5EEAD4] text-xs font-bold z-10 absolute bottom-1 left-24 transition-colors duration-300">Berlangsung</span>
                     </div>
                     <p class="text-slate-600 dark:text-slate-400 text-xs mt-6 max-w-[240px] relative z-10 leading-relaxed font-medium transition-colors duration-300">
                         Peningkatan <span class="font-bold text-slate-800 dark:text-slate-200">{{ $kenaikan }}%</span> penggunaan ruang kolaborasi dibanding bulan lalu.

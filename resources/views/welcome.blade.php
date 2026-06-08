@@ -13,7 +13,7 @@
             </h1>
             
             <p class="mb-10 text-base font-medium text-slate-600 dark:text-slate-400 sm:text-lg leading-relaxed max-w-2xl mx-auto">
-                SpaceIn mengotomatisasi alur birokrasi peminjaman ruang kelas, aula, dan lab. Cek ketersediaan ruangan secara real-time dan ajukan peminjaman tanpa repot.
+                SpaceIn mengotomatisasi alur birokrasi peminjaman ruang kelas, aula, dan lab. Cek ketersediaan ruangan secara langsung dan ajukan peminjaman tanpa repot.
             </p>
             
             <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -31,7 +31,7 @@
         <div class="flex flex-col lg:flex-row justify-between w-full lg:items-end gap-6 mb-8">
             <div class="text-left max-w-2xl">
                 <h2 class="text-4xl sm:text-5xl font-bold text-slate-900 dark:text-white mb-3">Ketersediaan <span class="text-[#14B8A6]">Ruang</span></h2>
-                <p class="text-sm text-slate-600 dark:text-gray-400 leading-relaxed">Lihat jadwal penggunaan fasilitas kampus secara real-time. Klik pada slot tersedia untuk mulai memesan.</p>
+                <p class="text-sm text-slate-600 dark:text-gray-400 leading-relaxed">Lihat jadwal penggunaan fasilitas kampus secara langsung. Klik pada slot tersedia untuk mulai memesan.</p>
             </div>
             <div class="flex flex-col md:flex-row gap-4 items-start md:items-center">
                 <!-- Premium Date Filter -->

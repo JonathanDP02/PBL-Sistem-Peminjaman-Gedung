@@ -212,7 +212,7 @@
                 </div>
                 <div>
                     <h4 class="text-sm font-bold text-slate-900 dark:text-white mb-1">Approval Cepat</h4>
-                    <p class="text-[10px] text-slate-500 dark:text-gray-500 leading-relaxed">Sistem otomatis mendeteksi ketersediaan ruang secara real-time.</p>
+                    <p class="text-[10px] text-slate-500 dark:text-gray-500 leading-relaxed">Sistem otomatis mendeteksi ketersediaan ruang secara langsung.</p>
                 </div>
             </div>
             <div class="bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] shadow-sm dark:shadow-none rounded-2xl p-6 flex gap-4 transition-colors duration-300">
