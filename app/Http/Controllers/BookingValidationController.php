@@ -16,6 +16,7 @@ class BookingValidationController extends Controller
             'room.building',
             'user',
             'workflow',
+            'approvals.bookingStep.position',
             'approvals.step.position',
             'approvals.approver',
         ])->findOrFail($bookingId);

@@ -77,6 +77,15 @@ class ApprovalController extends Controller
                 ->first();
 
         $approvalHistory = $booking->approvals
+            ->filter(function ($approval) {
+                $stepRecord = $approval->bookingStep ?? $approval->step;
+                $posName = strtolower($stepRecord?->position?->name ?? '');
+                $hasTwo = str_contains($posName, 'wadir ii') || str_contains($posName, 'wadir 2') || str_contains($posName, 'wakil direktur ii');
+                $hasThree = str_contains($posName, 'wadir iii') || str_contains($posName, 'wadir 3') || str_contains($posName, 'wakil direktur iii');
+                $isWadir2 = $hasTwo && ! $hasThree;
+
+                return ! $isWadir2;
+            })
             ->sortBy('created_at')
             ->map(function ($approval) {
                 // Try bookingStep first (new system), fallback to step (legacy)

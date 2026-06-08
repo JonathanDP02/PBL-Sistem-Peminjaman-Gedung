@@ -111,7 +111,18 @@
                         <div class="absolute left-[15px] top-2 bottom-2 w-0.5 bg-slate-100 dark:bg-[#2A2A2A]"></div>
 
                         {{-- Log History --}}
-                        @foreach($booking->logs->sortBy('created_at') as $log)
+                        @foreach($booking->logs->sortBy('created_at')->filter(function ($log) {
+                            if ($log->actor && $log->actor->position) {
+                                $posName = strtolower($log->actor->position->name);
+                                $hasTwo = str_contains($posName, 'wadir ii') || str_contains($posName, 'wadir 2') || str_contains($posName, 'wakil direktur ii');
+                                $hasThree = str_contains($posName, 'wadir iii') || str_contains($posName, 'wadir 3') || str_contains($posName, 'wakil direktur iii');
+                                $isWadir2 = $hasTwo && !$hasThree;
+                                if ($isWadir2) {
+                                    return false;
+                                }
+                            }
+                            return true;
+                        }) as $log)
                         <div class="relative flex gap-6">
                             @php
                                 $icon = 'ph-check';
@@ -277,13 +288,13 @@
                 </div>
 
                 <div class="bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-3xl p-8 flex items-center gap-8 transition-colors">
-                    <div class="w-32 h-32 bg-white dark:bg-[#222] rounded-2xl flex items-center justify-center border border-slate-300 dark:border-[#333] shrink-0 relative overflow-hidden group">
+                    <div class="w-32 h-32 bg-white rounded-2xl flex items-center justify-center border border-slate-300 dark:border-[#333] shrink-0 relative overflow-hidden group">
                         @if($booking->status === 'Approved')
-                        <img src="data:image/png;base64, {!! App\Support\QrCodeHelper::generateBase64(url('/validate/'.$booking->id)) !!}" class="w-24 h-24 object-contain transition-transform group-hover:scale-105 z-10">
+                        <img src="data:image/png;base64, {!! App\Support\QrCodeHelper::generateBase64(url('/validate/'.$booking->id)) !!}" class="relative w-24 h-24 object-contain transition-transform group-hover:scale-105 z-10">
                         @else
                         <i class="ph-fill ph-lock-key text-4xl text-slate-400 dark:text-gray-600 transition-transform group-hover:scale-110 z-10"></i>
-                        @endif
                         <div class="absolute inset-0 bg-black/5 dark:bg-black/20"></div>
+                        @endif
                     </div>
                     <div class="flex-1">
                         <div class="flex justify-between items-start mb-4">

@@ -90,10 +90,20 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach ($booking->approvals as $approval)
+                        @foreach ($booking->approvals->filter(function ($a) {
+                            $stepRecord = $a->bookingStep ?? $a->step;
+                            $posName = strtolower($stepRecord?->position?->name ?? '');
+                            $hasTwo = str_contains($posName, 'wadir ii') || str_contains($posName, 'wadir 2') || str_contains($posName, 'wakil direktur ii');
+                            $hasThree = str_contains($posName, 'wadir iii') || str_contains($posName, 'wadir 3') || str_contains($posName, 'wakil direktur iii');
+                            $isWadir2 = $hasTwo && !$hasThree;
+                            return !$isWadir2;
+                        }) as $approval)
+                            @php
+                                $stepRecord = $approval->bookingStep ?? $approval->step;
+                            @endphp
                             <tr class="hover:bg-slate-50 dark:hover:bg-[#111] transition-colors">
-                                <td class="border border-slate-200 dark:border-[#222] px-4 py-2 text-sm text-slate-600 dark:text-slate-400">{{ $approval->step->step_order ?? '-' }}</td>
-                                <td class="border border-slate-200 dark:border-[#222] px-4 py-2 text-sm text-slate-600 dark:text-slate-400">{{ $approval->step->position->name ?? '-' }}</td>
+                                <td class="border border-slate-200 dark:border-[#222] px-4 py-2 text-sm text-slate-600 dark:text-slate-400">{{ $stepRecord->step_order ?? '-' }}</td>
+                                <td class="border border-slate-200 dark:border-[#222] px-4 py-2 text-sm text-slate-600 dark:text-slate-400">{{ $stepRecord->position->name ?? '-' }}</td>
                                 <td class="border border-slate-200 dark:border-[#222] px-4 py-2 text-sm font-medium text-slate-800 dark:text-white">{{ $approval->approver->name ?? '-' }}</td>
                                 <td class="border border-slate-200 dark:border-[#222] px-4 py-2 text-sm">
                                     <span class="inline-block {{ $approval->approval_status === 'Approved' ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400' : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400' }} px-2.5 py-1 rounded text-xs font-semibold">

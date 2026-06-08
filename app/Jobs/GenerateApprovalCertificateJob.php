@@ -34,9 +34,17 @@ class GenerateApprovalCertificateJob implements ShouldQueue
             'approvals.approver.position',
         ])->findOrFail($this->bookingId);
 
-        // Ambil approval terakhir (pejabat tertinggi yang approve)
+        // Ambil approval terakhir (pejabat tertinggi yang approve) excluding Wadir II
         $lastApproval = $booking->approvals
             ->where('approval_status', 'Approved')
+            ->filter(function ($a) {
+                $posName = strtolower($a->bookingStep->position->name ?? $a->step->position->name ?? '');
+                $hasTwo = str_contains($posName, 'wadir ii') || str_contains($posName, 'wadir 2') || str_contains($posName, 'wakil direktur ii');
+                $hasThree = str_contains($posName, 'wadir iii') || str_contains($posName, 'wadir 3') || str_contains($posName, 'wakil direktur iii');
+                $isWadir2 = $hasTwo && ! $hasThree;
+
+                return ! $isWadir2;
+            })
             ->sortByDesc(fn ($a) => $a->bookingStep->step_order ?? $a->step->step_order ?? 0)
             ->first();
 
