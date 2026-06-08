@@ -1,5 +1,5 @@
 <x-app-layout>
-    <div class="px-8 py-8 space-y-8 min-h-full" x-data="{ 
+    <div id="fasilitasMain" class="px-8 py-8 space-y-8 min-h-full" x-data="{ 
         activeTab: 'ruangan',
         modal: {
             show: false,
@@ -190,7 +190,8 @@
                 </div>
             </div>
         </div>
-
+        <!-- Custom Confirm Modal -->
+        <x-modal-confirm />
     </div>
 
     @push('modals')
@@ -252,9 +253,7 @@
                         <button type="submit" class="w-1/2 bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 rounded-xl transition text-sm">Simpan</button>
                     </div>
                 </form>
-            </div>
-        <!-- Custom Confirm Modal -->
-        <x-modal-confirm />
+        </div>
     @endpush
 
     @push('scripts')
@@ -388,7 +387,7 @@
         }
 
         function getFasilitasAlpine() {
-            return Alpine.$data(document.querySelector('[x-data]'));
+            return Alpine.$data(document.getElementById('fasilitasMain'));
         }
 
         async function deleteRoom() {
