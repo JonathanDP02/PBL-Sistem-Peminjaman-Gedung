@@ -11,8 +11,8 @@
 
                 <!-- Header (Fixed) -->
                 <div class="p-8 pb-4">
-                    <h3 id="modalTitle" class="font-heading text-2xl font-bold text-slate-900 dark:text-white mb-1">Tambah User Baru</h3>
-                    <p id="modalSubtitle" class="text-xs text-slate-500 dark:text-gray-400">Isi form di bawah untuk menambah user baru.</p>
+                    <h3 id="modalTitle" class="font-heading text-2xl font-bold text-slate-900 dark:text-white mb-1">Tambah Pengguna Baru</h3>
+                    <p id="modalSubtitle" class="text-xs text-slate-500 dark:text-gray-400">Isi formulir di bawah untuk menambah pengguna baru.</p>
                 </div>
 
                 <!-- Body (Scrollable with custom thin scrollbar) -->
@@ -26,14 +26,14 @@
 
                     <!-- Email -->
                     <div>
-                        <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">Email</label>
+                        <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">Surel</label>
                         <input type="email" id="inputEmail" name="email" placeholder="email@example.com" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-kinetic-primary transition-colors" required>
                         <p id="errorEmail" class="text-xs text-red-500 mt-1 hidden"></p>
                     </div>
 
                     <!-- Password -->
                     <div>
-                        <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">Password <span id="passwordNote" class="text-slate-400 text-[8px]">(Isi jika ingin mengubah)</span></label>
+                        <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">Kata Sandi <span id="passwordNote" class="text-slate-400 text-[8px]">(Isi jika ingin mengubah)</span></label>
                         <input type="password" id="inputPassword" name="password" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-kinetic-primary transition-colors">
                         <p id="errorPassword" class="text-xs text-red-500 mt-1 hidden"></p>
                     </div>
@@ -66,9 +66,9 @@
 
                     <!-- Role -->
                     <div>
-                        <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">Role</label>
+                        <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">Peran</label>
                         <select id="inputRole" name="role_id" class="w-full bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#2A2A2A] rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-kinetic-primary transition-colors appearance-none" required>
-                            <option value="" disabled selected>Pilih Role</option>
+                            <option value="" disabled selected>Pilih Peran</option>
                         </select>
                         <p id="errorRole" class="text-xs text-red-500 mt-1 hidden"></p>
                     </div>

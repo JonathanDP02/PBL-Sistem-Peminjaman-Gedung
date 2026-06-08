@@ -241,7 +241,7 @@ class UserController extends Controller
             if (! in_array($targetUser->unit_id, $allowedUnitIds)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Anda tidak memiliki akses untuk mengedit user ini.',
+                    'message' => 'Anda tidak memiliki akses untuk mengedit pengguna ini.',
                 ], 403);
             }
         }
@@ -375,7 +375,7 @@ class UserController extends Controller
             if (! in_array($targetUser->unit_id, $allowedUnitIds)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Anda tidak memiliki akses untuk menghapus user ini.',
+                    'message' => 'Anda tidak memiliki akses untuk menghapus pengguna ini.',
                 ], 403);
             }
 

@@ -9,9 +9,9 @@
                 <div class="w-16 h-16 rounded-full bg-red-50 dark:bg-[#2A1515] flex items-center justify-center mx-auto mb-4">
                     <i class="ph-bold ph-warning text-3xl text-red-500"></i>
                 </div>
-                <h3 class="font-heading text-xl font-bold text-slate-900 dark:text-white mb-2">Hapus User?</h3>
+                <h3 class="font-heading text-xl font-bold text-slate-900 dark:text-white mb-2">Hapus Pengguna?</h3>
                 <p class="text-sm text-slate-500 dark:text-gray-400">
-                    Anda yakin ingin menghapus user <span id="deleteUserName" class="font-bold text-slate-900 dark:text-white"></span>? Tindakan ini tidak dapat dibatalkan.
+                    Anda yakin ingin menghapus pengguna <span id="deleteUserName" class="font-bold text-slate-900 dark:text-white"></span>? Tindakan ini tidak dapat dibatalkan.
                 </p>
             </div>
 
@@ -20,7 +20,7 @@
                     Batal
                 </button>
                 <button type="button" onclick="confirmDelete()" id="confirmDeleteBtn" class="w-1/2 bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-xl transition-colors text-sm">
-                    Hapus User
+                    Hapus Pengguna
                 </button>
             </div>
         </div>

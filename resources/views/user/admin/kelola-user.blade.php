@@ -3,13 +3,13 @@
         
         <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-2">
             <div>
-                <h2 class="font-heading text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white mb-2">Manajemen User</h2>
+                <h2 class="font-heading text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white mb-2">Kelola Pengguna</h2>
                 <p class="text-sm text-slate-500 dark:text-gray-400 max-w-xl leading-relaxed">
-                    Kelola data pengguna dengan fitur create, read, update, dan delete.
+                    Kelola data pengguna dengan fitur tambah, tampilkan, ubah, dan hapus.
                 </p>
             </div>
             <button onclick="openAddUserModal()" class="bg-kinetic-primary hover:bg-teal-400 text-slate-900 font-bold px-5 py-2.5 rounded-xl flex items-center gap-2 transition shadow-[0_0_15px_rgba(20,184,166,0.3)] shrink-0">
-                <i class="ph-bold ph-user-plus text-lg"></i> Tambah User
+                <i class="ph-bold ph-user-plus text-lg"></i> Tambah Pengguna
             </button>
         </div>
 
@@ -18,7 +18,7 @@
                 <p class="text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">Total Pengguna</p>
                 <div class="flex items-end gap-2">
                     <h2 id="statTotalUsers" class="font-heading text-3xl font-extrabold text-slate-900 dark:text-white leading-none">0</h2>
-                    <span class="text-xs font-bold text-teal-600 dark:text-kinetic-primary mb-0.5" id="statTotalUsersLabel">Semua Role</span>
+                    <span class="text-xs font-bold text-teal-600 dark:text-kinetic-primary mb-0.5" id="statTotalUsersLabel">Semua Peran</span>
                 </div>
             </div>
             <div class="bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] rounded-2xl p-5 shadow-sm dark:shadow-none flex flex-col transition-colors">
@@ -58,7 +58,7 @@
                 <!-- Level Filter -->
                 <div>
                     <select id="filterLevel" class="w-full px-3 py-2.5 text-sm bg-slate-50 dark:bg-[#1C1C1C] border border-slate-200 dark:border-[#2A2A2A] rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-kinetic-primary focus:border-transparent transition-all">
-                        <option value="">Semua Level</option>
+                        <option value="">Semua Tingkatan</option>
                         <option value="Pusat">Pusat</option>
                         <option value="Jurusan">Jurusan</option>
                         <option value="Organisasi">Organisasi</option>
@@ -68,7 +68,7 @@
                 <!-- Role Filter -->
                 <div>
                     <select id="filterRole" class="w-full px-3 py-2.5 text-sm bg-slate-50 dark:bg-[#1C1C1C] border border-slate-200 dark:border-[#2A2A2A] rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-kinetic-primary focus:border-transparent transition-all">
-                        <option value="">Semua Role</option>
+                        <option value="">Semua Peran</option>
                     </select>
                 </div>
 
@@ -102,9 +102,9 @@
                         <tr class="border-b border-slate-200 dark:border-[#2A2A2A] bg-slate-50/50 dark:bg-[#111]">
                             <th class="px-6 py-5 text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest">Nama</th>
                             <th class="px-6 py-5 text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest">Unit</th>
-                            <th class="px-6 py-5 text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest">Level</th>
+                            <th class="px-6 py-5 text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest">Tingkatan</th>
                             <th class="px-6 py-5 text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest">Jabatan</th>
-                            <th class="px-6 py-5 text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest">Role</th>
+                            <th class="px-6 py-5 text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest">Peran</th>
                             <th class="px-6 py-5 text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest text-center">Aksi</th>
                         </tr>
                     </thead>
@@ -594,11 +594,11 @@ function openAddUserModal() {
     
     userId.value = '';
     userForm.reset();
-    modalTitle.textContent = 'Tambah User Baru';
-    if (modalSubtitle) modalSubtitle.textContent = 'Isi form di bawah untuk menambah user baru.';
+    modalTitle.textContent = 'Tambah Pengguna Baru';
+    if (modalSubtitle) modalSubtitle.textContent = 'Isi formulir di bawah untuk menambah pengguna baru.';
     if (passwordNote) passwordNote.textContent = '(Wajib diisi)';
     if (inputPassword) inputPassword.required = true;
-    submitBtn.textContent = 'Tambah User';
+    submitBtn.textContent = 'Tambah Pengguna';
     clearErrors();
     resetPositionMode();
     openModal('modalUserForm');
@@ -643,8 +643,8 @@ function editUser(userId) {
             if (inputPosition) inputPosition.value = user.position_id || '';
             if (inputRole) inputRole.value = user.role_id;
             
-            if (modalTitle) modalTitle.textContent = 'Edit User';
-            if (modalSubtitle) modalSubtitle.textContent = 'Ubah informasi user di bawah.';
+            if (modalTitle) modalTitle.textContent = 'Edit Pengguna';
+            if (modalSubtitle) modalSubtitle.textContent = 'Ubah informasi pengguna di bawah.';
             if (passwordNote) passwordNote.textContent = '(Isi jika ingin mengubah)';
             if (inputPassword) inputPassword.required = false;
             if (submitBtn) submitBtn.textContent = 'Simpan Perubahan';
