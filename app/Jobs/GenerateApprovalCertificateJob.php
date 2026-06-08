@@ -49,7 +49,7 @@ class GenerateApprovalCertificateJob implements ShouldQueue
             ->first();
 
         // Generate QR Code menggunakan GD (tidak perlu Imagick)
-        $qrCode = QrCodeHelper::generateBase64(url(route('booking.validate', $booking->id)));
+        $qrCode = QrCodeHelper::generateBase64(config('app.url').'/validate/'.$booking->id);
 
         // Render Blade ke PDF
         $pdf = Pdf::loadView('pdf.surat-izin', [

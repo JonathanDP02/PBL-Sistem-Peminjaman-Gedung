@@ -48,7 +48,7 @@ class BookingPdfController extends Controller
             ->sortByDesc(fn ($a) => $a->bookingStep->step_order ?? $a->step->step_order ?? 0)
             ->first();
 
-        $qrCode = QrCodeHelper::generateBase64(url('/validate/'.$booking->id));
+        $qrCode = QrCodeHelper::generateBase64(config('app.url').'/validate/'.$booking->id);
 
         $pdf = Pdf::loadView('pdf.surat-izin', [
             'booking' => $booking,
@@ -99,7 +99,7 @@ class BookingPdfController extends Controller
             ->sortByDesc(fn ($a) => $a->bookingStep->step_order ?? $a->step->step_order ?? 0)
             ->first();
 
-        $qrCode = QrCodeHelper::generateBase64(url('/validate/'.$booking->id));
+        $qrCode = QrCodeHelper::generateBase64(config('app.url').'/validate/'.$booking->id);
 
         return view('pdf.surat-izin', [
             'booking' => $booking,
