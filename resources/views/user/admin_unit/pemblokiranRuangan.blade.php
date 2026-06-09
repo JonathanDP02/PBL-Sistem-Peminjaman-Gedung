@@ -4,8 +4,8 @@
             
             <div class="flex flex-col md:flex-row justify-between items-start mb-8 gap-4 md:gap-0">
                 <div>
-                    <p class="text-teal-600 dark:text-[#2dd4bf] text-xs font-bold tracking-widest uppercase mb-2">Security & Maintenance</p>
-                    <h1 class="text-4xl font-bold text-slate-900 dark:text-white leading-tight mb-3">Pemblokiran Jadwal<br>(Maintenance)</h1>
+                    <p class="text-teal-600 dark:text-[#2dd4bf] text-xs font-bold tracking-widest uppercase mb-2">Keamanan & pemeliharaan</p>
+                    <h1 class="text-4xl font-bold text-slate-900 dark:text-white leading-tight mb-3">Pemblokiran Jadwal<br>(pemeliharaan)</h1>
                     <p class="text-slate-500 dark:text-gray-400 text-sm max-w-2xl">Kunci ruangan secara manual untuk keperluan perawatan atau acara internal unit tanpa melalui alur reguler.</p>
                 </div>
                 <div class="flex items-center gap-3 bg-red-50 dark:bg-[#1a1111] border border-red-200 dark:border-red-900/50 px-4 py-2 rounded-xl shadow-sm dark:shadow-none transition-colors">
@@ -13,8 +13,8 @@
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                     </div>
                     <div>
-                        <p class="text-[10px] text-red-500 dark:text-gray-400 font-semibold uppercase tracking-wider">Sistem Lock</p>
-                        <p class="text-red-900 dark:text-white text-sm font-semibold">Hard-Lock Active</p>
+                        <p class="text-[10px] text-red-500 dark:text-gray-400 font-semibold uppercase tracking-wider">Sistem Terkunci</p>
+                        <p class="text-red-900 dark:text-white text-sm font-semibold">Penguncian-Permanen Aktif</p>
                     </div>
                 </div>
             </div>

@@ -22,7 +22,7 @@
                 </div>
             </div>
             <div class="bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] rounded-2xl p-5 shadow-sm dark:shadow-none flex flex-col transition-colors">
-                <p class="text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">Unit Admin</p>
+                <p class="text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mb-2">Administrator Unit</p>
                 <div class="flex items-end gap-2">
                     <h2 id="statUnitAdmin" class="font-heading text-3xl font-extrabold text-slate-900 dark:text-white leading-none">0</h2>
                     <span class="text-xs font-medium text-slate-500 dark:text-gray-400 mb-0.5">Tersebar</span>
