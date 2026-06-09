@@ -9,7 +9,7 @@
             <div class="mb-8">
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
                     <div>
-                        <h1 class="text-4xl font-bold text-slate-900 dark:text-white mb-2">Manajemen Workflow</h1>
+                        <h1 class="text-4xl font-bold text-slate-900 dark:text-white mb-2">Manajemen Alur Kerja</h1>
                         <p class="text-slate-600 dark:text-gray-400 text-sm">Kelola alur persetujuan umum dan syarat dokumen untuk unit Anda.</p>
                     </div>
                 </div>
