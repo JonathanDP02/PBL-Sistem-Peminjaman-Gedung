@@ -77,7 +77,7 @@
                 </div>
                 
                 <a href="{{ route('booking') }}" class="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-kinetic-primary hover:bg-teal-600 dark:hover:bg-kinetic-secondary text-white dark:text-slate-900 rounded-xl text-sm font-bold shadow-[0_0_15px_rgba(20,184,166,0.3)] transition transform hover:-translate-y-0.5">
-                    <i class="ph-bold ph-plus text-lg"></i> Booking Baru
+                    <i class="ph-bold ph-plus text-lg"></i> Pesan Ruangan
                 </a>
             </div>
 
@@ -88,7 +88,7 @@
                     </div>
                     <p class="text-[10px] font-bold tracking-widest text-slate-400 dark:text-gray-500 uppercase mb-4">Disetujui</p>
                     <p class="font-heading text-4xl font-extrabold text-slate-900 dark:text-white mb-1">{{ sprintf('%02d', $stats['approved'] ?? 0) }}</p>
-                    <p class="text-xs text-teal-600 dark:text-kinetic-primary font-medium">Jadwal Hard-Lock</p>
+                    <p class="text-xs text-teal-600 dark:text-kinetic-primary font-medium">Jadwal Penguncian Permanen</p>
                 </div>
 
                 <div class="bg-white dark:bg-kinetic-card shadow-sm dark:shadow-none border border-slate-200 dark:border-kinetic-border rounded-2xl p-6 relative overflow-hidden group hover:border-cyan-400 dark:hover:border-kinetic-tertiary/50 transition">
@@ -105,7 +105,7 @@
                     <div class="absolute right-6 top-6 text-red-100 dark:text-red-500/20 group-hover:text-red-200 dark:group-hover:text-red-500/40 transition">
                         <i class="ph-fill ph-warning-circle text-5xl"></i>
                     </div>
-                    <p class="text-[10px] font-bold tracking-widest text-red-500 dark:text-red-400 uppercase mb-4 relative z-10">Urgent</p>
+                    <p class="text-[10px] font-bold tracking-widest text-red-500 dark:text-red-400 uppercase mb-4 relative z-10">Mendesak</p>
                     <p class="font-heading text-4xl font-extrabold text-slate-900 dark:text-white mb-1 relative z-10">{{ sprintf('%02d', $stats['rejected'] ?? 0) }}</p>
                     <p class="text-xs text-red-600 dark:text-red-400 font-medium relative z-10">Perlu Revisi Dokumen</p>
                 </div>
@@ -115,7 +115,7 @@
                 
                 <div class="lg:col-span-2 space-y-6">
                     <div class="flex justify-between items-end">
-                        <h3 class="font-heading text-lg font-bold text-slate-900 dark:text-white">Booking Terkini</h3>
+                        <h3 class="font-heading text-lg font-bold text-slate-900 dark:text-white">Pesanan Terkini</h3>
                         <a href="{{ route('riwayat') }}" class="text-xs font-medium text-teal-600 dark:text-kinetic-primary hover:text-teal-700 dark:hover:text-kinetic-secondary transition">Lihat Semua</a>
                     </div>
                     
@@ -148,16 +148,22 @@
                                             'Rejected' => 'bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 border-red-200 dark:border-red-500/20',
                                             'Revising' => 'bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 border-red-200 dark:border-red-500/20'
                                         ];
+                                        $statusLabels = [
+                                            'Approved' => 'Disetujui',
+                                            'Pending'  => 'Ditunda',
+                                            'Rejected' => 'Ditolak',
+                                            'Revising' => 'Perlu Revisi'
+                                        ];
                                     @endphp
                                     <span class="px-3 py-1 border rounded-md text-[10px] font-bold tracking-wider uppercase {{ $statusClasses[$booking->status] ?? $statusClasses['Pending'] }}">
-                                        {{ $booking->status }}
+                                        {{ $statusLabels[$booking->status] ?? $booking->status }}
                                     </span>
                                 </div>
                             </div>
                         @empty
                             <div class="text-center py-10 bg-white dark:bg-kinetic-card rounded-2xl border border-dashed border-slate-200 dark:border-kinetic-border transition-colors duration-300">
                                 <i class="ph ph-folder-open text-4xl text-slate-300 dark:text-gray-600 mb-3 block"></i>
-                                <p class="text-sm text-slate-500 dark:text-gray-400">Belum ada riwayat booking terbaru.</p>
+                                <p class="text-sm text-slate-500 dark:text-gray-400">Belum ada riwayat pesanan terbaru.</p>
                             </div>
                         @endforelse
                     </div>

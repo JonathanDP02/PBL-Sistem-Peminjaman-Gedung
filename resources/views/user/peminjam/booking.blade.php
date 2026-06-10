@@ -187,7 +187,7 @@
                             <div>
                                 <label class="block text-[10px] font-bold text-slate-400 dark:text-gray-400 tracking-widest uppercase mb-3">Lampiran Dokumen</label>
                                 <div id="documentsContainer" class="space-y-3">
-                                    <p class="text-sm text-slate-500 dark:text-gray-400">Pilih ruangan dan workflow untuk melihat dokumen yang diperlukan</p>
+                                    <p class="text-sm text-slate-500 dark:text-gray-400">Pilih ruangan dan alur kerja untuk melihat dokumen yang diperlukan</p>
                                 </div>
                             </div>
                         </div>
@@ -211,7 +211,7 @@
                     <i class="ph-bold ph-shield-check text-xl"></i>
                 </div>
                 <div>
-                    <h4 class="text-sm font-bold text-slate-900 dark:text-white mb-1">Approval Cepat</h4>
+                    <h4 class="text-sm font-bold text-slate-900 dark:text-white mb-1">Persetujuan Cepat</h4>
                     <p class="text-[10px] text-slate-500 dark:text-gray-500 leading-relaxed">Sistem otomatis mendeteksi ketersediaan ruang secara langsung.</p>
                 </div>
             </div>
@@ -229,14 +229,14 @@
                     <i class="ph-bold ph-chart-bar text-xl"></i>
                 </div>
                 <div>
-                    <h4 class="text-sm font-bold text-slate-900 dark:text-white mb-1">Log Digital</h4>
+                    <h4 class="text-sm font-bold text-slate-900 dark:text-white mb-1">Riwayat Digital</h4>
                     <p class="text-[10px] text-slate-500 dark:text-gray-500 leading-relaxed">Seluruh riwayat penggunaan dan lampiran tersimpan aman.</p>
                 </div>
             </div>
             <div class="bg-white dark:bg-[#151515] border border-slate-200 dark:border-[#2A2A2A] shadow-sm dark:shadow-none rounded-2xl p-6 transition-colors duration-300">
                 <div class="flex items-center gap-2 mb-4">
                     <span class="w-2 h-2 bg-kinetic-primary rounded-full animate-pulse"></span>
-                    <span class="text-[10px] font-bold text-kinetic-primary tracking-widest uppercase">Live Insight</span>
+                    <span class="text-[10px] font-bold text-kinetic-primary tracking-widest uppercase">Siaran Langsung</span>
                 </div>
                 <h4 class="text-sm font-bold text-slate-900 dark:text-white mb-1">Sistem Aktif</h4>
                 <p class="text-[10px] text-slate-500 dark:text-gray-500 leading-relaxed">Siap menerima permohonan reservasi Anda saat ini.</p>

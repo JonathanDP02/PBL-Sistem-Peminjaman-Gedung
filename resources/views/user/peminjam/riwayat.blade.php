@@ -15,11 +15,11 @@
                     <div class="rounded-[2rem] border border-slate-200 dark:border-kinetic-border bg-white dark:bg-[#161616] shadow-sm dark:shadow-none overflow-hidden">
                         <div class="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
                             <div>
-                                <h2 class="text-lg font-bold text-slate-900 dark:text-white">Daftar Booking</h2>
+                                <h2 class="text-lg font-bold text-slate-900 dark:text-white">Daftar Pesanan</h2>
                                 <p class="mt-1 text-sm text-slate-500 dark:text-gray-400">Kelola & pantau status pemesanan Anda.</p>
                             </div>
                             <div class="inline-flex items-center gap-3 rounded-2xl bg-slate-50 dark:bg-[#111111] px-4 py-3 border border-slate-200 dark:border-kinetic-border">
-                                <span class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 dark:text-gray-400">Sort</span>
+                                <span class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 dark:text-gray-400">Urutkan</span>
                                 <select class="bg-transparent outline-none text-sm text-slate-900 dark:text-white cursor-pointer">
                                     <option>Terbaru</option>
                                     <option>Terlama</option>
@@ -66,10 +66,17 @@
                                         } else {
                                             $statusClass = 'text-slate-700 dark:text-slate-400 bg-slate-500/10 border-slate-500/20';
                                         }
+                                        $statusLabels = [
+                                            'Approved' => 'Disetujui',
+                                            'Pending'  => 'Ditunda',
+                                            'Rejected' => 'Ditolak',
+                                            'Revising' => 'Perlu Revisi',
+                                            'Cancelled' => 'Dibatalkan',
+                                        ];
                                     @endphp
 
                                     <span class="px-3 py-1.5 text-xs font-semibold rounded-full border {{ $statusClass }}">
-                                        {{ $booking->status }}
+                                        {{ $statusLabels[$booking->status] ?? $booking->status }}
                                     </span>
                                 </a>
                             @empty
@@ -89,9 +96,9 @@
                             @php
                                 // Array Status Dinamis dari controller
                                 $statusSummary = [
-                                    ['label' => 'Approved', 'value' => $statusCounts['Approved'] ?? 0, 'color' => 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'],
-                                    ['label' => 'Waiting', 'value' => $statusCounts['Pending'] ?? 0, 'color' => 'bg-amber-500/10 text-amber-600 dark:text-amber-400'],
-                                    ['label' => 'Cancel / Reject', 'value' => $statusCounts['Rejected'] ?? 0, 'color' => 'bg-red-500/10 text-red-600 dark:text-red-400'],
+                                    ['label' => 'Disetujui', 'value' => $statusCounts['Approved'] ?? 0, 'color' => 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'],
+                                    ['label' => 'Ditunda', 'value' => $statusCounts['Pending'] ?? 0, 'color' => 'bg-amber-500/10 text-amber-600 dark:text-amber-400'],
+                                    ['label' => 'Ditolak / Dibatalkan', 'value' => $statusCounts['Rejected'] ?? 0, 'color' => 'bg-red-500/10 text-red-600 dark:text-red-400'],
                                 ];
                             @endphp
 
@@ -113,15 +120,15 @@
                         <h2 class="text-lg font-bold text-slate-900 dark:text-white">Perhatian</h2>
                         <ul class="mt-4 space-y-4 text-sm text-slate-600 dark:text-gray-400">
                             @if($statusCounts['Pending'] > 0)
-                                <li class="flex gap-3"><span class="mt-1 inline-flex h-2.5 w-2.5 shrink-0 rounded-full bg-amber-500"></span>{{ $statusCounts['Pending'] }} Booking sedang menunggu persetujuan.</li>
+                                <li class="flex gap-3"><span class="mt-1 inline-flex h-2.5 w-2.5 shrink-0 rounded-full bg-amber-500"></span>{{ $statusCounts['Pending'] }} Pesanan sedang menunggu persetujuan.</li>
                             @endif
                             
                             @if($statusCounts['Approved'] > 0)
-                                <li class="flex gap-3"><span class="mt-1 inline-flex h-2.5 w-2.5 shrink-0 rounded-full bg-emerald-500"></span>{{ $statusCounts['Approved'] }} Booking sudah disetujui.</li>
+                                <li class="flex gap-3"><span class="mt-1 inline-flex h-2.5 w-2.5 shrink-0 rounded-full bg-emerald-500"></span>{{ $statusCounts['Approved'] }} Pesanan sudah disetujui.</li>
                             @endif
 
                             @if($statusCounts['Rejected'] > 0)
-                                <li class="flex gap-3"><span class="mt-1 inline-flex h-2.5 w-2.5 shrink-0 rounded-full bg-red-500"></span>{{ $statusCounts['Rejected'] }} Booking ditolak atau dibatalkan.</li>
+                                <li class="flex gap-3"><span class="mt-1 inline-flex h-2.5 w-2.5 shrink-0 rounded-full bg-red-500"></span>{{ $statusCounts['Rejected'] }} Pesanan ditolak atau dibatalkan.</li>
                             @endif
 
                             @if(array_sum($statusCounts) == 0)
