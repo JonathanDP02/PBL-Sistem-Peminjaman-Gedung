@@ -117,7 +117,7 @@
         <div class="flex flex-col md:flex-row justify-between items-center bg-white dark:bg-[#151515] p-4 rounded-2xl border border-slate-200 dark:border-kinetic-border shadow-sm dark:shadow-none gap-4 transition-colors">
             
             <div class="flex flex-wrap items-center gap-3">
-                <span class="text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-widest mr-2">Filter:</span>
+                <span class="text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-widest mr-2">Status Ruangan:</span>
                 
                 <div class="flex items-center gap-2 px-3 py-1.5 rounded-full border border-slate-200 dark:border-[#2A2A2A] bg-slate-50 dark:bg-[#1A1A1A] text-xs font-bold text-slate-600 dark:text-gray-400">
                     <span class="w-2.5 h-2.5 rounded-full border border-dashed border-slate-400"></span> 
@@ -125,11 +125,11 @@
                 </div>
 
                 <button type="button" class="filter-toggle active flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all text-xs font-bold border-teal-200 bg-teal-50 text-teal-700 dark:border-teal-900/50 dark:bg-[#102A24] dark:text-teal-400" data-status="booked">
-                    <span class="w-2.5 h-2.5 rounded-full bg-[#14b8a6]"></span> Dipesan (Booked)
+                    <span class="w-2.5 h-2.5 rounded-full bg-[#14b8a6]"></span> Dipesan 
                 </button>
 
                 <button type="button" class="filter-toggle active flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all text-xs font-bold border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900/50 dark:bg-[#101E28] dark:text-blue-400" data-status="pending">
-                    <span class="w-2.5 h-2.5 rounded-full bg-[#3b82f6]"></span> Tertunda (Pending)
+                    <span class="w-2.5 h-2.5 rounded-full bg-[#3b82f6]"></span> Tertunda 
                 </button>
 
                 <button type="button" class="filter-toggle active flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all text-xs font-bold border-red-200 bg-red-50 text-red-700 dark:border-red-900/50 dark:bg-[#2A1515] dark:text-red-400" data-status="locked">
@@ -139,7 +139,7 @@
 
             <div class="flex gap-3 w-full md:w-auto">
                 <a href="{{ route('booking') }}" class="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-kinetic-primary hover:bg-teal-600 dark:hover:bg-kinetic-secondary text-white dark:text-slate-900 rounded-xl text-sm font-bold shadow-[0_0_15px_rgba(20,184,166,0.3)] transition transform hover:-translate-y-0.5">
-                    <i class="ph-bold ph-plus text-lg"></i> Booking Baru
+                    <i class="ph-bold ph-plus text-lg"></i> Pesan Ruang
                 </a>
             </div>
         </div>
@@ -151,7 +151,7 @@
         <div class="bg-white dark:bg-[#151515] rounded-3xl p-6 md:p-8 border border-slate-200 dark:border-kinetic-border shadow-sm dark:shadow-none flex flex-col transition-colors pb-8">
             <div class="flex justify-between items-center mb-6">
                 <h3 class="font-heading font-bold flex items-center gap-2 text-slate-900 dark:text-white transition-colors">
-                    <i class="ph-fill ph-sparkle text-kinetic-primary text-lg"></i> Rekomendasi Slot Hari Ini
+                    <i class="ph-fill ph-sparkle text-kinetic-primary text-lg"></i> Rekomendasi Ruangan Hari Ini
                 </h3>
             </div>
             
