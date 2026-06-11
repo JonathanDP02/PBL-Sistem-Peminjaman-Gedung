@@ -56,11 +56,9 @@
     </style>
 
     @php
-        // Mengambil semua jadwal user yang aktif untuk dipetakan ke Kalender Dashboard
-        // (Agar tidak perlu mengubah route di web.php)
-        $calendarBookings = \App\Models\Booking::with('room')
-            ->where('user_id', auth()->id())
-            ->whereIn('status', ['Approved', 'Pending', 'Revising'])
+        // Mengambil semua jadwal aktif di sistem untuk dipetakan ke Kalender Dashboard
+        $calendarBookings = \App\Models\Booking::with(['room', 'user'])
+            ->whereIn('status', ['Approved', 'Pending'])
             ->get();
     @endphp
 
@@ -201,13 +199,22 @@
             const statusLower = b.status ? b.status.toLowerCase() : '';
             let bgColor = statusLower === 'approved' ? '#14b8a6' : (statusLower === 'revising' ? '#ef4444' : '#3b82f6'); // Teal untuk Approved, Merah untuk Revising, Biru untuk Pending
             
-            // Format split agar mendukung YYYY-MM-DD
-            const datePart = b.booking_date.split('T')[0].split(' ')[0];
+            const startDatePart = b.booking_date.split('T')[0].split(' ')[0];
+            const endRaw = (b.booking_end_date || b.booking_date).split('T')[0].split(' ')[0];
+            const parts = endRaw.split('-');
+            const endDateObj = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+            endDateObj.setDate(endDateObj.getDate() + 1);
+            
+            const y = endDateObj.getFullYear();
+            const m = String(endDateObj.getMonth() + 1).padStart(2, '0');
+            const d = String(endDateObj.getDate()).padStart(2, '0');
+            const endDatePart = `${y}-${m}-${d}`;
 
             return {
                 id: b.id,
                 title: b.room ? b.room.room_name : 'Ruangan',
-                start: datePart, // Hanya tanggal agar dirender full-day style di kalender mini
+                start: startDatePart,
+                end: endDatePart,
                 backgroundColor: bgColor,
                 borderColor: bgColor,
                 textColor: '#ffffff'

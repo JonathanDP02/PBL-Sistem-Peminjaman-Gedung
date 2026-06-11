@@ -360,7 +360,7 @@ class BookingController extends Controller
         $endOfMonth = $startOfMonth->clone()->endOfMonth()->endOfDay();
 
         // Ambil semua booking di bulan tersebut (untuk kalender umum)
-        $allBookings = Booking::with(['room', 'user'])
+        $allBookings = Booking::with(['room', 'user.unit'])
             ->whereBetween('booking_date', [$startOfMonth, $endOfMonth])
             ->whereIn('status', ['Approved', 'Pending'])
             ->get();

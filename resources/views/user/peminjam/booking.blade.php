@@ -468,6 +468,20 @@
             }
         }
 
+        // Edge case: no steps resolved at all — fallback to borrower's own unit workflow
+        if (chain.length === 0) {
+            const wf = findUnitWorkflow(borrowerUnit.id);
+            if (wf) {
+                (wf.steps || []).forEach(step => {
+                    chain.push({
+                        position_id: step.position_id,
+                        position_name: step.position ? step.position.name : 'Posisi Tidak Diketahui',
+                        tier: `Internal (${borrowerUnit.unit_name})`
+                    });
+                });
+            }
+        }
+
         // De-duplicate chain by position_id to prevent redundant consecutive approvals in preview
         const uniqueChain = [];
         const seenPositions = new Set();

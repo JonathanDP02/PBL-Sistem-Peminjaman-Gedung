@@ -34,12 +34,37 @@ Route::get('/', function () {
     $endOfWeek = $selectedDate->copy()->endOfWeek();
 
     $bookings = collect();
+    $allBookings = collect();
+    $rooms = collect();
+    $selectedRoomId = request('room_id');
+
+    $popularRooms = collect();
+    if (Schema::hasTable('rooms')) {
+        $rooms = Room::with('building')->orderBy('room_name')->get();
+        $popularRooms = Room::with('building')->take(3)->get();
+    }
+
     if (Schema::hasTable('bookings')) {
-        $bookings = Booking::with('room')
-            ->whereBetween('booking_date', [$startOfWeek, $endOfWeek])
-            ->whereIn('status', ['Approved', 'Pending'])
-            ->orderBy('start_time')
-            ->get();
+        // Fetch bookings for the weekly timetable grid
+        $weeklyQuery = Booking::with(['room.building', 'user.unit'])
+            ->where('booking_date', '<=', $endOfWeek)
+            ->where('booking_end_date', '>=', $startOfWeek)
+            ->whereIn('status', ['Approved', 'Pending']);
+
+        if ($selectedRoomId) {
+            $weeklyQuery->where('room_id', $selectedRoomId);
+        }
+        $bookings = $weeklyQuery->orderBy('start_time')->get();
+
+        // Fetch bookings in the selected month for FullCalendar (if room is not selected)
+        if (! $selectedRoomId) {
+            $startOfMonth = $selectedDate->copy()->startOfMonth()->startOfDay();
+            $endOfMonth = $selectedDate->copy()->endOfMonth()->endOfDay();
+            $allBookings = Booking::with(['room.building', 'user.unit'])
+                ->whereBetween('booking_date', [$startOfMonth, $endOfMonth])
+                ->whereIn('status', ['Approved', 'Pending'])
+                ->get();
+        }
     }
 
     $weekDates = collect();
@@ -47,12 +72,7 @@ Route::get('/', function () {
         $weekDates->push($startOfWeek->copy()->addDays($i));
     }
 
-    $rooms = collect();
-    if (Schema::hasTable('rooms')) {
-        $rooms = Room::with('building')->latest()->take(3)->get();
-    }
-
-    return view('welcome', compact('bookings', 'weekDates', 'rooms'));
+    return view('welcome', compact('bookings', 'weekDates', 'rooms', 'popularRooms', 'allBookings', 'selectedRoomId'));
 })->name('welcome');
 
 Route::get('ruangan', function () {

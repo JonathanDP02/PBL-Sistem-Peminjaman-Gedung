@@ -27,31 +27,120 @@
 </section>
 
 <section class="py-16 relative mb-20">
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js'></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        .fc {
+            --fc-border-color: #e2e8f0;
+            --fc-button-text-color: #475569;
+            --fc-button-bg-color: #ffffff;
+            --fc-button-border-color: #e2e8f0;
+            --fc-button-hover-bg-color: #f8fafc;
+            --fc-button-hover-border-color: #cbd5e1;
+            --fc-button-active-bg-color: #14b8a6;
+            --fc-button-active-border-color: #14b8a6;
+            --fc-button-active-text-color: #ffffff;
+            --fc-today-bg-color: rgba(20, 184, 166, 0.05);
+            --fc-list-event-hover-bg-color: #f1f5f9;
+            font-family: inherit;
+        }
+
+        .dark .fc {
+            --fc-border-color: #2A2A2A;
+            --fc-button-text-color: #94a3b8;
+            --fc-button-bg-color: #1A1A1A;
+            --fc-button-border-color: #2A2A2A;
+            --fc-button-hover-bg-color: #222;
+            --fc-button-hover-border-color: #333;
+            --fc-page-bg-color: transparent;
+            --fc-list-event-hover-bg-color: #1e1e1e;
+        }
+
+        .fc .fc-button {
+            padding: 8px 16px;
+            font-weight: 700;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+            border-radius: 12px !important;
+            transition: all 0.2s;
+            margin-right: 4px !important;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .fc-event {
+            cursor: pointer;
+            border: none !important;
+            border-radius: 8px;
+            padding: 4px 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .fc-event:hover {
+            transform: translateY(-1px);
+            filter: brightness(1.05);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .fc .fc-toolbar-title {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #1e293b;
+            letter-spacing: -0.025em;
+        }
+
+        .dark .fc .fc-toolbar-title {
+            color: #f8fafc !important;
+        }
+
+        .fc .fc-button-primary:not(:disabled):active, 
+        .fc .fc-button-primary:not(:disabled).fc-button-active {
+            color: #ffffff !important;
+        }
+    </style>
+
     <div class="custom-container" style="align-items: flex-start; max-width: 1200px; margin: 0 auto; width: 100%;">
-        <div class="flex flex-col lg:flex-row justify-between w-full lg:items-end gap-6 mb-8">
-            <div class="text-left max-w-2xl">
+        <div class="flex flex-col lg:flex-row justify-between w-full lg:items-center gap-6 mb-8">
+            <div class="text-left max-w-xl">
                 <h2 class="text-4xl sm:text-5xl font-bold text-slate-900 dark:text-white mb-3">Ketersediaan <span class="text-[#14B8A6]">Ruang</span></h2>
                 <p class="text-sm text-slate-600 dark:text-gray-400 leading-relaxed">Lihat jadwal penggunaan fasilitas kampus secara langsung. Klik pada slot tersedia untuk mulai memesan.</p>
             </div>
-            <div class="flex flex-col md:flex-row gap-4 items-start md:items-center">
-                <!-- Premium Date Filter -->
-                <form action="{{ route('welcome') }}" method="GET" class="flex items-center gap-2">
-                    <label class="text-xs font-semibold text-slate-500 dark:text-gray-400 uppercase tracking-wider hidden sm:inline">Cari Tanggal:</label>
-                    <input type="date" name="date" value="{{ request('date', now()->format('Y-m-d')) }}" 
-                           class="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-sm text-slate-700 dark:text-gray-300 px-3 py-2 focus:outline-none focus:border-[#14B8A6] focus:ring-1 focus:ring-[#14B8A6] transition cursor-pointer dark:[color-scheme:dark]" 
-                           onchange="this.form.submit()">
-                    @if(request('date'))
-                        <a href="{{ route('welcome') }}" class="px-3 py-2 bg-[#14B8A6]/10 hover:bg-[#14B8A6]/20 border border-[#14B8A6]/20 rounded-lg text-sm text-[#14B8A6] transition font-semibold" title="Reset Filter">
+
+            <div class="flex flex-wrap items-center gap-4 lg:justify-end w-full lg:w-auto">
+                <!-- Premium Room & Date Filter -->
+                <form action="{{ route('welcome') }}" method="GET" class="flex flex-wrap items-end gap-3">
+                    <div class="flex flex-col gap-1">
+                        <span class="text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider">Ruangan</span>
+                        <select name="room_id" onchange="this.form.submit()" 
+                                class="bg-slate-50 dark:bg-[#1A1A1A] border border-slate-200 dark:border-white/10 rounded-xl text-sm text-slate-700 dark:text-gray-300 px-3 py-2 focus:outline-none focus:border-[#14B8A6] focus:ring-1 focus:ring-[#14B8A6] transition cursor-pointer font-semibold h-10 min-w-[200px]">
+                            <option value="" class="bg-white dark:bg-[#1A1A1A] text-slate-700 dark:text-gray-300">-- Semua Ruangan --</option>
+                            @foreach($rooms as $room)
+                                <option value="{{ $room->id }}" {{ $selectedRoomId == $room->id ? 'selected' : '' }} class="bg-white dark:bg-[#1A1A1A] text-slate-700 dark:text-gray-300">
+                                    {{ $room->room_name }} ({{ $room->building->building_name ?? 'Gedung' }})
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="flex flex-col gap-1">
+                        <span class="text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider">Tanggal</span>
+                        <input type="date" name="date" value="{{ request('date', now()->format('Y-m-d')) }}" 
+                               class="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-sm text-slate-700 dark:text-gray-300 px-3 py-2 focus:outline-none focus:border-[#14B8A6] focus:ring-1 focus:ring-[#14B8A6] transition cursor-pointer dark:[color-scheme:dark] font-semibold h-10" 
+                               onchange="this.form.submit()">
+                    </div>
+
+                    @if(request('date') || request('room_id'))
+                        <a href="{{ route('welcome') }}" class="px-4 h-10 flex items-center justify-center bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 rounded-xl text-xs text-rose-500 transition font-extrabold tracking-wide uppercase" title="Reset Filter">
                             Reset
                         </a>
                     @endif
                 </form>
 
-                <div class="flex gap-4 items-center">
-                    <div class="flex items-center gap-3 text-xs font-bold text-slate-500 dark:text-gray-400">
-                        <span class="flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-[#14B8A6]"></div> TERSEDIA</span>
-                        <span class="flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-red-500"></div> TERISI</span>
-                    </div>
+                <div class="flex items-center gap-3 text-[10px] font-bold text-slate-400 dark:text-gray-500 tracking-wider uppercase bg-slate-50 dark:bg-white/5 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 h-10 self-end">
+                    <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#14B8A6]"></span> Tersedia</span>
+                    <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-red-500"></span> Terisi</span>
                 </div>
             </div>
         </div>
@@ -77,71 +166,229 @@
             }
         @endphp
 
-        <!-- Month Name above calendar -->
-        <div class="mb-4 flex items-center justify-between">
-            <h3 class="text-base sm:text-lg font-heading font-extrabold text-slate-800 dark:text-white tracking-wide uppercase flex items-center gap-2">
-                <i class="ph ph-calendar-blank text-[#14B8A6] text-xl animate-pulse"></i>
-                Periode: <span class="text-[#14B8A6]">{{ $monthTitle }}</span>
-            </h3>
-        </div>
+        @if($selectedRoomId)
+            <!-- Month Name above calendar -->
+            <div class="mb-4 flex items-center justify-between">
+                <h3 class="text-base sm:text-lg font-heading font-extrabold text-slate-800 dark:text-white tracking-wide uppercase flex items-center gap-2">
+                    <i class="ph ph-calendar-blank text-[#14B8A6] text-xl animate-pulse"></i>
+                    Periode: <span class="text-[#14B8A6]">{{ $monthTitle }}</span>
+                </h3>
+            </div>
 
-        <div class="calendar-wrapper">
-            <div class="calendar-grid">
-                
-                <div class="col-header time-label" style="padding-top:16px!important">
-                    <svg class="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                </div>
-                
-                @php
-                    Carbon\Carbon::setLocale('id');
-                    $timeSlots = ['08:00', '10:00', '13:00', '15:00'];
-                @endphp
-
-                @foreach($weekDates as $date)
-                    @php
-                        $isToday = $date->isToday();
-                        $isWeekend = $date->isWeekend();
-                        $headerClass = 'col-header';
-                        if ($isToday) $headerClass .= ' active text-[#14B8A6]';
-                        elseif ($isWeekend) $headerClass .= ' dim weekend-bg';
-                    @endphp
-                    <div class="{{ $headerClass }}">
-                        {{ strtoupper($date->translatedFormat('l')) }}<br>
-                        <span class="{{ $isToday ? 'text-[#14B8A6]' : '' }}">{{ $date->format('d') }}</span>
+            <div class="calendar-wrapper">
+                <div class="calendar-grid">
+                    
+                    <div class="col-header time-label" style="padding-top:16px!important">
+                        <svg class="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                     </div>
-                @endforeach
+                    
+                    @php
+                        Carbon\Carbon::setLocale('id');
+                        $timeSlots = ['00:00', '08:00', '10:00', '13:00', '15:00', '18:00'];
+                    @endphp
 
-                @foreach($timeSlots as $slot)
-                    <div class="time-label">{{ $slot }}</div>
                     @foreach($weekDates as $date)
                         @php
+                            $isToday = $date->isToday();
                             $isWeekend = $date->isWeekend();
-                            $cellClass = 'cell';
-                            if ($isWeekend) $cellClass .= ' weekend-bg text-center';
-                            
-                            $slotPrefix = substr($slot, 0, 2);
-                            $slotBooking = $bookings->filter(function($b) use ($date, $slotPrefix) {
-                                return Carbon\Carbon::parse($b->booking_date)->isSameDay($date) && 
-                                       str_starts_with($b->start_time, $slotPrefix);
-                            })->first();
+                            $headerClass = 'col-header';
+                            if ($isToday) $headerClass .= ' active text-[#14B8A6]';
+                            elseif ($isWeekend) $headerClass .= ' dim weekend-bg';
                         @endphp
-                        <div class="{{ $cellClass }}">
-                            @if($slotBooking)
-                                <div class="slot terisi">
-                                    <div class="slot-header">{{ strtoupper($slotBooking->status) == 'PENDING' ? 'PENDING' : 'TERISI' }}</div>
-                                    <p class="slot-title">{{ $slotBooking->room->room_name ?? 'Ruangan' }}</p>
-                                </div>
-                            @else
-                                <div class="slot tersedia">
-                                    <div class="slot-header">TERSEDIA</div>
-                                </div>
-                            @endif
+                        <div class="{{ $headerClass }}">
+                            {{ strtoupper($date->translatedFormat('l')) }}<br>
+                            <span class="{{ $isToday ? 'text-[#14B8A6]' : '' }}">{{ $date->format('d') }}</span>
                         </div>
                     @endforeach
-                @endforeach
 
+                    @php
+                        $slotRanges = [
+                            '00:00' => ['start' => '00:00:00', 'end' => '08:00:00'],
+                            '08:00' => ['start' => '08:00:00', 'end' => '10:00:00'],
+                            '10:00' => ['start' => '10:00:00', 'end' => '13:00:00'],
+                            '13:00' => ['start' => '13:00:00', 'end' => '15:00:00'],
+                            '15:00' => ['start' => '15:00:00', 'end' => '18:00:00'],
+                            '18:00' => ['start' => '18:00:00', 'end' => '23:59:59']
+                        ];
+                    @endphp
+
+                    @foreach($timeSlots as $slot)
+                        <div class="time-label">{{ $slot }}</div>
+                        @foreach($weekDates as $date)
+                            @php
+                                $isWeekend = $date->isWeekend();
+                                $cellClass = 'cell';
+                                if ($isWeekend) $cellClass .= ' weekend-bg text-center';
+                                
+                                $slotRange = $slotRanges[$slot];
+                                $slotBooking = $bookings->filter(function($b) use ($date, $slotRange) {
+                                    $start = \Carbon\Carbon::parse($b->booking_date)->startOfDay();
+                                    $end = \Carbon\Carbon::parse($b->booking_end_date ?? $b->booking_date)->endOfDay();
+                                    if (!$date->between($start, $end)) {
+                                        return false;
+                                    }
+                                    
+                                    $bStart = $b->start_time;
+                                    $bEnd = $b->end_time;
+                                    $sStart = $slotRange['start'];
+                                    $sEnd = $slotRange['end'];
+                                    
+                                    return ($bStart < $sEnd) && ($bEnd > $sStart);
+                                })->first();
+                            @endphp
+                            <div class="{{ $cellClass }}">
+                                @if($slotBooking)
+                                    <div class="slot terisi">
+                                        <div class="slot-header">{{ strtoupper($slotBooking->status) == 'PENDING' ? 'PENDING' : 'TERISI' }}</div>
+                                        <p class="slot-title">{{ $slotBooking->room->room_name ?? 'Ruangan' }}</p>
+                                    </div>
+                                @else
+                                    <div class="slot tersedia">
+                                        <div class="slot-header">TERSEDIA</div>
+                                    </div>
+                                @endif
+                            </div>
+                        @endforeach
+                    @endforeach
+
+                </div>
             </div>
-        </div>
+        @else
+            <!-- Tampilan Kalender Umum (FullCalendar) untuk Semua Ruangan -->
+            <div class="bg-white dark:bg-[#111] rounded-3xl p-6 border border-slate-200 dark:border-white/5 shadow-lg">
+                <div id="calendar" class="text-slate-800 dark:text-slate-200"></div>
+            </div>
+
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    const rawBookings = @json($allBookings);
+
+                    const calendarEvents = rawBookings.map(b => {
+                        const statusLower = b.status ? b.status.toLowerCase() : '';
+                        let bgColor = statusLower === 'approved' ? '#14b8a6' : '#3b82f6';
+                        
+                        const startDatePart = b.booking_date.split('T')[0].split(' ')[0];
+                        const endDatePart = (b.booking_end_date || b.booking_date).split('T')[0].split(' ')[0];
+
+                        return {
+                            id: b.id,
+                            title: `${b.room ? b.room.room_name : 'Ruangan'} - ${b.event_name}`,
+                            start: `${startDatePart}T${b.start_time}`,
+                            end: `${endDatePart}T${b.end_time}`,
+                            backgroundColor: bgColor,
+                            borderColor: bgColor,
+                            textColor: '#ffffff',
+                            extendedProps: {
+                                roomName: b.room ? b.room.room_name : 'Ruangan',
+                                originalStatus: b.status,
+                                borrowerName: b.user ? b.user.name : 'Sistem',
+                                borrowerUnit: b.user && b.user.unit ? b.user.unit.unit_name : '-'
+                            }
+                        };
+                    });
+
+                    const calendarEl = document.getElementById('calendar');
+                    const calendar = new FullCalendar.Calendar(calendarEl, {
+                        locale: 'id',
+                        buttonText: {
+                            today: 'Hari Ini',
+                            month: 'Bulan',
+                            listWeek: 'Agenda Mingguan',
+                            listDay: 'Agenda Harian'
+                        },
+                        slotLabelFormat: {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: false
+                        },
+                        eventTimeFormat: {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: false
+                        },
+                        initialDate: '{{ request('date', now()->format('Y-m-d')) }}',
+                        initialView: 'dayGridMonth',
+                        headerToolbar: {
+                            left: 'prev,next today',
+                            center: 'title',
+                            right: 'dayGridMonth,listWeek,listDay'
+                        },
+                        height: 'auto',
+                        contentHeight: 'auto',
+                        fixedWeekCount: false,
+                        events: calendarEvents,
+                        eventClick: function(info) {
+                            const props = info.event.extendedProps;
+                            const timeStr = `${info.event.start.toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'})} - ${info.event.end.toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'})}`;
+                            
+                            const startDayStr = info.event.start.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                            let dateStr = startDayStr;
+                            if (info.event.end && info.event.start.toDateString() !== info.event.end.toDateString()) {
+                                const endDayStr = info.event.end.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                                dateStr = `${startDayStr} s.d. ${endDayStr}`;
+                            }
+                            
+                            const isDark = document.documentElement.classList.contains('dark');
+                            
+                            Swal.fire({
+                                title: `<span class="${isDark ? 'text-white' : 'text-slate-900'} font-bold">${info.event.title.split(' - ')[1] || info.event.title}</span>`,
+                                html: `
+                                    <div class="text-left space-y-3 mt-4">
+                                        <div class="flex items-center gap-3 p-3 rounded-xl border ${isDark ? 'border-[#2A2A2A] bg-[#1A1A1A]' : 'border-slate-100 bg-slate-50'}">
+                                            <div class="w-10 h-10 rounded-lg bg-teal-500/10 flex items-center justify-center text-teal-600">
+                                                <i class="ph-bold ph-door text-xl"></i>
+                                            </div>
+                                            <div>
+                                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ruangan</p>
+                                                <p class="text-sm font-bold ${isDark ? 'text-slate-200' : 'text-slate-700'}">${props.roomName}</p>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center gap-3 p-3 rounded-xl border ${isDark ? 'border-[#2A2A2A] bg-[#1A1A1A]' : 'border-slate-100 bg-slate-50'}">
+                                            <div class="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-600">
+                                                <i class="ph-bold ph-calendar text-xl"></i>
+                                            </div>
+                                            <div>
+                                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Waktu</p>
+                                                <p class="text-sm font-bold ${isDark ? 'text-slate-200' : 'text-slate-700'}">${dateStr}<br>${timeStr} WIB</p>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center gap-3 p-3 rounded-xl border ${isDark ? 'border-[#2A2A2A] bg-[#1A1A1A]' : 'border-slate-100 bg-slate-50'}">
+                                            <div class="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-600">
+                                                <i class="ph-bold ph-user text-xl"></i>
+                                            </div>
+                                            <div>
+                                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Peminjam</p>
+                                                <p class="text-sm font-bold ${isDark ? 'text-slate-200' : 'text-slate-700'}">${props.borrowerName} (${props.borrowerUnit})</p>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center gap-3 p-3 rounded-xl border ${isDark ? 'border-[#2A2A2A] bg-[#1A1A1A]' : 'border-slate-100 bg-slate-50'}">
+                                            <div class="w-10 h-10 rounded-lg bg-orange-500/10 flex items-center justify-center text-orange-600">
+                                                <i class="ph-bold ph-info text-xl"></i>
+                                            </div>
+                                            <div>
+                                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status</p>
+                                                <p class="text-sm font-bold ${isDark ? 'text-slate-200' : 'text-slate-700'}">${props.originalStatus}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `,
+                                icon: 'info',
+                                iconColor: '#14b8a6',
+                                background: isDark ? '#151515' : '#ffffff',
+                                confirmButtonColor: '#14b8a6',
+                                confirmButtonText: 'Tutup',
+                                customClass: {
+                                    popup: 'rounded-[2rem] border border-slate-200 dark:border-[#2A2A2A] shadow-2xl',
+                                    confirmButton: 'rounded-xl px-8 py-3 font-bold text-sm transition transform hover:scale-105 shadow-lg shadow-teal-500/20'
+                                }
+                            });
+                        }
+                    });
+                    
+                    calendar.render();
+                });
+            </script>
+        @endif
     </div>
 </section>
 
@@ -155,19 +402,19 @@
             <h2 class="text-3xl font-bold text-slate-900 dark:text-white">Ruang Populer</h2>
         </div>
 
-        @if($rooms->isNotEmpty())
+        @if($popularRooms->isNotEmpty())
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
             
             <!-- Left Large Card: First dynamic room -->
-            @php $firstRoom = $rooms->first(); @endphp
-            <div class="lg:col-span-5 bg-white dark:bg-[#111] rounded-2xl relative overflow-hidden group flex flex-col justify-end border border-slate-200 dark:border-white/5 hover:border-[#14B8A6]/30 min-h-[400px]">
-                <div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" style="background-image: url('{{ $firstRoom->image ? asset('storage/' . $firstRoom->image) : 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80' }}'); opacity: 0.4;"></div>
-                <div class="absolute inset-0 bg-gradient-to-t from-white dark:from-[#0A0A0A] via-white/90 dark:via-[#0A0A0A]/80 to-transparent"></div>
+            @php $firstRoom = $popularRooms->first(); @endphp
+            <div class="lg:col-span-5 bg-[#0a0a0a] rounded-2xl relative overflow-hidden group flex flex-col justify-end border border-[#14B8A6]/20 hover:border-[#14B8A6]/30 min-h-[400px]">
+                <div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" style="background-image: url('{{ $firstRoom->image ? asset('storage/' . $firstRoom->image) : 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80' }}'); opacity: 0.45;"></div>
+                <div class="absolute inset-0 bg-gradient-to-t from-black via-black/75 to-transparent"></div>
                 
                 <div class="relative z-10 p-8 text-left">
                     <span class="inline-block px-3 py-1 mb-4 text-[10px] font-bold tracking-wider text-[#14B8A6] bg-[#14B8A6]/10 dark:bg-[#14B8A6]/20 rounded-full border border-[#14B8A6]/30">{{ strtoupper($firstRoom->building->building_name ?? 'LOKASI UTAMA') }}</span>
-                    <h3 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">{{ $firstRoom->room_name }}</h3>
-                    <p class="text-sm text-slate-600 dark:text-gray-400 mb-6 max-w-sm">{{ $firstRoom->description ?? 'Fasilitas premium dengan kenyamanan dan teknologi terkini.' }}</p>
+                    <h3 class="text-3xl font-bold text-white mb-2">{{ $firstRoom->room_name }}</h3>
+                    <p class="text-sm text-gray-300 mb-6 max-w-sm">{{ $firstRoom->description ?? 'Fasilitas premium dengan kenyamanan dan teknologi terkini.' }}</p>
                     <div class="flex items-center justify-between">
                         <span class="text-xs font-bold text-slate-700 dark:text-gray-300">KAPASITAS: {{ $firstRoom->capacity }} ORANG</span>
                         <a href="{{ route('login') }}" class="inline-block px-6 py-3 bg-[#14B8A6] text-white dark:text-black font-semibold rounded-xl hover:bg-[#10ECE8] transition shadow-[0_0_20px_rgba(20,184,166,0.3)]">
@@ -176,11 +423,11 @@
                     </div>
                 </div>
             </div>
-
+ 
             <!-- Right Side Grid: Rest of dynamic rooms -->
             <div class="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-6">
                 
-                @foreach($rooms->skip(1) as $room)
+                @foreach($popularRooms->skip(1) as $room)
                 <div class="bg-white dark:bg-[#111] p-6 rounded-2xl border border-slate-200 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-[#151515] hover:border-[#14B8A6]/30 transition group flex flex-col text-left">
                     @if($room->image)
                         <div class="w-full h-32 rounded-xl overflow-hidden mb-4 relative">
@@ -202,7 +449,7 @@
                     </div>
                 </div>
                 @endforeach
-
+ 
                 <!-- Dynamic Web Help Card to balance grid if only 1 or 2 rooms on the right -->
                 <div class="sm:col-span-2 bg-[#f0fdfa] dark:bg-[#0c2423] border border-[#14B8A6]/20 p-8 rounded-2xl flex items-center justify-between group overflow-hidden relative text-left">
                     <div class="absolute inset-0 bg-[#14B8A6]/5 opacity-0 group-hover:opacity-100 transition"></div>
@@ -214,7 +461,7 @@
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                     </div>
                 </div>
-
+ 
             </div>
         </div>
         @else

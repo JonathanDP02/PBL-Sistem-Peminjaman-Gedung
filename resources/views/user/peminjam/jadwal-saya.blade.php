@@ -207,20 +207,23 @@
                 bgColor = '#14b8a6'; // Teal
             }
 
-            const datePart = b.booking_date.split('T')[0].split(' ')[0];
+            const startDatePart = b.booking_date.split('T')[0].split(' ')[0];
+            const endDatePart = (b.booking_end_date || b.booking_date).split('T')[0].split(' ')[0];
 
             return {
                 id: b.id,
                 title: `${b.room ? b.room.room_name : 'Ruangan'} - ${isLocked ? 'Locked by IT' : b.event_name}`,
-                start: `${datePart}T${b.start_time}`,
-                end: `${datePart}T${b.end_time}`,
+                start: `${startDatePart}T${b.start_time}`,
+                end: `${endDatePart}T${b.end_time}`,
                 backgroundColor: bgColor,
                 borderColor: bgColor,
                 textColor: textColor,
                 extendedProps: {
                     statusCategory: eventStatus,
                     roomName: b.room ? b.room.room_name : 'Ruangan',
-                    originalStatus: b.status
+                    originalStatus: b.status,
+                    borrowerName: b.user ? b.user.name : 'Sistem',
+                    borrowerUnit: b.user && b.user.unit ? b.user.unit.unit_name : '-'
                 }
             };
         });
@@ -278,7 +281,13 @@
             eventClick: function(info) {
                 const props = info.event.extendedProps;
                 const timeStr = `${info.event.start.toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'})} - ${info.event.end.toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'})}`;
-                const dateStr = info.event.start.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                
+                const startDayStr = info.event.start.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                let dateStr = startDayStr;
+                if (info.event.end && info.event.start.toDateString() !== info.event.end.toDateString()) {
+                    const endDayStr = info.event.end.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                    dateStr = `${startDayStr} s.d. ${endDayStr}`;
+                }
                 
                 const isDark = document.documentElement.classList.contains('dark');
                 
@@ -302,6 +311,15 @@
                                 <div>
                                     <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Waktu</p>
                                     <p class="text-sm font-bold ${isDark ? 'text-slate-200' : 'text-slate-700'}">${dateStr}<br>${timeStr} WIB</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3 p-3 rounded-xl border ${isDark ? 'border-[#2A2A2A] bg-[#1A1A1A]' : 'border-slate-100 bg-slate-50'}">
+                                <div class="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-600">
+                                    <i class="ph-bold ph-user text-xl"></i>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Peminjam</p>
+                                    <p class="text-sm font-bold ${isDark ? 'text-slate-200' : 'text-slate-700'}">${props.borrowerName} (${props.borrowerUnit})</p>
                                 </div>
                             </div>
                             <div class="flex items-center gap-3 p-3 rounded-xl border ${isDark ? 'border-[#2A2A2A] bg-[#1A1A1A]' : 'border-slate-100 bg-slate-50'}">
