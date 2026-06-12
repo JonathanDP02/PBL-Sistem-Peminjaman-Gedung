@@ -4,14 +4,33 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>SpaceIn - Sistem Peminjaman Gedung</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="{{ asset('img/icon_spacein_default.png') }}" id="favicon">
     
-    <!-- Theme Switch Checker -->
+    <!-- Theme Switch Checker & Dynamic Favicon -->
     <script>
-        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        const isDarkTheme = localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        if (isDarkTheme) {
             document.documentElement.classList.add('dark');
         } else {
             document.documentElement.classList.remove('dark');
         }
+        
+        const updateFavicon = (isDark) => {
+            const favicon = document.getElementById('favicon');
+            if (favicon) {
+                favicon.href = isDark ? "{{ asset('img/icon_spacein.png') }}" : "{{ asset('img/icon_spacein_default.png') }}";
+            }
+        };
+
+        // Sync initially
+        updateFavicon(isDarkTheme);
+
+        // Watch for manual theme changes
+        const observer = new MutationObserver(() => {
+            updateFavicon(document.documentElement.classList.contains('dark'));
+        });
+        observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
         
         // Clear Service Worker cache for development
         if ('serviceWorker' in navigator) {

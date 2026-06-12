@@ -6,6 +6,35 @@
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
         <title>Space.in | Kinetic Dashboard</title>
+
+        <!-- Favicon -->
+        <link rel="icon" type="image/png" href="{{ asset('img/icon_spacein_default.png') }}" id="favicon">
+        
+        <!-- Theme Switch Checker & Dynamic Favicon -->
+        <script>
+            const isDarkTheme = localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
+            if (isDarkTheme) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+            
+            const updateFavicon = (isDark) => {
+                const favicon = document.getElementById('favicon');
+                if (favicon) {
+                    favicon.href = isDark ? "{{ asset('img/icon_spacein.png') }}" : "{{ asset('img/icon_spacein_default.png') }}";
+                }
+            };
+
+            // Sync initially
+            updateFavicon(isDarkTheme);
+
+            // Watch for manual theme changes
+            const observer = new MutationObserver(() => {
+                updateFavicon(document.documentElement.classList.contains('dark'));
+            });
+            observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+        </script>
     
         <!-- Fonts: Plus Jakarta Sans (Headings) & Inter (Body) -->
         <link rel="preconnect" href="https://fonts.googleapis.com">
