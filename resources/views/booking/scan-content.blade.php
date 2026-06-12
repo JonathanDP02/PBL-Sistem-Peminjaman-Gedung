@@ -55,7 +55,7 @@
                             </div>
 
                             <!-- Stop Scanner / Retry UI -->
-                            <div id="scannerPlaceholder" class="flex flex-col items-center justify-center p-6 text-center z-10 space-y-4">
+                            <div id="scannerPlaceholder" class="absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-30 bg-slate-100 dark:bg-[#101010] space-y-4">
                                 <div class="w-16 h-16 rounded-full bg-teal-50 dark:bg-slate-800 flex items-center justify-center text-kinetic-primary text-2xl">
                                     <i class="ph-bold ph-qr-code "></i>
                                 </div>

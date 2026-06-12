@@ -534,4 +534,14 @@ class UserController extends Controller
             'data' => $positions,
         ]);
     }
+
+    public function kelolaView()
+    {
+        $view = match (Auth()->user()->role->name) {
+            'Administrator Utama', 'Administrator Unit' => 'user.admin.kelola-user',
+            default => 'user.peminjam.kelola-user',
+        };
+
+        return view($view);
+    }
 }

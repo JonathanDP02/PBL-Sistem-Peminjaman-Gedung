@@ -18,12 +18,12 @@
                                 <h2 class="text-lg font-bold text-slate-900 dark:text-white">Daftar Pesanan</h2>
                                 <p class="mt-1 text-sm text-slate-500 dark:text-gray-400">Kelola & pantau status pemesanan Anda.</p>
                             </div>
-                            <div class="inline-flex items-center gap-3 rounded-2xl bg-slate-50 dark:bg-[#111111] px-4 py-3 border border-slate-200 dark:border-kinetic-border">
-                                <span class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 dark:text-gray-400">Urutkan</span>
-                                <select class="bg-transparent outline-none text-sm text-slate-900 dark:text-white cursor-pointer">
-                                    <option>Terbaru</option>
-                                    <option>Terlama</option>
-                                    <option>Status</option>
+                            <div class="inline-flex items-center gap-3 rounded-2xl bg-slate-50 dark:bg-[#111111] px-4 py-2.5 border border-slate-200 dark:border-kinetic-border hover:border-teal-500/50 dark:hover:border-teal-500/50 transition-colors duration-200">
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-gray-500">Urutkan</span>
+                                <select onchange="window.location.href = this.value;" class="bg-transparent border-none outline-none text-sm font-semibold text-slate-700 dark:text-slate-200 cursor-pointer focus:ring-0 focus:outline-none">
+                                    <option value="{{ route('riwayat', ['sort' => 'latest']) }}" {{ request('sort') === 'latest' || !request('sort') ? 'selected' : '' }} class="bg-white dark:bg-[#161616] text-slate-900 dark:text-white">Terbaru</option>
+                                    <option value="{{ route('riwayat', ['sort' => 'oldest']) }}" {{ request('sort') === 'oldest' ? 'selected' : '' }} class="bg-white dark:bg-[#161616] text-slate-900 dark:text-white">Terlama</option>
+                                    <option value="{{ route('riwayat', ['sort' => 'status']) }}" {{ request('sort') === 'status' ? 'selected' : '' }} class="bg-white dark:bg-[#161616] text-slate-900 dark:text-white">Status</option>
                                 </select>
                             </div>
                         </div>
