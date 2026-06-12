@@ -1,215 +1,51 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminApiController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\WorkflowController;
 use App\Http\Controllers\Admin\WorkflowRequirementController;
 use App\Http\Controllers\Admin\WorkflowStepController;
+use App\Http\Controllers\AdminUnitController;
 use App\Http\Controllers\ApprovalController;
 use App\Http\Controllers\BookingAttachmentController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\BookingPdfController;
 use App\Http\Controllers\BookingValidationController;
 use App\Http\Controllers\BuildingController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FacilityController;
+use App\Http\Controllers\GuestController;
+use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RiwayatController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\UnitController;
-use App\Models\Booking;
-use App\Models\BookingLog;
-use App\Models\Building;
-use App\Models\Position;
 use App\Models\Role;
-use App\Models\Room;
 use App\Models\Unit;
 use App\Models\Workflow;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Schema;
 
 // --- GUEST / PUBLIC ROUTES ---
-Route::get('/', function () {
-    $selectedDate = request('date') ? Carbon::parse(request('date')) : Carbon::now();
-    $startOfWeek = $selectedDate->copy()->startOfWeek();
-    $endOfWeek = $selectedDate->copy()->endOfWeek();
-
-    $bookings = collect();
-    $allBookings = collect();
-    $rooms = collect();
-    $selectedRoomId = request('room_id');
-
-    $popularRooms = collect();
-    if (Schema::hasTable('rooms')) {
-        $rooms = Room::with('building')->orderBy('room_name')->get();
-        $popularRooms = Room::with('building')->take(3)->get();
-    }
-
-    if (Schema::hasTable('bookings')) {
-        // Fetch bookings for the weekly timetable grid
-        $weeklyQuery = Booking::with(['room.building', 'user.unit'])
-            ->where('booking_date', '<=', $endOfWeek)
-            ->where('booking_end_date', '>=', $startOfWeek)
-            ->whereIn('status', ['Approved', 'Pending']);
-
-        if ($selectedRoomId) {
-            $weeklyQuery->where('room_id', $selectedRoomId);
-        }
-        $bookings = $weeklyQuery->orderBy('start_time')->get();
-
-        // Fetch bookings in the selected month for FullCalendar (if room is not selected)
-        if (! $selectedRoomId) {
-            $startOfMonth = $selectedDate->copy()->startOfMonth()->startOfDay();
-            $endOfMonth = $selectedDate->copy()->endOfMonth()->endOfDay();
-            $allBookings = Booking::with(['room.building', 'user.unit'])
-                ->whereBetween('booking_date', [$startOfMonth, $endOfMonth])
-                ->whereIn('status', ['Approved', 'Pending'])
-                ->get();
-        }
-    }
-
-    $weekDates = collect();
-    for ($i = 0; $i < 7; $i++) {
-        $weekDates->push($startOfWeek->copy()->addDays($i));
-    }
-
-    return view('welcome', compact('bookings', 'weekDates', 'rooms', 'popularRooms', 'allBookings', 'selectedRoomId'));
-})->name('welcome');
-
-Route::get('ruangan', function () {
-    $buildings = collect();
-    if (Schema::hasTable('buildings')) {
-        $buildings = Building::with('rooms')->get();
-    }
-
-    return view('ruangan', compact('buildings'));
-})->name('ruangan');
+Route::get('/', [GuestController::class, 'welcome'])->name('welcome');
+Route::get('ruangan', [GuestController::class, 'ruangan'])->name('ruangan');
 
 // --- AUTHENTICATED ROUTES ---
 Route::middleware('auth')->group(function () {
 
     // General Dashboard (Role-based redirection)
-    Route::get('/dashboard', function () {
-        $user = Auth::user();
-
-        if ($user->role->name === 'Penyetuju') {
-            return app(ApprovalController::class)->dashboard(request());
-        }
-
-        $stats = ['approved' => 0, 'pending' => 0, 'rejected' => 0];
-        $recentBookings = collect();
-        $notifications = collect();
-
-        if ($user->role->name === 'Peminjam') {
-            // Statistik
-            $stats['approved'] = Booking::where('user_id', $user->id)->where('status', 'Approved')->count();
-            $stats['pending'] = Booking::where('user_id', $user->id)->where('status', 'Pending')->count();
-            $stats['rejected'] = Booking::where('user_id', $user->id)->whereIn('status', ['Rejected', 'Revising'])->count();
-
-            // Ambil 5 booking terbaru
-            $recentBookings = Booking::with('room')
-                ->where('user_id', $user->id)
-                ->orderBy('created_at', 'desc')
-                ->take(5)
-                ->get();
-
-            // Ambil 5 notifikasi terbaru (dari log booking milik user)
-            $notifications = BookingLog::whereHas('booking', function ($query) use ($user) {
-                $query->where('user_id', $user->id);
-            })
-                ->orderBy('created_at', 'desc')
-                ->take(5)
-                ->get();
-        }
-
-        $view = match ($user->role->name) {
-            'Administrator Utama' => 'user.superadmin.dashboard',
-            'Administrator Unit' => 'user.admin_unit.dashboard',
-            'Peminjam' => 'user.peminjam.dashboard',
-            default => 'user.peminjam.dashboard',
-        };
-
-        return view($view, compact('stats', 'recentBookings', 'notifications'));
-    })->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Riwayat (Shared between all authenticated roles)
-    Route::get('/riwayat', function () {
-        $user = Auth::user();
-
-        if ($user->role->name === 'Penyetuju') {
-            return app(ApprovalController::class)->history(request());
-        }
-
-        if (in_array($user->role->name, ['Administrator Utama', 'Administrator Unit'])) {
-            return redirect()->route('laporan');
-        }
-
-        $bookings = Booking::with(['room.building', 'user'])
-            ->where('user_id', $user->id)
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        // Hitung statistik untuk sidebar
-        $statusCounts = [
-            'Approved' => $bookings->where('status', 'Approved')->count(),
-            'Pending' => $bookings->where('status', 'Pending')->count(),
-            'Rejected' => $bookings->whereIn('status', ['Rejected', 'Cancelled', 'Revising'])->count(),
-        ];
-
-        return view('user.peminjam.riwayat', compact('bookings', 'statusCounts'));
-    })->name('riwayat');
+    Route::get('/riwayat', [RiwayatController::class, 'index'])->name('riwayat');
 
     // Laporan Peminjaman (Shared between SuperAdmin & Admin_Unit)
     Route::middleware('checkRole:Administrator Utama,Administrator Unit')->group(function () {
-        Route::get('/laporan', function () {
-            $user = Auth::user();
-
-            $query = Booking::with(['room.building', 'user'])
-                ->orderBy('created_at', 'desc');
-
-            if ($user->role->name === 'Administrator Utama') {
-                // SuperAdmin can see all bookings
-                $bookings = $query->get();
-            } elseif ($user->role->name === 'Administrator Unit') {
-                // Admin_Unit can see bookings belonging to their unit's rooms or child's rooms
-                $unitIds = [$user->unit_id];
-
-                // Dapatkan seluruh child unit (descendants)
-                if ($user->unit) {
-                    $childIds = Unit::where('parent_id', $user->unit_id)->pluck('id')->toArray();
-                    $unitIds = array_merge($unitIds, $childIds);
-                    if (! empty($childIds)) {
-                        $grandchildIds = Unit::whereIn('parent_id', $childIds)->pluck('id')->toArray();
-                        $unitIds = array_merge($unitIds, $grandchildIds);
-                    }
-                }
-
-                $unitIds = array_unique($unitIds);
-
-                $bookings = $query->whereHas('room', function ($q) use ($unitIds) {
-                    $q->whereIn('unit_id', $unitIds);
-                })->get();
-            }
-
-            // Hitung statistik untuk sidebar
-            $statusCounts = [
-                'Approved' => $bookings->where('status', 'Approved')->count(),
-                'Pending' => $bookings->where('status', 'Pending')->count(),
-                'Rejected' => $bookings->whereIn('status', ['Rejected', 'Cancelled', 'Revising'])->count(),
-            ];
-
-            return view('user.admin.laporan_peminjaman', compact('bookings', 'statusCounts'));
-        })->name('laporan');
+        Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan');
     });
 
     // Kelola User (Shared between SuperAdmin & Admin_Unit)
-    Route::get('/kelola-user', function () {
-        $view = match (Auth::user()->role->name) {
-            'Administrator Utama', 'Administrator Unit' => 'user.admin.kelola-user',
-            default => 'user.peminjam.kelola-user',
-        };
-
-        return view($view);
-    })->name('kelola-user');
+    Route::get('/kelola-user', [UserController::class, 'kelolaView'])->name('kelola-user');
 
     // --- INTERNAL API FOR AJAX (Uses Web Session) ---
     Route::prefix('admin/api')->group(function () {
@@ -231,20 +67,10 @@ Route::middleware('auth')->group(function () {
         Route::post('/rooms', [RoomController::class, 'store']);
 
         // Roles
-        Route::get('/roles', function () {
-            return response()->json([
-                'success' => true,
-                'data' => Role::all(),
-            ]);
-        });
+        Route::get('/roles', [AdminApiController::class, 'roles']);
 
         // Positions
-        Route::get('/positions', function () {
-            return response()->json([
-                'success' => true,
-                'data' => Position::all(),
-            ]);
-        });
+        Route::get('/positions', [AdminApiController::class, 'positions']);
     });
 
     // --- SHARED FILE ACCESS (All Auth Roles with Internal Auth Logic) ---
@@ -279,74 +105,11 @@ Route::middleware('auth')->group(function () {
 
         // Views
         Route::get('/bookings/bulk-pdf', [BookingPdfController::class, 'bulkDownload'])->name('booking.pdf.bulk');
-        Route::get('/manajemen-ruangan', function () {
-            $user = Auth::user();
-            $unitIds = [$user->unit_id];
+        Route::get('/manajemen-ruangan', [AdminUnitController::class, 'manajemenRuangan'])->name('manajemenRuangan');
+        Route::get('/pemblokiran-ruangan', [AdminUnitController::class, 'pemblokiranRuangan'])->name('pemblokiranRuangan');
 
-            // Dapatkan seluruh child unit (descendants)
-            if ($user->unit) {
-                $childIds = Unit::where('parent_id', $user->unit_id)->pluck('id')->toArray();
-                $unitIds = array_merge($unitIds, $childIds);
-                if (! empty($childIds)) {
-                    $grandchildIds = Unit::whereIn('parent_id', $childIds)->pluck('id')->toArray();
-                    $unitIds = array_merge($unitIds, $grandchildIds);
-                }
-            }
-
-            $unitIds = array_unique($unitIds);
-
-            $rooms = Room::whereIn('unit_id', $unitIds)->with(['building', 'workflows'])->get();
-            $workflows = Workflow::where('unit_id', $user->unit_id)->get();
-
-            return view('user.admin_unit.manajemenRuangan', compact('rooms', 'workflows'));
-        })->name('manajemenRuangan');
-
-        Route::get('/pemblokiran-ruangan', function () {
-            $user = Auth::user();
-            $unitIds = [$user->unit_id];
-
-            // Dapatkan seluruh child unit (descendants)
-            if ($user->unit) {
-                $childIds = Unit::where('parent_id', $user->unit_id)->pluck('id')->toArray();
-                $unitIds = array_merge($unitIds, $childIds);
-                if (! empty($childIds)) {
-                    $grandchildIds = Unit::whereIn('parent_id', $childIds)->pluck('id')->toArray();
-                    $unitIds = array_merge($unitIds, $grandchildIds);
-                }
-            }
-
-            $unitIds = array_unique($unitIds);
-
-            $rooms = Room::whereIn('unit_id', $unitIds)->with('building')->get();
-
-            // Mengambil jadwal maintenance mendatang dan mengelompokkannya
-            $rawBlockings = Booking::with('room')
-                ->whereHas('room', fn ($q) => $q->whereIn('unit_id', $unitIds))
-                ->where('event_name', 'LIKE', '[MAINTENANCE HARD-LOCK]%')
-                ->whereDate('booking_date', '>=', now())
-                ->orderBy('booking_date', 'asc')
-                ->get();
-
-            $activeBlockings = $rawBlockings->groupBy('event_name')->map(function ($group) {
-                $first = $group->first();
-
-                return (object) [
-                    'id' => $first->id,
-                    'event_name' => $first->event_name,
-                    'room' => $first->room,
-                    'event_description' => $first->event_description,
-                    'start_date' => $group->min('booking_date'),
-                    'end_date' => $group->max('booking_date'),
-                    'is_range' => $group->count() > 1,
-                    'count' => $group->count(),
-                ];
-            })->take(5);
-
-            return view('user.admin_unit.pemblokiranRuangan', compact('rooms', 'activeBlockings'));
-        })->name('pemblokiranRuangan');
-
-        Route::get('/workflows-builder', fn () => view('user.admin_unit.workflowsBuilder'))->name('workflowsBuilder');
-        Route::get('/workflows-index', fn () => view('user.admin_unit.workflowsIndex'))->name('workflowsIndex');
+        Route::view('/workflows-builder', 'user.admin_unit.workflowsBuilder')->name('workflowsBuilder');
+        Route::view('/workflows-index', 'user.admin_unit.workflowsIndex')->name('workflowsIndex');
 
         // Form Standard (Redirect Back)
         Route::post('/rooms', [RoomController::class, 'store'])->name('rooms.store');
@@ -394,7 +157,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware('checkRole:Peminjam')->prefix('peminjam')->group(function () {
         Route::get('/booking', [BookingController::class, 'showBookingForm'])->name('booking');
         Route::get('/jadwal-saya', [BookingController::class, 'showJadwalSaya'])->name('jadwal-saya');
-        Route::get('/peminjaman', fn () => view('user.peminjam.peminjaman'))->name('peminjaman');
+        Route::view('/peminjaman', 'user.peminjam.peminjaman')->name('peminjaman');
 
         Route::get('/bookings', [BookingController::class, 'index'])->name('booking.index');
         Route::get('/bookings/create', [BookingController::class, 'create'])->name('booking.create');

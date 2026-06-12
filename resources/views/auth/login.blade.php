@@ -45,7 +45,7 @@
 
                         <!-- Email / NIM / NIP -->
                         <div>
-                            <label for="email" class="block text-[10px] lg:text-[11px] uppercase tracking-wider font-bold text-[#14B8A6] mb-1.5 hover:text-[#10ECE8] transition-colors cursor-pointer">NIM / NIP</label>
+                            <label for="email" class="block text-[10px] lg:text-[11px] uppercase tracking-wider font-bold text-[#14B8A6] mb-1.5 hover:text-[#10ECE8] transition-colors cursor-pointer">Pos-el</label>
                             <input 
                                 id="email" 
                                 type="email" 
@@ -97,7 +97,7 @@
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                             </div>
                             <p class="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                                Sistem tertutup. Akun dibuat oleh <span class="font-semibold text-slate-800 dark:text-white">Admin Unit</span>.
+                                Sistem tertutup. Akun dibuat oleh <span class="font-semibold text-slate-800 dark:text-white">Administrator Unit</span>.
                             </p>
                         </div>
 
@@ -113,7 +113,7 @@
                 
                 <!-- Bottom Badges -->
                 <div class="mt-6 flex items-center justify-between sm:px-4">
-                    <div class="text-[9px] lg:text-[10px] font-bold tracking-widest text-slate-400 dark:text-slate-600 uppercase">Secured by IBM</div>
+                    <div class="text-[9px] lg:text-[10px] font-bold tracking-widest text-slate-400 dark:text-slate-600 uppercase">Dikembangkan Oleh: Kelompok 4</div>
                     <div class="flex justify-center gap-1.5">
                         <div class="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-[#111]"></div>
                         <div class="w-1.5 h-1.5 rounded-full bg-[#14B8A6]"></div>
